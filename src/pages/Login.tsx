@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { Building2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUserRole } from "@/hooks/useUserRole";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 
@@ -18,16 +19,20 @@ const loginSchema = z.object({
 const Login = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { role } = useUserRole();
   const { toast } = useToast();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (user) {
-      navigate("/dashboard/client");
+    if (user && role) {
+      // Redirect based on role
+      if (role === 'admin') navigate("/dashboard/admin");
+      else if (role === 'broker') navigate("/dashboard/broker");
+      else navigate("/dashboard/client");
     }
-  }, [user, navigate]);
+  }, [user, role, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,12 +55,22 @@ const Login = () => {
         return;
       }
 
+      // Fetch user role and redirect
+      const { data: roleData } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
+        .maybeSingle();
+
       toast({
         title: "Welcome back!",
         description: "Successfully logged in",
       });
-      
-      navigate("/dashboard/client");
+
+      // Redirect based on role
+      if (roleData?.role === 'admin') navigate("/dashboard/admin");
+      else if (roleData?.role === 'broker') navigate("/dashboard/broker");
+      else navigate("/dashboard/client");
     } catch (error) {
       if (error instanceof z.ZodError) {
         toast({

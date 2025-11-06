@@ -5,12 +5,14 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { RoleBasedRoute } from "./components/RoleBasedRoute";
 import Index from "./pages/Index";
 import PreEligibility from "./pages/PreEligibility";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import ClientDashboard from "./pages/ClientDashboard";
 import BrokerDashboard from "./pages/BrokerDashboard";
+import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,14 +30,19 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/dashboard/client" element={
-              <ProtectedRoute>
+              <RoleBasedRoute allowedRoles={['client']}>
                 <ClientDashboard />
-              </ProtectedRoute>
+              </RoleBasedRoute>
             } />
             <Route path="/dashboard/broker/*" element={
-              <ProtectedRoute>
+              <RoleBasedRoute allowedRoles={['broker']}>
                 <BrokerDashboard />
-              </ProtectedRoute>
+              </RoleBasedRoute>
+            } />
+            <Route path="/dashboard/admin" element={
+              <RoleBasedRoute allowedRoles={['admin']}>
+                <AdminDashboard />
+              </RoleBasedRoute>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
