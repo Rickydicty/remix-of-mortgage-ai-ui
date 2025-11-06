@@ -9,13 +9,21 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 const ClientDashboard = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [notificationsEnabled, setNotificationsEnabled] = useState({
     email: true,
     whatsapp: false,
   });
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate("/login");
+  };
 
   const progressSteps = [
     { id: "1", label: "Pre-App", status: "complete" as const },
@@ -67,7 +75,7 @@ const ClientDashboard = () => {
             <div className="flex items-center gap-4">
               <Building2 className="h-8 w-8 text-primary" />
               <div>
-                <h1 className="text-xl font-bold">John Doe</h1>
+                <h1 className="text-xl font-bold">{user?.email?.split('@')[0] || 'User'}</h1>
                 <p className="text-sm text-muted-foreground">App ID: #MG-2024-1234</p>
               </div>
               <StatusBadge status="in-progress" />
@@ -77,7 +85,7 @@ const ClientDashboard = () => {
                 <p className="text-sm text-muted-foreground">Assigned Broker</p>
                 <p className="font-medium">Sarah O'Connor</p>
               </div>
-              <Button variant="ghost" size="sm" onClick={() => navigate("/")}>
+              <Button variant="ghost" size="sm" onClick={handleLogout}>
                 <LogOut className="h-4 w-4 mr-2" />
                 Logout
               </Button>

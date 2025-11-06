@@ -3,6 +3,8 @@ import { Routes, Route, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Building2, LogOut, Globe, ListTodo, Activity, FileText, TrendingUp, BookOpen, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 // Tab Components (create placeholder components for now)
 import BrokerWebTab from "@/components/broker/WebTab";
@@ -16,6 +18,12 @@ import BrokerAdminTab from "@/components/broker/AdminTab";
 const BrokerDashboard = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuth();
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate("/login");
+  };
 
   const tabs = [
     { id: "web", label: "Web", icon: Globe, path: "/dashboard/broker" },
@@ -44,10 +52,10 @@ const BrokerDashboard = () => {
               <Building2 className="h-8 w-8 text-primary" />
               <div>
                 <h1 className="text-xl font-bold">Broker Portal</h1>
-                <p className="text-sm text-muted-foreground">Sarah O'Connor</p>
+                <p className="text-sm text-muted-foreground">{user?.email}</p>
               </div>
             </div>
-            <Button variant="ghost" size="sm" onClick={() => navigate("/")}>
+            <Button variant="ghost" size="sm" onClick={handleLogout}>
               <LogOut className="h-4 w-4 mr-2" />
               Logout
             </Button>

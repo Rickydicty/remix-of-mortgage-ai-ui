@@ -1,13 +1,16 @@
+import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { Shield, Users, BarChart3, Settings, LogOut } from "lucide-react";
+import { UserManagement } from "@/components/admin/UserManagement";
 
 const AdminDashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'analytics' | 'settings'>('users');
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -32,62 +35,61 @@ const AdminDashboard = () => {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5 text-primary" />
-                User Management
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground mb-4">
-                Manage users, assign roles, and control access permissions.
-              </p>
-              <Button className="w-full">Manage Users</Button>
-            </CardContent>
-          </Card>
-
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BarChart3 className="h-5 w-5 text-primary" />
-                Analytics
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground mb-4">
-                View system analytics, usage statistics, and performance metrics.
-              </p>
-              <Button className="w-full">View Analytics</Button>
-            </CardContent>
-          </Card>
-
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Settings className="h-5 w-5 text-primary" />
-                System Settings
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground mb-4">
-                Configure system settings, integrations, and preferences.
-              </p>
-              <Button className="w-full">Configure</Button>
-            </CardContent>
-          </Card>
-
-          <Card className="col-span-full">
-            <CardHeader>
-              <CardTitle>Recent Activity</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">No recent activity to display.</p>
-            </CardContent>
-          </Card>
+      <div className="border-b border-border bg-card">
+        <div className="container mx-auto px-4">
+          <nav className="flex gap-4">
+            <Button
+              variant={activeTab === 'users' ? 'default' : 'ghost'}
+              onClick={() => setActiveTab('users')}
+              className="rounded-b-none"
+            >
+              <Users className="h-4 w-4 mr-2" />
+              Users
+            </Button>
+            <Button
+              variant={activeTab === 'analytics' ? 'default' : 'ghost'}
+              onClick={() => setActiveTab('analytics')}
+              className="rounded-b-none"
+            >
+              <BarChart3 className="h-4 w-4 mr-2" />
+              Analytics
+            </Button>
+            <Button
+              variant={activeTab === 'settings' ? 'default' : 'ghost'}
+              onClick={() => setActiveTab('settings')}
+              className="rounded-b-none"
+            >
+              <Settings className="h-4 w-4 mr-2" />
+              Settings
+            </Button>
+          </nav>
         </div>
+      </div>
+
+      <main className="container mx-auto px-4 py-8">
+        {activeTab === 'users' && <UserManagement />}
+        
+        {activeTab === 'analytics' && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Analytics Dashboard</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground">Analytics coming soon...</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {activeTab === 'settings' && (
+          <Card>
+            <CardHeader>
+              <CardTitle>System Settings</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground">Settings coming soon...</p>
+            </CardContent>
+          </Card>
+        )}
       </main>
     </div>
   );
