@@ -1,0 +1,5 @@
+{
+  "imports": {
+    "tesseract.js": "npm:tesseract.js@5.1.1"
+  }
+}
