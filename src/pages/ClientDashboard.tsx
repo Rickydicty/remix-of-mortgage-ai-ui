@@ -4,17 +4,19 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import { Building2, LogOut, Upload, MessageSquare, Bell, CreditCard, FileText, PenTool } from "lucide-react";
 import ProgressTracker from "@/components/ProgressTracker";
-import StatusBadge from "@/components/StatusBadge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { DocumentUpload } from "@/components/DocumentUpload";
+import { DocumentList } from "@/components/DocumentList";
 
 const ClientDashboard = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [notificationsEnabled, setNotificationsEnabled] = useState({
     email: true,
     whatsapp: false,
@@ -34,9 +36,12 @@ const ClientDashboard = () => {
     { id: "6", label: "Drawdown", status: "upcoming" as const },
   ];
 
-  const documents: Array<{ category: string; files: number; status: "verified" | "pending" | "flagged" }> = [];
   const clarifications: Array<{ id: string; from: string; message: string; timestamp: string; replies: number }> = [];
   const notifications: Array<{ id: string; message: string; time: string }> = [];
+
+  const handleUploadComplete = () => {
+    setRefreshTrigger(prev => prev + 1);
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -79,45 +84,10 @@ const ClientDashboard = () => {
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-8">
             {/* Document Upload */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Upload className="h-5 w-5 text-primary" />
-                  Document Upload
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {documents.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <p>No documents to upload yet</p>
-                    <p className="text-sm mt-2">Start an application to upload documents</p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {documents.map((doc) => (
-                      <div
-                        key={doc.category}
-                        className="flex items-center justify-between p-4 border border-border rounded-lg"
-                      >
-                        <div className="flex-1">
-                          <h4 className="font-medium">{doc.category}</h4>
-                          <p className="text-sm text-muted-foreground">
-                            {doc.files} file{doc.files !== 1 ? "s" : ""} uploaded
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <StatusBadge status={doc.status} />
-                          <Button size="sm">
-                            <Upload className="h-4 w-4 mr-2" />
-                            Upload
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            <DocumentUpload onUploadComplete={handleUploadComplete} />
+
+            {/* Document List */}
+            <DocumentList refreshTrigger={refreshTrigger} />
 
             {/* AI Feedback */}
             <Card>
@@ -141,41 +111,10 @@ const ClientDashboard = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {clarifications.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <p>No clarifications requested</p>
-                    <p className="text-sm mt-2">You're all up to date</p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {clarifications.map((item) => (
-                      <div key={item.id} className="p-4 border border-border rounded-lg space-y-2">
-                        <div className="flex items-center justify-between">
-                          <StatusBadge
-                            status={item.from === "broker" ? "pending" : "flagged"}
-                            text={item.from === "broker" ? "Broker" : "AI"}
-                          />
-                          <span className="text-xs text-muted-foreground">{item.timestamp}</span>
-                        </div>
-                        <p className="text-sm">{item.message}</p>
-                        <div className="flex items-center gap-2">
-                          <Button size="sm" variant="outline">
-                            Reply
-                          </Button>
-                          <Button size="sm" variant="outline">
-                            <Upload className="h-3 w-3 mr-1" />
-                            Attach File
-                          </Button>
-                          {item.replies > 0 && (
-                            <span className="text-xs text-muted-foreground">
-                              {item.replies} {item.replies === 1 ? "reply" : "replies"}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                <div className="text-center py-8 text-muted-foreground">
+                  <p>No clarifications requested</p>
+                  <p className="text-sm mt-2">You're all up to date</p>
+                </div>
               </CardContent>
             </Card>
 
