@@ -34,6 +34,7 @@ const ClientDashboard = () => {
   const [application, setApplication] = useState<Application | null>(null);
   const [userProfile, setUserProfile] = useState<Profile | null>(null);
   const [brokerProfile, setBrokerProfile] = useState<Profile | null>(null);
+  const [documentProgress, setDocumentProgress] = useState(0);
 
   useEffect(() => {
     fetchApplicationData();
@@ -75,6 +76,22 @@ const ClientDashboard = () => {
           setBrokerProfile(broker);
         }
       }
+
+      // Fetch documents to calculate phase progress
+      const { data: documents } = await supabase
+        .from('documents')
+        .select('*')
+        .eq('user_id', user.id);
+
+      if (documents) {
+        // Define required document types
+        const requiredDocTypes = ['id_proof', 'proof_of_address', 'payslips', 'bank_statements', 'contract'];
+        const approvedRequiredDocs = documents.filter(
+          doc => requiredDocTypes.includes(doc.document_type) && doc.status === 'approved'
+        ).length;
+        const docPercentage = Math.round((approvedRequiredDocs / requiredDocTypes.length) * 100);
+        setDocumentProgress(docPercentage);
+      }
     } catch (error) {
       console.error('Error fetching application data:', error);
     }
@@ -109,12 +126,12 @@ const ClientDashboard = () => {
   };
 
   const progressSteps = [
-    { id: "1", label: "Pre-App", status: getStepStatus(1) },
-    { id: "2", label: "Documents", status: getStepStatus(2) },
-    { id: "3", label: "Review", status: getStepStatus(3) },
-    { id: "4", label: "AIP", status: getStepStatus(4) },
-    { id: "5", label: "Offer", status: getStepStatus(5) },
-    { id: "6", label: "Drawdown", status: getStepStatus(6) },
+    { id: "1", label: "Pre-App", status: getStepStatus(1), phaseProgress: 0 },
+    { id: "2", label: "Documents", status: getStepStatus(2), phaseProgress: documentProgress },
+    { id: "3", label: "Review", status: getStepStatus(3), phaseProgress: 0 },
+    { id: "4", label: "AIP", status: getStepStatus(4), phaseProgress: 0 },
+    { id: "5", label: "Offer", status: getStepStatus(5), phaseProgress: 0 },
+    { id: "6", label: "Drawdown", status: getStepStatus(6), phaseProgress: 0 },
   ];
 
   const clarifications: Array<{ id: string; from: string; message: string; timestamp: string; replies: number }> = [];
