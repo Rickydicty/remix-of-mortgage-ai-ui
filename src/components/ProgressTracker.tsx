@@ -14,9 +14,19 @@ interface ProgressTrackerProps {
 
 const ProgressTracker = ({ steps }: ProgressTrackerProps) => {
   const completedSteps = steps.filter(step => step.status === 'complete').length;
-  const totalSteps = steps.length;
-  const percentage = Math.round((completedSteps / totalSteps) * 100);
   const currentStep = steps.find(step => step.status === 'current');
+  const totalSteps = steps.length;
+  
+  // Calculate overall progress: each complete step is 1/6, current step with phase progress contributes proportionally
+  const phaseWeight = 100 / totalSteps; // Each phase is worth ~16.67% (or 25% if custom weighted)
+  let overallPercentage = completedSteps * phaseWeight;
+  
+  // Add current phase progress contribution
+  if (currentStep && currentStep.phaseProgress !== undefined) {
+    overallPercentage += (currentStep.phaseProgress / 100) * phaseWeight;
+  }
+  
+  const percentage = Math.round(overallPercentage);
 
   return (
     <div className="w-full space-y-4">
@@ -24,24 +34,25 @@ const ProgressTracker = ({ steps }: ProgressTrackerProps) => {
         {steps.map((step, index) => (
           <div key={step.id} className="flex-1 flex items-center">
             <div className="flex flex-col items-center flex-1">
-              <div
-                className={cn(
-                  "w-10 h-10 rounded-full flex items-center justify-center font-semibold",
-                  step.status === "complete" && "bg-success text-success-foreground",
-                  step.status === "current" && "bg-primary text-primary-foreground ring-4 ring-primary/20",
-                  step.status === "upcoming" && "bg-muted text-muted-foreground"
-                )}
-              >
-                {step.status === "complete" ? (
-                  <Check className="h-5 w-5" />
-                ) : (
-                  <span>{index + 1}</span>
-                )}
+              <div className="relative">
+                <div
+                  className={cn(
+                    "w-10 h-10 rounded-full flex items-center justify-center font-semibold text-sm",
+                    step.status === "complete" && "bg-success text-success-foreground",
+                    step.status === "current" && "bg-primary text-primary-foreground ring-4 ring-primary/20",
+                    step.status === "upcoming" && "bg-muted text-muted-foreground"
+                  )}
+                >
+                  {step.status === "complete" ? (
+                    <Check className="h-5 w-5" />
+                  ) : step.status === "current" && step.phaseProgress !== undefined && step.phaseProgress > 0 ? (
+                    <span className="text-xs font-bold">{step.phaseProgress}%</span>
+                  ) : (
+                    <span>{index + 1}</span>
+                  )}
+                </div>
               </div>
               <span className="text-xs mt-2 text-center font-medium">{step.label}</span>
-              {step.status === "current" && step.phaseProgress !== undefined && step.phaseProgress > 0 && (
-                <span className="text-xs font-bold text-primary mt-1">{step.phaseProgress}%</span>
-              )}
             </div>
             {index < steps.length - 1 && (
               <div
