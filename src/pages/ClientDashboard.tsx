@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
-import { Building2, LogOut, Upload, MessageSquare, Bell, FileText, PenTool } from "lucide-react";
+import { Building2, LogOut, Upload, MessageSquare, Bell, FileText, PenTool, User } from "lucide-react";
 import ProgressTracker from "@/components/ProgressTracker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,27 +14,104 @@ import { useAuth } from "@/contexts/AuthContext";
 import { DocumentUpload } from "@/components/DocumentUpload";
 import { DocumentList } from "@/components/DocumentList";
 
+interface Application {
+  id: string;
+  application_number: string;
+  status: string;
+  current_step: number;
+  assigned_broker_id: string | null;
+}
+
+interface Profile {
+  full_name: string | null;
+  email: string | null;
+}
+
 const ClientDashboard = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [application, setApplication] = useState<Application | null>(null);
+  const [userProfile, setUserProfile] = useState<Profile | null>(null);
+  const [brokerProfile, setBrokerProfile] = useState<Profile | null>(null);
   const [notificationsEnabled, setNotificationsEnabled] = useState({
     email: true,
     whatsapp: false,
   });
+
+  useEffect(() => {
+    fetchApplicationData();
+  }, [user]);
+
+  const fetchApplicationData = async () => {
+    if (!user) return;
+
+    try {
+      // Fetch user profile
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('full_name, email')
+        .eq('id', user.id)
+        .single();
+      
+      setUserProfile(profile);
+
+      // Fetch application
+      const { data: app } = await supabase
+        .from('applications')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (app) {
+        setApplication(app);
+
+        // Fetch broker profile if assigned
+        if (app.assigned_broker_id) {
+          const { data: broker } = await supabase
+            .from('profiles')
+            .select('full_name, email')
+            .eq('id', app.assigned_broker_id)
+            .single();
+          
+          setBrokerProfile(broker);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching application data:', error);
+    }
+  };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate("/login");
   };
 
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'approved':
+        return 'bg-success/10 text-success border-success/20';
+      case 'in_progress':
+      case 'in progress':
+        return 'bg-primary/10 text-primary border-primary/20';
+      case 'pending':
+        return 'bg-warning/10 text-warning border-warning/20';
+      case 'rejected':
+        return 'bg-destructive/10 text-destructive border-destructive/20';
+      default:
+        return 'bg-muted/10 text-muted-foreground border-muted/20';
+    }
+  };
+
   const progressSteps = [
-    { id: "1", label: "Pre-App", status: "upcoming" as const },
-    { id: "2", label: "Documents", status: "upcoming" as const },
-    { id: "3", label: "Review", status: "upcoming" as const },
-    { id: "4", label: "AIP", status: "upcoming" as const },
-    { id: "5", label: "Offer", status: "upcoming" as const },
-    { id: "6", label: "Drawdown", status: "upcoming" as const },
+    { id: "1", label: "Pre-App", status: (application?.current_step ?? 0) > 1 ? "complete" : (application?.current_step === 1 ? "current" : "upcoming") as const },
+    { id: "2", label: "Documents", status: (application?.current_step ?? 0) > 2 ? "complete" : (application?.current_step === 2 ? "current" : "upcoming") as const },
+    { id: "3", label: "Review", status: (application?.current_step ?? 0) > 3 ? "complete" : (application?.current_step === 3 ? "current" : "upcoming") as const },
+    { id: "4", label: "AIP", status: (application?.current_step ?? 0) > 4 ? "complete" : (application?.current_step === 4 ? "current" : "upcoming") as const },
+    { id: "5", label: "Offer", status: (application?.current_step ?? 0) > 5 ? "complete" : (application?.current_step === 5 ? "current" : "upcoming") as const },
+    { id: "6", label: "Drawdown", status: (application?.current_step ?? 0) > 6 ? "complete" : (application?.current_step === 6 ? "current" : "upcoming") as const },
   ];
 
   const clarifications: Array<{ id: string; from: string; message: string; timestamp: string; replies: number }> = [];
@@ -48,12 +126,12 @@ const ClientDashboard = () => {
       {/* Header */}
       <header className="border-b border-border bg-card sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex justify-between items-center">
+          <div className="flex justify-between items-center mb-4">
             <div className="flex items-center gap-4">
               <Building2 className="h-8 w-8 text-primary" />
               <div>
-                <h1 className="text-xl font-bold">{user?.email?.split('@')[0] || 'User'}</h1>
-                <p className="text-sm text-muted-foreground">No active application</p>
+                <h1 className="text-xl font-bold">{userProfile?.full_name || user?.email?.split('@')[0] || 'User'}</h1>
+                <p className="text-xs text-muted-foreground">{userProfile?.email || user?.email}</p>
               </div>
             </div>
             <div className="flex items-center gap-4">
@@ -63,6 +141,36 @@ const ClientDashboard = () => {
               </Button>
             </div>
           </div>
+          
+          {application && (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-border">
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">Application ID</p>
+                <p className="font-semibold">{application.application_number}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">Status</p>
+                <Badge className={getStatusColor(application.status)}>
+                  {application.status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                </Badge>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">Current Step</p>
+                <p className="font-semibold">Step {application.current_step} of 6</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">Assigned Broker</p>
+                {brokerProfile ? (
+                  <div className="flex items-center gap-2">
+                    <User className="h-4 w-4 text-primary" />
+                    <p className="font-semibold">{brokerProfile.full_name || brokerProfile.email}</p>
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">Not assigned yet</p>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </header>
 
@@ -74,9 +182,6 @@ const ClientDashboard = () => {
           </CardHeader>
           <CardContent>
             <ProgressTracker steps={progressSteps} />
-            <div className="mt-4 text-center">
-              <p className="text-sm text-muted-foreground">No active application</p>
-            </div>
           </CardContent>
         </Card>
 

@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      applications: {
+        Row: {
+          application_number: string
+          assigned_broker_id: string | null
+          created_at: string
+          current_step: number
+          id: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          application_number: string
+          assigned_broker_id?: string | null
+          created_at?: string
+          current_step?: number
+          id?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          application_number?: string
+          assigned_broker_id?: string | null
+          created_at?: string
+          current_step?: number
+          id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       documents: {
         Row: {
           analysis_text: string | null
@@ -106,6 +139,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_application_number: { Args: never; Returns: string }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
