@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
-import { Building2, LogOut, Upload, MessageSquare, Bell, FileText, PenTool, User } from "lucide-react";
+import { Building2, LogOut, Upload, MessageSquare, FileText, PenTool, User } from "lucide-react";
 import ProgressTracker from "@/components/ProgressTracker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -34,10 +34,6 @@ const ClientDashboard = () => {
   const [application, setApplication] = useState<Application | null>(null);
   const [userProfile, setUserProfile] = useState<Profile | null>(null);
   const [brokerProfile, setBrokerProfile] = useState<Profile | null>(null);
-  const [notificationsEnabled, setNotificationsEnabled] = useState({
-    email: true,
-    whatsapp: false,
-  });
 
   useEffect(() => {
     fetchApplicationData();
@@ -105,17 +101,23 @@ const ClientDashboard = () => {
     }
   };
 
+  const getStepStatus = (stepNumber: number): "complete" | "current" | "upcoming" => {
+    const currentStep = application?.current_step ?? 0;
+    if (currentStep > stepNumber) return "complete";
+    if (currentStep === stepNumber) return "current";
+    return "upcoming";
+  };
+
   const progressSteps = [
-    { id: "1", label: "Pre-App", status: (application?.current_step ?? 0) > 1 ? "complete" : (application?.current_step === 1 ? "current" : "upcoming") as const },
-    { id: "2", label: "Documents", status: (application?.current_step ?? 0) > 2 ? "complete" : (application?.current_step === 2 ? "current" : "upcoming") as const },
-    { id: "3", label: "Review", status: (application?.current_step ?? 0) > 3 ? "complete" : (application?.current_step === 3 ? "current" : "upcoming") as const },
-    { id: "4", label: "AIP", status: (application?.current_step ?? 0) > 4 ? "complete" : (application?.current_step === 4 ? "current" : "upcoming") as const },
-    { id: "5", label: "Offer", status: (application?.current_step ?? 0) > 5 ? "complete" : (application?.current_step === 5 ? "current" : "upcoming") as const },
-    { id: "6", label: "Drawdown", status: (application?.current_step ?? 0) > 6 ? "complete" : (application?.current_step === 6 ? "current" : "upcoming") as const },
+    { id: "1", label: "Pre-App", status: getStepStatus(1) },
+    { id: "2", label: "Documents", status: getStepStatus(2) },
+    { id: "3", label: "Review", status: getStepStatus(3) },
+    { id: "4", label: "AIP", status: getStepStatus(4) },
+    { id: "5", label: "Offer", status: getStepStatus(5) },
+    { id: "6", label: "Drawdown", status: getStepStatus(6) },
   ];
 
   const clarifications: Array<{ id: string; from: string; message: string; timestamp: string; replies: number }> = [];
-  const notifications: Array<{ id: string; message: string; time: string }> = [];
 
   const handleUploadComplete = () => {
     setRefreshTrigger(prev => prev + 1);
@@ -257,53 +259,6 @@ const ClientDashboard = () => {
 
           {/* Sidebar */}
           <div className="space-y-6">
-            {/* Notifications */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <Bell className="h-5 w-5 text-warning" />
-                  Notifications
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label>Email Notifications</Label>
-                    <Switch
-                      checked={notificationsEnabled.email}
-                      onCheckedChange={(checked) =>
-                        setNotificationsEnabled({ ...notificationsEnabled, email: checked })
-                      }
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label>WhatsApp Alerts</Label>
-                    <Switch
-                      checked={notificationsEnabled.whatsapp}
-                      onCheckedChange={(checked) =>
-                        setNotificationsEnabled({ ...notificationsEnabled, whatsapp: checked })
-                      }
-                    />
-                  </div>
-                </div>
-                <div className="border-t border-border pt-4">
-                  {notifications.length === 0 ? (
-                    <div className="text-center py-4 text-muted-foreground text-sm">
-                      No new notifications
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {notifications.map((notif) => (
-                        <div key={notif.id} className="text-sm">
-                          <p className="font-medium">{notif.message}</p>
-                          <p className="text-xs text-muted-foreground">{notif.time}</p>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
           </div>
         </div>
       </div>
