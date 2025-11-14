@@ -1,6 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from 'jsr:@supabase/supabase-js@2';
-import { createWorker } from "tesseract.js";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -13,36 +12,49 @@ interface AnalysisResponse {
   status: 'approved' | 'disapproved' | 'waiting';
 }
 
-async function analyzeDocumentWithGroq(text: string): Promise<AnalysisResponse> {
-  const groqApiKey = Deno.env.get('GROQ_API_KEY');
+async function analyzeDocumentWithAI(imageBase64: string, mimeType: string): Promise<AnalysisResponse> {
+  const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
   
-  const prompt = `You are a document verification expert. Analyze the following document text and provide:
-1. A score from 0-100 based on document quality, completeness, and validity
-2. A brief analysis explaining the score
-
-Document text:
-${text}
-
-Respond in JSON format with "score" (number) and "analysis" (string) fields.`;
-
-  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+  const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${groqApiKey}`,
+      'Authorization': `Bearer ${lovableApiKey}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'groq/compound',
+      model: 'google/gemini-2.5-flash',
       messages: [
-        { role: 'system', content: 'You are a document analysis expert. Always respond with valid JSON.' },
-        { role: 'user', content: prompt }
+        { 
+          role: 'system', 
+          content: 'You are a document verification expert. Analyze documents and provide a score from 0-100 based on quality, completeness, and validity. Always respond with valid JSON containing "score" (number) and "analysis" (string) fields.' 
+        },
+        { 
+          role: 'user', 
+          content: [
+            {
+              type: 'text',
+              text: 'Analyze this document and provide a score (0-100) and brief analysis. Consider factors like: document authenticity, completeness, readability, validity of information, and any red flags. Respond ONLY with JSON: {"score": number, "analysis": "your analysis"}'
+            },
+            {
+              type: 'image_url',
+              image_url: {
+                url: `data:${mimeType};base64,${imageBase64}`
+              }
+            }
+          ]
+        }
       ],
-      temperature: 0.3,
     }),
   });
 
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error('AI Gateway error:', response.status, errorText);
+    throw new Error(`AI analysis failed: ${response.status}`);
+  }
+
   const data = await response.json();
-  console.log('Groq response:', data);
+  console.log('AI response:', data);
   
   const content = data.choices[0].message.content;
   const parsed = JSON.parse(content);
@@ -61,23 +73,6 @@ Respond in JSON format with "score" (number) and "analysis" (string) fields.`;
     analysis: parsed.analysis,
     status,
   };
-}
-
-async function performOCR(fileBuffer: ArrayBuffer): Promise<string> {
-  console.log('Starting OCR...');
-  const worker = await createWorker();
-  
-  try {
-    await worker.loadLanguage('eng');
-    await worker.initialize('eng');
-    
-    const { data: { text } } = await worker.recognize(new Uint8Array(fileBuffer));
-    console.log('OCR completed, extracted text length:', text.length);
-    
-    return text;
-  } finally {
-    await worker.terminate();
-  }
 }
 
 Deno.serve(async (req) => {
@@ -137,18 +132,13 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Perform OCR
-    const extractedText = await performOCR(fileBuffer);
-    
-    if (!extractedText || extractedText.trim().length === 0) {
-      return new Response(JSON.stringify({ error: 'No text could be extracted from document' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
+    // Convert to base64 for AI analysis
+    const base64Image = btoa(
+      new Uint8Array(fileBuffer).reduce((data, byte) => data + String.fromCharCode(byte), '')
+    );
 
-    // Analyze with Groq
-    const analysis = await analyzeDocumentWithGroq(extractedText);
+    // Analyze with AI
+    const analysis = await analyzeDocumentWithAI(base64Image, file.type);
 
     // Save to database
     const { data: document, error: dbError } = await supabaseClient
