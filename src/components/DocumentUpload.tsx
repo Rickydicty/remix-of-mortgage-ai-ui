@@ -9,23 +9,13 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
 const DOCUMENT_TYPES = [
-  { value: "cover_letter", label: "Cover Letter", required: true },
-  { value: "calculator", label: "Calculator (Lender Specific)", required: false },
-  { value: "bi_application_form", label: "BI Application Form", required: true },
-  { value: "lender_declarations", label: "Lender Declarations", required: true },
-  { value: "original_declarations", label: "Sight of Original Declarations", required: true },
   { value: "certified_id", label: "Certified ID", required: true },
-  { value: "certified_proof_address", label: "Certified Proof of Address", required: true },
-  { value: "marriage_certificate", label: "Marriage Certificate", required: false },
-  { value: "salary_certificate", label: "Salary Certificate (BPFI)", required: true },
-  { value: "payslips_3months", label: "3 Months Payslips", required: true },
-  { value: "self_employed_docs", label: "Self-Employed Documents", required: false },
-  { value: "employment_detail_summary", label: "2024 Employment Detail Summary", required: true },
-  { value: "current_account_6months", label: "6 Months Current Account Statements", required: true },
-  { value: "savings_account_6months", label: "6 Months Savings Account Statements", required: true },
-  { value: "gift_letter", label: "Gift Letter", required: false },
-  { value: "loan_accounts_6months", label: "6 Months Loan Accounts", required: true },
-  { value: "mortgage_statements_12months", label: "12 Months Mortgage Statements", required: true },
+  { value: "proof_of_address", label: "Certified Proof of Address", required: true },
+  { value: "payslips", label: "3 Months Payslips", required: true },
+  { value: "bank_statements", label: "6 Months Bank Statements", required: true },
+  { value: "employment_summary", label: "Employment Detail Summary", required: true },
+  { value: "salary_cert", label: "Salary Certificate (BPFI)", required: false },
+  { value: "other", label: "Other Document", required: false },
 ];
 
 interface DocumentUploadProps {
