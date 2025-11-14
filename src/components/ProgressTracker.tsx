@@ -5,6 +5,7 @@ interface Step {
   id: string;
   label: string;
   status: "complete" | "current" | "upcoming";
+  phaseProgress?: number;
 }
 
 interface ProgressTrackerProps {
@@ -15,6 +16,7 @@ const ProgressTracker = ({ steps }: ProgressTrackerProps) => {
   const completedSteps = steps.filter(step => step.status === 'complete').length;
   const totalSteps = steps.length;
   const percentage = Math.round((completedSteps / totalSteps) * 100);
+  const currentStep = steps.find(step => step.status === 'current');
 
   return (
     <div className="w-full space-y-4">
@@ -37,6 +39,9 @@ const ProgressTracker = ({ steps }: ProgressTrackerProps) => {
                 )}
               </div>
               <span className="text-xs mt-2 text-center font-medium">{step.label}</span>
+              {step.status === "current" && step.phaseProgress !== undefined && step.phaseProgress > 0 && (
+                <span className="text-xs font-bold text-primary mt-1">{step.phaseProgress}%</span>
+              )}
             </div>
             {index < steps.length - 1 && (
               <div
@@ -49,6 +54,24 @@ const ProgressTracker = ({ steps }: ProgressTrackerProps) => {
           </div>
         ))}
       </div>
+      
+      {currentStep && currentStep.phaseProgress !== undefined && currentStep.phaseProgress > 0 && (
+        <div className="bg-muted/30 rounded-lg p-4 border border-border">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-foreground">{currentStep.label} Phase Progress</span>
+            <span className="text-xl font-bold text-primary">{currentStep.phaseProgress}%</span>
+          </div>
+          <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+            <div 
+              className="h-full bg-primary transition-all duration-500 ease-out rounded-full"
+              style={{ width: `${currentStep.phaseProgress}%` }}
+            />
+          </div>
+          <p className="text-xs text-muted-foreground mt-2">
+            Complete all required documents to proceed to the next phase
+          </p>
+        </div>
+      )}
       
       <div className="mt-6">
         <div className="flex items-center justify-between mb-2">
