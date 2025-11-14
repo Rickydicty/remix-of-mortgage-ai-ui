@@ -56,8 +56,16 @@ async function analyzeDocumentWithAI(imageBase64: string, mimeType: string): Pro
   const data = await response.json();
   console.log('AI response:', data);
   
-  const content = data.choices[0].message.content;
-  const parsed = JSON.parse(content);
+  let content = data.choices[0].message.content;
+  
+  // Remove markdown code blocks if present
+  if (content.includes('```json')) {
+    content = content.replace(/```json\s*/g, '').replace(/```\s*/g, '');
+  } else if (content.includes('```')) {
+    content = content.replace(/```\s*/g, '');
+  }
+  
+  const parsed = JSON.parse(content.trim());
   
   let status: 'approved' | 'disapproved' | 'waiting';
   if (parsed.score >= 70) {
