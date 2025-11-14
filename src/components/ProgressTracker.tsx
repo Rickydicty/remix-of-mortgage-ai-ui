@@ -12,8 +12,12 @@ interface ProgressTrackerProps {
 }
 
 const ProgressTracker = ({ steps }: ProgressTrackerProps) => {
+  const completedSteps = steps.filter(step => step.status === 'complete').length;
+  const totalSteps = steps.length;
+  const percentage = Math.round((completedSteps / totalSteps) * 100);
+
   return (
-    <div className="w-full">
+    <div className="w-full space-y-4">
       <div className="flex items-center justify-between">
         {steps.map((step, index) => (
           <div key={step.id} className="flex-1 flex items-center">
@@ -44,6 +48,22 @@ const ProgressTracker = ({ steps }: ProgressTrackerProps) => {
             )}
           </div>
         ))}
+      </div>
+      
+      <div className="mt-6">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-sm font-medium text-muted-foreground">Overall Progress</span>
+          <span className="text-2xl font-bold text-primary">{percentage}%</span>
+        </div>
+        <div className="w-full bg-muted rounded-full h-3 overflow-hidden">
+          <div 
+            className="h-full bg-primary transition-all duration-500 ease-out rounded-full"
+            style={{ width: `${percentage}%` }}
+          />
+        </div>
+        <p className="text-xs text-muted-foreground mt-2 text-center">
+          {completedSteps} of {totalSteps} steps completed
+        </p>
       </div>
     </div>
   );
