@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      documents: {
+        Row: {
+          analysis_text: string | null
+          created_at: string | null
+          document_type: string
+          file_path: string
+          filename: string
+          id: string
+          score: number | null
+          status: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          analysis_text?: string | null
+          created_at?: string | null
+          document_type: string
+          file_path: string
+          filename: string
+          id?: string
+          score?: number | null
+          status: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          analysis_text?: string | null
+          created_at?: string | null
+          document_type?: string
+          file_path?: string
+          filename?: string
+          id?: string
+          score?: number | null
+          status?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
