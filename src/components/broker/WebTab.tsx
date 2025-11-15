@@ -27,8 +27,8 @@ const BrokerWebTab = () => {
       .from('applications')
       .select(`
         *,
-        profile:profiles!applications_user_id_fkey(full_name, email),
-        documents:documents(id, status, document_type)
+        profile:profiles!user_id(full_name, email),
+        documents:documents!user_id(id, status, document_type)
       `)
       .order('created_at', { ascending: false });
 
