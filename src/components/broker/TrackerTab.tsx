@@ -4,52 +4,16 @@ import { Clock, TrendingUp } from "lucide-react";
 import StatusBadge from "@/components/StatusBadge";
 
 const BrokerTrackerTab = () => {
-  const cases = [
-    {
-      id: "MG-2024-1234",
-      client: "John Doe",
-      stage: "Documents",
-      progress: 60,
-      status: "pending" as const,
-      expectedAIP: "5 days",
-      lastActivity: "2 hours ago",
-    },
-    {
-      id: "MG-2024-1235",
-      client: "Emma Walsh",
-      stage: "Pre-App",
-      progress: 30,
-      status: "in-progress" as const,
-      expectedAIP: "10 days",
-      lastActivity: "1 day ago",
-    },
-    {
-      id: "MG-2024-1236",
-      client: "Michael Ryan",
-      stage: "AIP",
-      progress: 80,
-      status: "complete" as const,
-      expectedAIP: "Completed",
-      lastActivity: "3 hours ago",
-    },
-    {
-      id: "MG-2024-1237",
-      client: "Sarah Johnson",
-      stage: "Documents",
-      progress: 45,
-      status: "flagged" as const,
-      expectedAIP: "Delayed",
-      lastActivity: "5 days ago",
-    },
-  ];
-
+  // TODO: Fetch pipeline cases from database
+  const cases: any[] = [];
+  
   const stageColumns = [
-    { id: "pre-app", label: "Pre-App", count: 8 },
-    { id: "documents", label: "Documents", count: 15 },
-    { id: "review", label: "Review", count: 6 },
-    { id: "aip", label: "AIP", count: 12 },
-    { id: "offer", label: "Offer", count: 4 },
-    { id: "drawdown", label: "Drawdown", count: 3 },
+    { id: "pre-app", label: "Pre-App", count: 0 },
+    { id: "documents", label: "Documents", count: 0 },
+    { id: "review", label: "Review", count: 0 },
+    { id: "aip", label: "AIP", count: 0 },
+    { id: "offer", label: "Offer", count: 0 },
+    { id: "drawdown", label: "Drawdown", count: 0 },
   ];
 
   return (
@@ -163,22 +127,7 @@ const BrokerTrackerTab = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="p-4 border border-destructive/50 bg-destructive/5 rounded-lg">
-              <div className="flex items-center justify-between mb-2">
-                <h4 className="font-medium">Sarah Johnson</h4>
-                <Badge className="bg-destructive text-destructive-foreground">Critical</Badge>
-              </div>
-              <p className="text-sm text-muted-foreground mb-1">No progress for 5 days</p>
-              <p className="text-xs text-muted-foreground">Missing documents - auto-reminder sent</p>
-            </div>
-            <div className="p-4 border border-warning/50 bg-warning/5 rounded-lg">
-              <div className="flex items-center justify-between mb-2">
-                <h4 className="font-medium">Tom Wilson</h4>
-                <Badge className="bg-warning text-warning-foreground">Warning</Badge>
-              </div>
-              <p className="text-sm text-muted-foreground mb-1">No progress for 3 days</p>
-              <p className="text-xs text-muted-foreground">Awaiting bank statements</p>
-            </div>
+            <p className="text-sm text-muted-foreground">No escalation alerts.</p>
           </CardContent>
         </Card>
       </div>

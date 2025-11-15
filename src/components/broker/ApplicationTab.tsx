@@ -43,12 +43,12 @@ const ApplicationTab = () => {
         <CardContent className="pt-6">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-bold">John Doe - MG-2024-1234</h2>
-              <p className="text-muted-foreground">Assigned to you • Documents stage • 60% complete</p>
+              <h2 className="text-2xl font-bold">No Application Selected</h2>
+              <p className="text-muted-foreground">Select an application to view details</p>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline">Export PDF</Button>
-              <Button>Submit to Lender</Button>
+              <Button variant="outline" disabled>Export PDF</Button>
+              <Button disabled>Submit to Lender</Button>
             </div>
           </div>
         </CardContent>

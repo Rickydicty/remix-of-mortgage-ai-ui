@@ -5,44 +5,8 @@ import { Search, Bell, Bot } from "lucide-react";
 import StatusBadge from "@/components/StatusBadge";
 
 const BrokerTasksTab = () => {
-  const tasks = [
-    {
-      id: "1",
-      client: "John Doe",
-      task: "Review bank statements",
-      priority: "high",
-      dueDate: "Today",
-      status: "pending" as const,
-      aiAdded: true,
-    },
-    {
-      id: "2",
-      client: "Emma Walsh",
-      task: "Request additional payslips",
-      priority: "medium",
-      dueDate: "Tomorrow",
-      status: "pending" as const,
-      aiAdded: false,
-    },
-    {
-      id: "3",
-      client: "Michael Ryan",
-      task: "Schedule valuation",
-      priority: "high",
-      dueDate: "Dec 20",
-      status: "in-progress" as const,
-      aiAdded: false,
-    },
-    {
-      id: "4",
-      client: "Sarah Johnson",
-      task: "Clarify employment gap",
-      priority: "low",
-      dueDate: "Dec 22",
-      status: "pending" as const,
-      aiAdded: true,
-    },
-  ];
+  // TODO: Fetch tasks from database
+  const tasks: any[] = [];
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -142,21 +106,7 @@ const BrokerTasksTab = () => {
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="p-4 bg-secondary/10 rounded-lg">
-            <h4 className="font-medium mb-2">Suggested Actions</h4>
-            <ul className="space-y-2 text-sm">
-              <li className="flex items-start gap-2">
-                <span className="text-secondary">•</span>
-                <span>3 clients need payslip follow-up this week</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-secondary">•</span>
-                <span>2 applications approaching AIP deadline</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-secondary">•</span>
-                <span>5 bank statements ready for review</span>
-              </li>
-            </ul>
+            <p className="text-sm text-muted-foreground">No AI suggestions at this time.</p>
           </div>
           <Button className="w-full" variant="outline">
             View All AI Suggestions
@@ -170,24 +120,7 @@ const BrokerTasksTab = () => {
           <CardTitle>Auto-Reminders</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <div className="flex items-center justify-between p-3 border border-border rounded-lg">
-            <div>
-              <p className="font-medium text-sm">John Doe - Bank Statements</p>
-              <p className="text-xs text-muted-foreground">Reminder scheduled for today at 3 PM</p>
-            </div>
-            <Button size="sm" variant="outline">
-              Send Now
-            </Button>
-          </div>
-          <div className="flex items-center justify-between p-3 border border-border rounded-lg">
-            <div>
-              <p className="font-medium text-sm">Emma Walsh - Payslips</p>
-              <p className="text-xs text-muted-foreground">Reminder scheduled for tomorrow at 10 AM</p>
-            </div>
-            <Button size="sm" variant="outline">
-              Send Now
-            </Button>
-          </div>
+          <p className="text-sm text-muted-foreground">No scheduled reminders.</p>
         </CardContent>
       </Card>
     </div>
