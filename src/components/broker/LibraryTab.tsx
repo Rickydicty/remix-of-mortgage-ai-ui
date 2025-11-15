@@ -4,32 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Search, Upload, FileText, Bot } from "lucide-react";
 
 const BrokerLibraryTab = () => {
-  const templates = [
-    {
-      category: "Checklists",
-      items: [
-        { name: "Bank of Ireland AIP Checklist", type: "PDF" },
-        { name: "AIB Application Requirements", type: "PDF" },
-        { name: "Haven Document Checklist", type: "PDF" },
-      ],
-    },
-    {
-      category: "Letter Templates",
-      items: [
-        { name: "Client Welcome Letter", type: "DOCX" },
-        { name: "Document Request Letter", type: "DOCX" },
-        { name: "Lender Submission Cover Letter", type: "DOCX" },
-      ],
-    },
-    {
-      category: "Forms",
-      items: [
-        { name: "Application Form - Standard", type: "PDF" },
-        { name: "Income Declaration Form", type: "PDF" },
-        { name: "Authority to Act Form", type: "PDF" },
-      ],
-    },
-  ];
+  // TODO: Fetch document templates from database or storage
+  const templates: any[] = [];
 
   return (
     <div className="space-y-6">

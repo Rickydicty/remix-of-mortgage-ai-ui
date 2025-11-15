@@ -3,40 +3,8 @@ import { TrendingUp, TrendingDown, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const BrokerRatesTab = () => {
-  const rates = [
-    {
-      lender: "Bank of Ireland",
-      fixedRate: "3.10%",
-      variableRate: "3.85%",
-      ltv: "Up to 90%",
-      change: "down",
-      changeAmount: "0.15%",
-    },
-    {
-      lender: "AIB",
-      fixedRate: "3.30%",
-      variableRate: "4.00%",
-      ltv: "Up to 90%",
-      change: "down",
-      changeAmount: "0.10%",
-    },
-    {
-      lender: "Haven",
-      fixedRate: "3.50%",
-      variableRate: "4.15%",
-      ltv: "Up to 90%",
-      change: "up",
-      changeAmount: "0.05%",
-    },
-    {
-      lender: "Avant Money",
-      fixedRate: "3.45%",
-      variableRate: "3.95%",
-      ltv: "Up to 80%",
-      change: "same",
-      changeAmount: "0%",
-    },
-  ];
+  // TODO: Fetch mortgage rates from database or external API
+  const rates: any[] = [];
 
   return (
     <div className="space-y-6">
@@ -46,23 +14,8 @@ const BrokerRatesTab = () => {
           <CardTitle>Rate Trends - Last 30 Days</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-64 flex items-end justify-between gap-2">
-            {[3.8, 3.7, 3.65, 3.6, 3.55, 3.5, 3.45, 3.4, 3.35, 3.3, 3.25, 3.2].map((value, i) => (
-              <div key={i} className="flex-1 flex flex-col items-center">
-                <div
-                  className="w-full bg-primary rounded-t transition-all hover:bg-primary/80"
-                  style={{ height: `${(value / 4) * 100}%` }}
-                />
-                <span className="text-xs text-muted-foreground mt-1 rotate-45 origin-left">
-                  {i % 3 === 0 && `Week ${Math.floor(i / 3) + 1}`}
-                </span>
-              </div>
-            ))}
-          </div>
-          <div className="mt-4 text-center">
-            <p className="text-sm text-success font-medium">
-              ↓ Average rates decreased by 0.60% this month
-            </p>
+          <div className="h-64 flex items-center justify-center">
+            <p className="text-muted-foreground">No data available</p>
           </div>
         </CardContent>
       </Card>
@@ -128,38 +81,7 @@ const BrokerRatesTab = () => {
           <CardTitle>AI Matchmaking - Clients Who Benefit</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <div className="p-4 border border-primary/50 bg-primary/5 rounded-lg">
-            <div className="flex items-center justify-between mb-2">
-              <h4 className="font-medium">John Doe - MG-2024-1234</h4>
-              <Button size="sm" variant="outline">
-                Notify
-              </Button>
-            </div>
-            <p className="text-sm text-muted-foreground mb-2">
-              Bank of Ireland rate dropped 0.15% - potential savings: €45/month
-            </p>
-            <div className="flex items-center gap-2">
-              <span className="text-xs bg-success/20 text-success px-2 py-1 rounded">
-                Better rate available
-              </span>
-            </div>
-          </div>
-          <div className="p-4 border border-primary/50 bg-primary/5 rounded-lg">
-            <div className="flex items-center justify-between mb-2">
-              <h4 className="font-medium">Emma Walsh - MG-2024-1235</h4>
-              <Button size="sm" variant="outline">
-                Notify
-              </Button>
-            </div>
-            <p className="text-sm text-muted-foreground mb-2">
-              AIB now offers better rate for her LTV - potential savings: €30/month
-            </p>
-            <div className="flex items-center gap-2">
-              <span className="text-xs bg-success/20 text-success px-2 py-1 rounded">
-                Consider switching lender
-              </span>
-            </div>
-          </div>
+          <p className="text-sm text-muted-foreground">No matching opportunities at this time.</p>
         </CardContent>
       </Card>
 
