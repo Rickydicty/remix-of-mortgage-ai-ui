@@ -1,7 +1,8 @@
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, XCircle, Clock, Download, FileText } from "lucide-react";
+import { CheckCircle2, XCircle, Clock, Download, FileText, ChevronDown, ChevronUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -32,7 +33,21 @@ export const DocumentSection = ({
   required 
 }: DocumentSectionProps) => {
   const { toast } = useToast();
-  const sectionDocs = documents.filter(doc => doc.document_type === documentType);
+  const [expandedAnalysis, setExpandedAnalysis] = useState<string | null>(null);
+  const [showAllDocs, setShowAllDocs] = useState(false);
+  
+  // Sort documents by created_at descending (most recent first)
+  const sectionDocs = documents
+    .filter(doc => doc.document_type === documentType)
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  
+  // Show only the most recent document by default
+  const displayDocs = showAllDocs ? sectionDocs : sectionDocs.slice(0, 1);
+  
+  const truncateText = (text: string, maxLength: number = 200) => {
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + "...";
+  };
   
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -107,49 +122,86 @@ export const DocumentSection = ({
             <p className="text-xs mt-1">Upload this document using the form above</p>
           </div>
         ) : (
-          sectionDocs.map((doc) => (
-            <div key={doc.id} className="border border-border rounded-lg p-4 space-y-3">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium truncate">{doc.filename}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {new Date(doc.created_at).toLocaleDateString()}
-                  </p>
+          <>
+            {displayDocs.map((doc) => (
+              <div key={doc.id} className="border border-border rounded-lg p-4 space-y-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium truncate">{doc.filename}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Uploaded {new Date(doc.created_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge className={getStatusColor(doc.status)}>
+                      <div className="flex items-center gap-1">
+                        {getStatusIcon(doc.status)}
+                        <span className="capitalize">{doc.status}</span>
+                      </div>
+                    </Badge>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDownload(doc.file_path, doc.filename)}
+                    >
+                      <Download className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Badge className={getStatusColor(doc.status)}>
-                    <div className="flex items-center gap-1">
-                      {getStatusIcon(doc.status)}
-                      <span className="capitalize">{doc.status}</span>
-                    </div>
-                  </Badge>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleDownload(doc.file_path, doc.filename)}
-                  >
-                    <Download className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
 
-              {doc.analysis_text && (
-                <div className={`p-3 rounded-md text-sm ${
-                  doc.status === 'approved' 
-                    ? 'bg-success/5 border border-success/20' 
-                    : doc.status === 'disapproved'
-                    ? 'bg-destructive/5 border border-destructive/20'
-                    : 'bg-warning/5 border border-warning/20'
-                }`}>
-                  <p className="font-medium mb-1 flex items-center gap-2">
-                    {getStatusIcon(doc.status)}
-                    AI Analysis {doc.score && `(Score: ${doc.score}/100)`}
-                  </p>
-                  <p className="text-muted-foreground">{doc.analysis_text}</p>
-                </div>
-              )}
-            </div>
-          ))
+                {doc.analysis_text && (
+                  <div className={`p-3 rounded-md text-sm ${
+                    doc.status === 'approved' 
+                      ? 'bg-success/5 border border-success/20' 
+                      : doc.status === 'disapproved'
+                      ? 'bg-destructive/5 border border-destructive/20'
+                      : 'bg-warning/5 border border-warning/20'
+                  }`}>
+                    <p className="font-medium mb-1 flex items-center gap-2">
+                      {getStatusIcon(doc.status)}
+                      AI Analysis {doc.score && `(Score: ${doc.score}/100)`}
+                    </p>
+                    <p className="text-muted-foreground">
+                      {expandedAnalysis === doc.id 
+                        ? doc.analysis_text 
+                        : truncateText(doc.analysis_text)}
+                    </p>
+                    {doc.analysis_text.length > 200 && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="mt-2 h-auto p-0 text-xs hover:bg-transparent"
+                        onClick={() => setExpandedAnalysis(
+                          expandedAnalysis === doc.id ? null : doc.id
+                        )}
+                      >
+                        {expandedAnalysis === doc.id ? (
+                          <>Show less <ChevronUp className="h-3 w-3 ml-1" /></>
+                        ) : (
+                          <>Show more <ChevronDown className="h-3 w-3 ml-1" /></>
+                        )}
+                      </Button>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+            
+            {sectionDocs.length > 1 && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full"
+                onClick={() => setShowAllDocs(!showAllDocs)}
+              >
+                {showAllDocs ? (
+                  <>Hide previous uploads <ChevronUp className="h-4 w-4 ml-2" /></>
+                ) : (
+                  <>View previous uploads ({sectionDocs.length - 1}) <ChevronDown className="h-4 w-4 ml-2" /></>
+                )}
+              </Button>
+            )}
+          </>
         )}
       </CardContent>
     </Card>
