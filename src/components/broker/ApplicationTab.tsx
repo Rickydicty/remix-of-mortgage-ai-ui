@@ -154,7 +154,7 @@ const ApplicationTab = () => {
         </Card>
       )}
       
-      {application?.status === 'pending_review' && (
+      {(application?.status === 'pending_review' || application?.status === 'in_review') && (
         <DocumentReview
           clientId={application.user_id}
           clientName={profile?.full_name || profile?.email || 'Client'}
