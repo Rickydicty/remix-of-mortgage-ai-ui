@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { DocumentUpload } from "@/components/DocumentUpload";
 import { DocumentList } from "@/components/DocumentList";
+import ClientMessaging from "@/components/broker/ClientMessaging";
 
 interface Application {
   id: string;
@@ -254,24 +255,28 @@ const ClientDashboard = () => {
               </CardContent>
             </Card>
 
-            {/* Support Chat */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <MessageSquare className="h-5 w-5 text-success" />
-                  Support Chat
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="h-64 border border-border rounded-lg p-4 overflow-y-auto bg-muted/30 flex items-center justify-center">
-                  <p className="text-muted-foreground text-sm">Start a conversation with support</p>
-                </div>
-                <div className="flex gap-2">
-                  <Textarea placeholder="Type your message..." className="flex-1" />
-                  <Button>Send</Button>
-                </div>
-              </CardContent>
-            </Card>
+            {/* Broker Messaging */}
+            {brokerProfile && application?.assigned_broker_id ? (
+              <ClientMessaging 
+                clientId={application.assigned_broker_id} 
+                clientName={brokerProfile.full_name || brokerProfile.email || 'Broker'} 
+                applicationId={application.id}
+              />
+            ) : (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <MessageSquare className="h-5 w-5 text-success" />
+                    Support Chat
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="h-64 border border-border rounded-lg p-4 overflow-y-auto bg-muted/30 flex items-center justify-center">
+                    <p className="text-muted-foreground text-sm">A broker will be assigned to your application soon</p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
 
           {/* Sidebar */}
