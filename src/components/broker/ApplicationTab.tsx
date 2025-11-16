@@ -3,10 +3,79 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { User, Briefcase, CreditCard, Home, FileText, CheckSquare, Building2, MessageSquare, History, Shield, AlertCircle } from "lucide-react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Badge } from "@/components/ui/badge";
+import DocumentReview from "./DocumentReview";
 
 const ApplicationTab = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [application, setApplication] = useState<any>(null);
+  const [profile, setProfile] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Get application ID from URL query parameter
+  const searchParams = new URLSearchParams(location.search);
+  const applicationId = searchParams.get('id');
+
+  useEffect(() => {
+    if (applicationId) {
+      fetchApplicationData();
+    } else {
+      setLoading(false);
+    }
+  }, [applicationId]);
+
+  const fetchApplicationData = async () => {
+    if (!applicationId) return;
+
+    try {
+      // Fetch application
+      const { data: appData, error: appError } = await supabase
+        .from('applications')
+        .select('*')
+        .eq('id', applicationId)
+        .single();
+
+      if (appError) throw appError;
+      setApplication(appData);
+
+      // Fetch client profile
+      if (appData?.user_id) {
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', appData.user_id)
+          .single();
+
+        if (profileError) throw profileError;
+        setProfile(profileData);
+      }
+    } catch (error) {
+      console.error('Error fetching application:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case 'approved':
+      case 'aip_pending':
+        return 'bg-success/10 text-success border-success/20';
+      case 'pending_review':
+      case 'in_review':
+        return 'bg-warning/10 text-warning border-warning/20';
+      case 'pending':
+      case 'draft':
+        return 'bg-muted/10 text-muted-foreground border-muted/20';
+      case 'needs_documents':
+        return 'bg-destructive/10 text-destructive border-destructive/20';
+      default:
+        return 'bg-muted/10 text-muted-foreground border-muted/20';
+    }
+  };
 
   const subTabs = [
     { id: "summary", label: "Summary", icon: FileText },
@@ -41,18 +110,49 @@ const ApplicationTab = () => {
       {/* Client Header */}
       <Card>
         <CardContent className="pt-6">
-          <div className="flex items-center justify-between">
+          {loading ? (
+            <div className="text-center py-4">Loading...</div>
+          ) : !applicationId || !application ? (
             <div>
               <h2 className="text-2xl font-bold">No Application Selected</h2>
-              <p className="text-muted-foreground">Select an application to view details</p>
+              <p className="text-muted-foreground">Select an application from the Web tab to view details</p>
             </div>
-            <div className="flex gap-2">
-              <Button variant="outline" disabled>Export PDF</Button>
-              <Button disabled>Submit to Lender</Button>
+          ) : (
+            <div className="flex items-center justify-between">
+              <div className="space-y-2">
+                <h2 className="text-2xl font-bold">
+                  {profile?.full_name || profile?.email || 'Client'}
+                </h2>
+                <div className="flex gap-4 text-sm">
+                  <p className="text-muted-foreground">
+                    Application: <span className="font-semibold">{application.application_number}</span>
+                  </p>
+                  <p className="text-muted-foreground">
+                    Step: <span className="font-semibold">{application.current_step} of 6</span>
+                  </p>
+                  <Badge className={getStatusColor(application.status)}>
+                    {application.status?.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
+                  </Badge>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline">Export PDF</Button>
+                <Button>Submit to Lender</Button>
+              </div>
             </div>
-          </div>
+          )}
         </CardContent>
       </Card>
+
+      {/* Document Review for pending_review status */}
+      {application?.status === 'pending_review' && (
+        <DocumentReview
+          clientId={application.user_id}
+          clientName={profile?.full_name || profile?.email || 'Client'}
+          applicationId={application.id}
+          onUpdate={fetchApplicationData}
+        />
+      )}
 
       {/* Sub-Tab Navigation */}
       <Card>
@@ -81,14 +181,14 @@ const ApplicationTab = () => {
 
       {/* Sub-Tab Content */}
       <Routes>
-        <Route index element={<SummaryTab />} />
-        <Route path="summary" element={<SummaryTab />} />
-        <Route path="personal" element={<PersonalTab />} />
+        <Route index element={<SummaryTab application={application} profile={profile} />} />
+        <Route path="summary" element={<SummaryTab application={application} profile={profile} />} />
+        <Route path="personal" element={<PersonalTab profile={profile} />} />
         <Route path="income" element={<IncomeTab />} />
         <Route path="financial" element={<FinancialTab />} />
         <Route path="mortgage" element={<MortgageTab />} />
         <Route path="property" element={<PropertyTab />} />
-        <Route path="docs" element={<DocsTab />} />
+        <Route path="docs" element={<DocsTab applicationId={applicationId} userId={application?.user_id} />} />
         <Route path="declarations" element={<DeclarationsTab />} />
         <Route path="transactions" element={<TransactionsTab />} />
         <Route path="lender" element={<LenderTab />} />
@@ -102,49 +202,67 @@ const ApplicationTab = () => {
   );
 };
 
-// Placeholder components for each sub-tab
-const SummaryTab = () => (
-  <Card>
-    <CardHeader>
-      <CardTitle>AI-Generated Summary</CardTitle>
-    </CardHeader>
-    <CardContent className="space-y-4">
-      <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
-        <h3 className="font-semibold mb-2">Client Profile</h3>
-        <p className="text-sm text-muted-foreground">
-          John Doe, 35, PAYE employee with stable €65,000 annual income. First-time buyer seeking €300,000 mortgage
-          for property valued at €350,000. Strong credit history with no adverse events.
-        </p>
-      </div>
-      <div className="grid md:grid-cols-3 gap-4">
-        <div className="p-4 bg-success/10 rounded-lg">
-          <h4 className="font-medium text-success mb-1">Strengths</h4>
-          <ul className="text-sm space-y-1">
-            <li>• Stable employment (5 years)</li>
-            <li>• Good credit score</li>
-            <li>• 14% deposit available</li>
-          </ul>
-        </div>
-        <div className="p-4 bg-warning/10 rounded-lg">
-          <h4 className="font-medium text-warning mb-1">Considerations</h4>
-          <ul className="text-sm space-y-1">
-            <li>• High monthly commitments</li>
-            <li>• Recent large transaction</li>
-          </ul>
-        </div>
-        <div className="p-4 bg-muted rounded-lg">
-          <h4 className="font-medium mb-1">Recommendations</h4>
-          <ul className="text-sm space-y-1">
-            <li>• Bank of Ireland (95% match)</li>
-            <li>• AIB (92% match)</li>
-          </ul>
-        </div>
-      </div>
-    </CardContent>
-  </Card>
-);
+// Summary Tab Component
+const SummaryTab = ({ application, profile }: { application: any; profile: any }) => {
+  if (!application) {
+    return (
+      <Card>
+        <CardContent className="pt-6">
+          <p className="text-center text-muted-foreground">No application data available</p>
+        </CardContent>
+      </Card>
+    );
+  }
 
-const PersonalTab = () => (
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Application Summary</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid md:grid-cols-2 gap-4">
+            <div>
+              <p className="text-sm text-muted-foreground">Client Name</p>
+              <p className="font-semibold">{profile?.full_name || 'Not provided'}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Email</p>
+              <p className="font-semibold">{profile?.email || 'Not provided'}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Phone</p>
+              <p className="font-semibold">{profile?.phone || 'Not provided'}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Application Number</p>
+              <p className="font-semibold">{application.application_number}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Current Step</p>
+              <p className="font-semibold">Step {application.current_step} of 6</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Status</p>
+              <p className="font-semibold">{application.status?.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Created</p>
+              <p className="font-semibold">{new Date(application.created_at).toLocaleDateString()}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Last Updated</p>
+              <p className="font-semibold">{new Date(application.updated_at).toLocaleDateString()}</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+// Personal Tab Component
+const PersonalTab = ({ profile }: { profile: any }) => (
   <Card>
     <CardHeader>
       <CardTitle>Personal Details</CardTitle>
@@ -348,35 +466,26 @@ const PropertyTab = () => (
   </Card>
 );
 
-const DocsTab = () => (
-  <Card>
-    <CardHeader>
-      <CardTitle>Documents & AI Flags</CardTitle>
-    </CardHeader>
-    <CardContent className="space-y-3">
-      {[
-        { doc: "ID - Passport", status: "verified", flag: null },
-        { doc: "Payslips (6 months)", status: "verified", flag: null },
-        { doc: "Bank Statements", status: "pending", flag: "Needs clarification" },
-        { doc: "Proof of Deposit", status: "verified", flag: null },
-      ].map((item) => (
-        <div key={item.doc} className="flex items-center justify-between p-3 border border-border rounded-lg">
-          <div>
-            <p className="font-medium">{item.doc}</p>
-            {item.flag && <p className="text-xs text-warning">{item.flag}</p>}
-          </div>
-          <div className="flex items-center gap-2">
-            {item.status === "verified" ? (
-              <span className="text-success text-sm">✓ Verified</span>
-            ) : (
-              <span className="text-warning text-sm">○ Pending</span>
-            )}
-          </div>
-        </div>
-      ))}
-    </CardContent>
-  </Card>
-);
+const DocsTab = ({ applicationId, userId }: { applicationId: string | null; userId: string | null }) => {
+  if (!applicationId || !userId) {
+    return (
+      <Card>
+        <CardContent className="pt-6">
+          <p className="text-center text-muted-foreground">No application selected</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <DocumentReview
+      clientId={userId}
+      clientName="Client"
+      applicationId={applicationId}
+      onUpdate={() => {}}
+    />
+  );
+};
 
 const DeclarationsTab = () => (
   <Card>
