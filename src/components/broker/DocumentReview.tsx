@@ -268,7 +268,7 @@ const DocumentReview = ({ clientId, clientName, applicationId, onUpdate }: Docum
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Review Phase Actions */}
-          {application?.status === 'pending_review' && (
+          {(application?.status === 'pending_review' || application?.status === 'in_review') && (
             <Alert className="border-primary bg-primary/10">
               <AlertDescription>
                 <div className="space-y-4">

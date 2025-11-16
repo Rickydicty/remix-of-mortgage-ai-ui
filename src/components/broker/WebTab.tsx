@@ -150,7 +150,7 @@ const BrokerWebTab = () => {
               <div>
                 <p className="text-sm text-muted-foreground">Pending Review</p>
                 <p className="text-3xl font-bold">
-                  {applications.filter((a: any) => a.status === 'pending_review').length}
+                  {applications.filter((a: any) => a.status === 'pending_review' || a.status === 'in_review').length}
                 </p>
               </div>
               <Clock className="h-10 w-10 text-warning opacity-50" />
@@ -186,9 +186,11 @@ const BrokerWebTab = () => {
             <div className="space-y-4">
               {applications
                 .sort((a: any, b: any) => {
-                  // Prioritize pending_review status
-                  if (a.status === 'pending_review' && b.status !== 'pending_review') return -1;
-                  if (a.status !== 'pending_review' && b.status === 'pending_review') return 1;
+                  // Prioritize review statuses
+                  const aReview = a.status === 'pending_review' || a.status === 'in_review';
+                  const bReview = b.status === 'pending_review' || b.status === 'in_review';
+                  if (aReview && !bReview) return -1;
+                  if (!aReview && bReview) return 1;
                   return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
                 })
                 .map((app: any) => {
@@ -197,7 +199,7 @@ const BrokerWebTab = () => {
                   <div 
                     key={app.id} 
                     className={`p-4 border rounded-lg hover:bg-accent/50 transition-colors ${
-                      app.status === 'pending_review' ? 'border-warning bg-warning/5' : 'border-border'
+                      (app.status === 'pending_review' || app.status === 'in_review') ? 'border-warning bg-warning/5' : 'border-border'
                     }`}
                   >
                     <div className="flex items-center justify-between">
