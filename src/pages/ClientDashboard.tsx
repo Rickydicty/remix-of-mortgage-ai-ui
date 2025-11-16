@@ -97,12 +97,9 @@ const ClientDashboard = () => {
         }).filter(Boolean);
         
         const uploadedCount = latestDocs.length;
-        const approvedCount = latestDocs.filter(doc => doc?.status === 'approved').length;
         
-        // Calculate percentage based on uploads (0-50%) and approvals (50-100%)
-        const uploadProgress = (uploadedCount / requiredDocTypes.length) * 50;
-        const approvalProgress = (approvedCount / requiredDocTypes.length) * 50;
-        const docPercentage = Math.round(uploadProgress + approvalProgress);
+        // Once all docs uploaded, phase is 100% complete
+        const docPercentage = Math.round((uploadedCount / requiredDocTypes.length) * 100);
         
         setDocumentProgress(docPercentage);
       }
@@ -163,14 +160,14 @@ const ClientDashboard = () => {
         .from('applications')
         .update({ 
           status: 'pending_review',
-          current_step: 2
+          current_step: 3
         })
         .eq('id', application.id);
 
       if (error) throw error;
 
       await fetchApplicationData();
-      alert('Application submitted for broker review!');
+      alert('All documents uploaded! Your application is now under broker review.');
     } catch (error) {
       console.error('Error submitting application:', error);
       alert('Failed to submit application');
@@ -179,7 +176,7 @@ const ClientDashboard = () => {
 
   const canSubmitForReview = () => {
     if (!application) return false;
-    return documentProgress >= 50 && 
+    return documentProgress === 100 && 
            (application.status === 'draft' || application.status === 'pending');
   };
 
