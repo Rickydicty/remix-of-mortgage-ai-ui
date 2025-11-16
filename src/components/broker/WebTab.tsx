@@ -8,6 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import ClientMessaging from "@/components/broker/ClientMessaging";
+import DocumentReview from "@/components/broker/DocumentReview";
 
 const BrokerWebTab = () => {
   const { user } = useAuth();
@@ -15,6 +16,7 @@ const BrokerWebTab = () => {
   const [applications, setApplications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [openMessageFor, setOpenMessageFor] = useState<string | null>(null);
+  const [openDocsFor, setOpenDocsFor] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -238,12 +240,29 @@ const BrokerWebTab = () => {
                         <Button
                           size="sm"
                           variant="secondary"
+                          onClick={() => setOpenDocsFor(prev => prev === app.id ? null : app.id)}
+                        >
+                          Documents
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="secondary"
                           onClick={() => setOpenMessageFor(prev => prev === app.id ? null : app.id)}
                         >
                           Message
                         </Button>
                       </div>
                     </div>
+
+                    {openDocsFor === app.id && (
+                      <div className="mt-4">
+                        <DocumentReview
+                          clientId={app.user_id}
+                          clientName={app.profile?.full_name || 'Unknown'}
+                          onUpdate={fetchApplications}
+                        />
+                      </div>
+                    )}
 
                     {openMessageFor === app.id && (
                       <div className="mt-4">
