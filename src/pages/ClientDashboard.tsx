@@ -180,10 +180,10 @@ const ClientDashboard = () => {
               </div>
               <div>
                 <p className="text-xs text-muted-foreground mb-1">Assigned Broker</p>
-                {brokerProfile ? (
+                {application?.assigned_broker_id ? (
                   <div className="flex items-center gap-2">
                     <User className="h-4 w-4 text-primary" />
-                    <p className="font-semibold">{brokerProfile.full_name || brokerProfile.email}</p>
+                    <p className="font-semibold">{brokerProfile?.full_name || brokerProfile?.email || 'Assigned Broker'}</p>
                   </div>
                 ) : (
                   <p className="text-sm text-muted-foreground">Not assigned yet</p>
@@ -256,10 +256,10 @@ const ClientDashboard = () => {
             </Card>
 
             {/* Broker Messaging */}
-            {brokerProfile && application?.assigned_broker_id ? (
+            {application?.assigned_broker_id ? (
               <ClientMessaging 
                 clientId={application.assigned_broker_id} 
-                clientName={brokerProfile.full_name || brokerProfile.email || 'Broker'} 
+                clientName={brokerProfile?.full_name || brokerProfile?.email || 'Broker'} 
                 applicationId={application.id}
               />
             ) : (
