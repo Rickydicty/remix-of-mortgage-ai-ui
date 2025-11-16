@@ -144,7 +144,16 @@ const ApplicationTab = () => {
         </CardContent>
       </Card>
 
-      {/* Document Review for pending_review status */}
+      {/* Document Review for pending_review status - ALWAYS VISIBLE FOR DEBUG */}
+      {application && (
+        <Card className="border-2 border-primary">
+          <CardContent className="pt-6">
+            <p className="text-sm mb-2">Debug: Application Status = <strong>{application.status}</strong></p>
+            <p className="text-sm mb-2">Application ID = {application.id}</p>
+          </CardContent>
+        </Card>
+      )}
+      
       {application?.status === 'pending_review' && (
         <DocumentReview
           clientId={application.user_id}
