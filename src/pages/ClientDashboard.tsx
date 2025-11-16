@@ -177,7 +177,7 @@ const ClientDashboard = () => {
   const canSubmitForReview = () => {
     if (!application) return false;
     return documentProgress === 100 && 
-           (application.status === 'draft' || application.status === 'pending');
+           (application.status === 'draft' || application.status === 'pending' || application.status === 'needs_documents');
   };
 
   return (
@@ -280,6 +280,20 @@ const ClientDashboard = () => {
                     <h3 className="font-semibold text-lg mb-2">Under Review</h3>
                     <p className="text-sm text-muted-foreground">
                       Your documents are being reviewed by your broker. You'll be notified once the review is complete.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Need to Upload More Documents */}
+            {application?.status === 'needs_documents' && (
+              <Card className="border-destructive bg-destructive/5">
+                <CardContent className="pt-6">
+                  <div className="text-center py-4">
+                    <h3 className="font-semibold text-lg mb-2 text-destructive">Additional Documents Required</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Your broker has requested additional documents. Please check your messages and upload the required documents.
                     </p>
                   </div>
                 </CardContent>
