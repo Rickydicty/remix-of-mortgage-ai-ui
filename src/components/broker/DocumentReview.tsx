@@ -3,9 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { FileText, CheckCircle, XCircle, Clock, ChevronDown, ChevronUp } from "lucide-react";
+import { FileText, CheckCircle, XCircle, Clock, ChevronDown, ChevronUp, ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,13 +32,15 @@ interface Document {
 interface DocumentReviewProps {
   clientId: string;
   clientName: string;
+  applicationId?: string;
   onUpdate?: () => void;
 }
 
-const DocumentReview = ({ clientId, clientName, onUpdate }: DocumentReviewProps) => {
+const DocumentReview = ({ clientId, clientName, applicationId, onUpdate }: DocumentReviewProps) => {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedDocs, setExpandedDocs] = useState<Set<string>>(new Set());
+  const [application, setApplication] = useState<any>(null);
   const [statusChangeDialog, setStatusChangeDialog] = useState<{
     open: boolean;
     documentId: string;
@@ -48,7 +51,25 @@ const DocumentReview = ({ clientId, clientName, onUpdate }: DocumentReviewProps)
 
   useEffect(() => {
     fetchDocuments();
-  }, [clientId]);
+    if (applicationId) fetchApplication();
+  }, [clientId, applicationId]);
+
+  const fetchApplication = async () => {
+    if (!applicationId) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('applications')
+        .select('*')
+        .eq('id', applicationId)
+        .single();
+
+      if (error) throw error;
+      setApplication(data);
+    } catch (error) {
+      console.error('Error fetching application:', error);
+    }
+  };
 
   const fetchDocuments = async () => {
     setLoading(true);
@@ -120,7 +141,43 @@ const DocumentReview = ({ clientId, clientName, onUpdate }: DocumentReviewProps)
     setStatusChangeDialog({ open: false, documentId: "", newStatus: "", documentName: "" });
     setStatusMessage("");
     fetchDocuments();
+    if (applicationId) fetchApplication();
     onUpdate?.();
+  };
+
+  const handleMoveToNextPhase = async () => {
+    if (!applicationId || !application) return;
+
+    try {
+      const { error } = await supabase
+        .from('applications')
+        .update({ 
+          status: 'in_review',
+          current_step: 3
+        })
+        .eq('id', applicationId);
+
+      if (error) throw error;
+
+      toast.success('Application moved to Review phase');
+      await fetchApplication();
+      onUpdate?.();
+    } catch (error) {
+      console.error('Error moving to next phase:', error);
+      toast.error('Failed to move application forward');
+    }
+  };
+
+  const canMoveToNextPhase = () => {
+    const requiredTypes = ['certified_id', 'proof_of_address', 'payslips', 'bank_statements', 'employment_summary'];
+    const latestDocs = requiredTypes.map(type => {
+      const docsOfType = documents.filter(doc => doc.document_type === type);
+      return docsOfType.sort((a, b) => 
+        new Date(b.created_at || '').getTime() - new Date(a.created_at || '').getTime()
+      )[0];
+    }).filter(Boolean);
+
+    return latestDocs.length === 5 && latestDocs.every(doc => doc?.status === 'approved');
   };
 
   const toggleExpand = (docId: string) => {
@@ -169,6 +226,22 @@ const DocumentReview = ({ clientId, clientName, onUpdate }: DocumentReviewProps)
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* Move to Next Phase Alert */}
+          {canMoveToNextPhase() && application?.status === 'pending_review' && (
+            <Alert className="border-success bg-success/10">
+              <AlertDescription className="flex items-center justify-between">
+                <div>
+                  <p className="font-semibold mb-1 text-success">All documents approved!</p>
+                  <p className="text-sm text-muted-foreground">Ready to move application to Review phase.</p>
+                </div>
+                <Button onClick={handleMoveToNextPhase} size="lg" className="gap-2">
+                  Move to Review Phase
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </AlertDescription>
+            </Alert>
+          )}
+
           {documents.length === 0 ? (
             <p className="text-center text-muted-foreground py-8">No documents uploaded yet</p>
           ) : (

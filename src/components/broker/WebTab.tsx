@@ -259,6 +259,7 @@ const BrokerWebTab = () => {
                         <DocumentReview
                           clientId={app.user_id}
                           clientName={app.profile?.full_name || 'Unknown'}
+                          applicationId={app.id}
                           onUpdate={fetchApplications}
                         />
                       </div>

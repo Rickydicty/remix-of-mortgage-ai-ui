@@ -86,11 +86,24 @@ const ClientDashboard = () => {
 
       if (documents) {
         // Define required document types
-        const requiredDocTypes = ['id_proof', 'proof_of_address', 'payslips', 'bank_statements', 'contract'];
-        const approvedRequiredDocs = documents.filter(
-          doc => requiredDocTypes.includes(doc.document_type) && doc.status === 'approved'
-        ).length;
-        const docPercentage = Math.round((approvedRequiredDocs / requiredDocTypes.length) * 100);
+        const requiredDocTypes = ['certified_id', 'proof_of_address', 'payslips', 'bank_statements', 'employment_summary'];
+        
+        // Get latest document of each type
+        const latestDocs = requiredDocTypes.map(type => {
+          const docsOfType = documents.filter(doc => doc.document_type === type);
+          return docsOfType.sort((a, b) => 
+            new Date(b.created_at || '').getTime() - new Date(a.created_at || '').getTime()
+          )[0];
+        }).filter(Boolean);
+        
+        const uploadedCount = latestDocs.length;
+        const approvedCount = latestDocs.filter(doc => doc?.status === 'approved').length;
+        
+        // Calculate percentage based on uploads (0-50%) and approvals (50-100%)
+        const uploadProgress = (uploadedCount / requiredDocTypes.length) * 50;
+        const approvalProgress = (approvedCount / requiredDocTypes.length) * 50;
+        const docPercentage = Math.round(uploadProgress + approvalProgress);
+        
         setDocumentProgress(docPercentage);
       }
     } catch (error) {
@@ -139,6 +152,35 @@ const ClientDashboard = () => {
 
   const handleUploadComplete = () => {
     setRefreshTrigger(prev => prev + 1);
+    fetchApplicationData(); // Refresh to update progress
+  };
+
+  const handleSubmitForReview = async () => {
+    if (!application) return;
+
+    try {
+      const { error } = await supabase
+        .from('applications')
+        .update({ 
+          status: 'pending_review',
+          current_step: 2
+        })
+        .eq('id', application.id);
+
+      if (error) throw error;
+
+      await fetchApplicationData();
+      alert('Application submitted for broker review!');
+    } catch (error) {
+      console.error('Error submitting application:', error);
+      alert('Failed to submit application');
+    }
+  };
+
+  const canSubmitForReview = () => {
+    if (!application) return false;
+    return documentProgress >= 50 && 
+           (application.status === 'draft' || application.status === 'pending');
   };
 
   return (
@@ -213,6 +255,39 @@ const ClientDashboard = () => {
 
             {/* Document List */}
             <DocumentList refreshTrigger={refreshTrigger} />
+
+            {/* Submit for Review */}
+            {canSubmitForReview() && (
+              <Card className="border-primary bg-primary/5">
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-semibold text-lg mb-1">Ready for Review</h3>
+                      <p className="text-sm text-muted-foreground">
+                        All required documents uploaded. Submit to broker for review.
+                      </p>
+                    </div>
+                    <Button onClick={handleSubmitForReview} size="lg">
+                      Submit for Review
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Waiting for Broker Review */}
+            {application?.status === 'pending_review' && (
+              <Card className="border-warning bg-warning/5">
+                <CardContent className="pt-6">
+                  <div className="text-center py-4">
+                    <h3 className="font-semibold text-lg mb-2">Under Review</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Your documents are being reviewed by your broker. You'll be notified once the review is complete.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Valuation & Solicitor */}
             <Card>
