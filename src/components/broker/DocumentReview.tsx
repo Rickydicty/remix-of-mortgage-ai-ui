@@ -48,6 +48,8 @@ const DocumentReview = ({ clientId, clientName, applicationId, onUpdate }: Docum
     documentName: string;
   }>({ open: false, documentId: "", newStatus: "", documentName: "" });
   const [statusMessage, setStatusMessage] = useState("");
+  const [showRequestDialog, setShowRequestDialog] = useState(false);
+  const [requestMessage, setRequestMessage] = useState("");
 
   useEffect(() => {
     fetchDocuments();
@@ -152,19 +154,58 @@ const DocumentReview = ({ clientId, clientName, applicationId, onUpdate }: Docum
       const { error } = await supabase
         .from('applications')
         .update({ 
-          status: 'in_review',
-          current_step: 3
+          status: 'aip_pending',
+          current_step: 4
         })
         .eq('id', applicationId);
 
       if (error) throw error;
 
-      toast.success('Application moved to Review phase');
+      toast.success('Application approved and moved to AIP phase');
       await fetchApplication();
       onUpdate?.();
     } catch (error) {
       console.error('Error moving to next phase:', error);
       toast.error('Failed to move application forward');
+    }
+  };
+
+  const handleRequestMoreDocs = async (message: string) => {
+    if (!applicationId || !application) return;
+
+    try {
+      // Send message to client
+      const { data: userData } = await supabase.auth.getUser();
+      if (userData.user) {
+        const { error: msgError } = await supabase
+          .from('messages')
+          .insert({
+            sender_id: userData.user.id,
+            receiver_id: clientId,
+            application_id: applicationId,
+            message: `Additional documents required:\n\n${message}`
+          });
+
+        if (msgError) throw msgError;
+      }
+
+      // Update application status back to document collection
+      const { error } = await supabase
+        .from('applications')
+        .update({ 
+          status: 'needs_documents',
+          current_step: 2
+        })
+        .eq('id', applicationId);
+
+      if (error) throw error;
+
+      toast.success('Request sent to client for additional documents');
+      await fetchApplication();
+      onUpdate?.();
+    } catch (error) {
+      console.error('Error requesting documents:', error);
+      toast.error('Failed to send document request');
     }
   };
 
@@ -226,18 +267,38 @@ const DocumentReview = ({ clientId, clientName, applicationId, onUpdate }: Docum
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Move to Next Phase Alert */}
-          {canMoveToNextPhase() && application?.status === 'pending_review' && (
-            <Alert className="border-success bg-success/10">
-              <AlertDescription className="flex items-center justify-between">
-                <div>
-                  <p className="font-semibold mb-1 text-success">All documents approved!</p>
-                  <p className="text-sm text-muted-foreground">Ready to move application to Review phase.</p>
+          {/* Review Phase Actions */}
+          {application?.status === 'pending_review' && (
+            <Alert className="border-primary bg-primary/10">
+              <AlertDescription>
+                <div className="space-y-4">
+                  <div>
+                    <p className="font-semibold mb-1">Application Under Review</p>
+                    <p className="text-sm text-muted-foreground">
+                      Review all documents and either approve to move to AIP phase or request additional documents.
+                    </p>
+                  </div>
+                  {canMoveToNextPhase() ? (
+                    <div className="flex gap-2">
+                      <Button onClick={handleMoveToNextPhase} className="gap-2 flex-1">
+                        Approve & Move to AIP Phase
+                        <ArrowRight className="h-4 w-4" />
+                      </Button>
+                      <Button variant="outline" onClick={() => setShowRequestDialog(true)}>
+                        Request More Documents
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <Button variant="outline" onClick={() => setShowRequestDialog(true)} className="flex-1">
+                        Request Additional Documents
+                      </Button>
+                      <p className="text-sm text-muted-foreground my-auto">
+                        All required documents must be approved before moving forward
+                      </p>
+                    </div>
+                  )}
                 </div>
-                <Button onClick={handleMoveToNextPhase} size="lg" className="gap-2">
-                  Move to Review Phase
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
               </AlertDescription>
             </Alert>
           )}
@@ -466,6 +527,45 @@ const DocumentReview = ({ clientId, clientName, applicationId, onUpdate }: Docum
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleStatusChange}>
               Confirm Change
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Request More Documents Dialog */}
+      <AlertDialog open={showRequestDialog} onOpenChange={setShowRequestDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Request Additional Documents</AlertDialogTitle>
+            <AlertDialogDescription>
+              Send a message to the client explaining what additional documents are needed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="py-4">
+            <Textarea
+              placeholder="Example: Please upload your most recent 3 months of payslips and updated bank statements..."
+              value={requestMessage}
+              onChange={(e) => setRequestMessage(e.target.value)}
+              rows={6}
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+              setRequestMessage("");
+              setShowRequestDialog(false);
+            }}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (requestMessage.trim()) {
+                  handleRequestMoreDocs(requestMessage);
+                  setRequestMessage("");
+                  setShowRequestDialog(false);
+                } else {
+                  toast.error("Please enter a message");
+                }
+              }}
+            >
+              Send Request
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
