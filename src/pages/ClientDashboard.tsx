@@ -14,6 +14,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { DocumentUpload } from "@/components/DocumentUpload";
 import { DocumentList } from "@/components/DocumentList";
 import ClientMessaging from "@/components/broker/ClientMessaging";
+import { SignatureDialog } from "@/components/SignatureDialog";
 
 interface Application {
   id: string;
@@ -36,6 +37,7 @@ const ClientDashboard = () => {
   const [userProfile, setUserProfile] = useState<Profile | null>(null);
   const [brokerProfile, setBrokerProfile] = useState<Profile | null>(null);
   const [documentProgress, setDocumentProgress] = useState(0);
+  const [signatureDialog, setSignatureDialog] = useState({ open: false, documentType: '' });
 
   useEffect(() => {
     fetchApplicationData();
@@ -397,6 +399,19 @@ const ClientDashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* Signature Dialog */}
+      {application && (
+        <SignatureDialog
+          open={signatureDialog.open}
+          onOpenChange={(open) => setSignatureDialog({ ...signatureDialog, open })}
+          documentType={signatureDialog.documentType}
+          applicationId={application.id}
+          onSignatureComplete={() => {
+            fetchApplicationData();
+          }}
+        />
+      )}
     </div>
   );
 };
