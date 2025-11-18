@@ -333,11 +333,38 @@ const ClientDashboard = () => {
                   E-Signatures
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="text-center py-8 text-muted-foreground">
-                  <p>No documents to sign</p>
-                  <p className="text-sm mt-2">Signature requests will appear here</p>
-                </div>
+              <CardContent className="space-y-4">
+                {application?.status === 'aip' && (
+                  <>
+                    <div className="space-y-3">
+                      <Button 
+                        className="w-full" 
+                        onClick={() => {
+                          setSignatureDialog({ open: true, documentType: 'Agreement in Principle' });
+                        }}
+                      >
+                        <PenTool className="mr-2 h-4 w-4" />
+                        Sign Agreement in Principle
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        className="w-full"
+                        onClick={() => {
+                          setSignatureDialog({ open: true, documentType: 'Mortgage Application' });
+                        }}
+                      >
+                        <PenTool className="mr-2 h-4 w-4" />
+                        Sign Mortgage Application
+                      </Button>
+                    </div>
+                  </>
+                )}
+                {(!application || application.status !== 'aip') && (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <p>No documents to sign</p>
+                    <p className="text-sm mt-2">Signature requests will appear when your application reaches AIP stage</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
