@@ -154,6 +154,36 @@ export type Database = {
         }
         Relationships: []
       }
+      signatures: {
+        Row: {
+          application_id: string
+          created_at: string
+          document_type: string
+          id: string
+          signature_data: string
+          signed_at: string
+          user_id: string
+        }
+        Insert: {
+          application_id: string
+          created_at?: string
+          document_type: string
+          id?: string
+          signature_data: string
+          signed_at?: string
+          user_id: string
+        }
+        Update: {
+          application_id?: string
+          created_at?: string
+          document_type?: string
+          id?: string
+          signature_data?: string
+          signed_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
