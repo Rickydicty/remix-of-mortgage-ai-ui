@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { FileText, CheckCircle, XCircle, Clock, ChevronDown, ChevronUp, ArrowRight } from "lucide-react";
+import { FileText, CheckCircle, XCircle, Clock, ChevronDown, ChevronUp, ArrowRight, Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -110,6 +110,30 @@ const DocumentReview = ({ clientId, clientName, applicationId, onUpdate }: Docum
       waiting: 'bg-warning/10 text-warning border-warning/20',
     };
     return variants[status] || 'bg-muted text-muted-foreground';
+  };
+
+  const handleDownload = async (filePath: string, filename: string) => {
+    try {
+      const { data, error } = await supabase.storage
+        .from('documents')
+        .download(filePath);
+
+      if (error) throw error;
+
+      const url = window.URL.createObjectURL(data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast.success(`Downloaded ${filename}`);
+    } catch (error) {
+      console.error('Download error:', error);
+      toast.error('Failed to download document');
+    }
   };
 
   const handleStatusChange = async () => {
@@ -318,19 +342,29 @@ const DocumentReview = ({ clientId, clientName, applicationId, onUpdate }: Docum
                     <Card key={doc.id} className="border-warning/30">
                       <CardContent className="pt-4">
                         <div className="flex justify-between items-start mb-2">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-1 min-w-0">
                             {getStatusIcon(doc.status)}
-                            <div>
-                              <p className="font-medium">{doc.filename}</p>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium truncate">{doc.filename}</p>
                               <p className="text-sm text-muted-foreground">
                                 {doc.document_type.replace(/_/g, ' ')}
                                 {doc.score && ` • AI Score: ${doc.score}/100`}
                               </p>
                             </div>
                           </div>
-                          <Badge className={getStatusBadge(doc.status)}>
-                            {doc.status}
-                          </Badge>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDownload(doc.file_path, doc.filename)}
+                              title="Download document"
+                            >
+                              <Download className="h-4 w-4" />
+                            </Button>
+                            <Badge className={getStatusBadge(doc.status)}>
+                              {doc.status}
+                            </Badge>
+                          </div>
                         </div>
 
                         {/* Full AI Analysis for Broker */}
@@ -405,19 +439,29 @@ const DocumentReview = ({ clientId, clientName, applicationId, onUpdate }: Docum
                     <Card key={doc.id} className="border-success/30">
                       <CardContent className="pt-4">
                         <div className="flex justify-between items-start mb-2">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-1 min-w-0">
                             {getStatusIcon(doc.status)}
-                            <div>
-                              <p className="font-medium">{doc.filename}</p>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium truncate">{doc.filename}</p>
                               <p className="text-sm text-muted-foreground">
                                 {doc.document_type.replace(/_/g, ' ')}
                                 {doc.score && ` • AI Score: ${doc.score}/100`}
                               </p>
                             </div>
                           </div>
-                          <Badge className={getStatusBadge(doc.status)}>
-                            {doc.status}
-                          </Badge>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDownload(doc.file_path, doc.filename)}
+                              title="Download document"
+                            >
+                              <Download className="h-4 w-4" />
+                            </Button>
+                            <Badge className={getStatusBadge(doc.status)}>
+                              {doc.status}
+                            </Badge>
+                          </div>
                         </div>
                         
                         {/* Full AI Analysis for Broker */}
@@ -476,19 +520,29 @@ const DocumentReview = ({ clientId, clientName, applicationId, onUpdate }: Docum
                     <Card key={doc.id} className="border-destructive/30">
                       <CardContent className="pt-4">
                         <div className="flex justify-between items-start mb-2">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-1 min-w-0">
                             {getStatusIcon(doc.status)}
-                            <div>
-                              <p className="font-medium">{doc.filename}</p>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium truncate">{doc.filename}</p>
                               <p className="text-sm text-muted-foreground">
                                 {doc.document_type.replace(/_/g, ' ')}
                                 {doc.score && ` • AI Score: ${doc.score}/100`}
                               </p>
                             </div>
                           </div>
-                          <Badge className={getStatusBadge(doc.status)}>
-                            {doc.status}
-                          </Badge>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDownload(doc.file_path, doc.filename)}
+                              title="Download document"
+                            >
+                              <Download className="h-4 w-4" />
+                            </Button>
+                            <Badge className={getStatusBadge(doc.status)}>
+                              {doc.status}
+                            </Badge>
+                          </div>
                         </div>
 
                         {/* Full AI Analysis for Broker */}
