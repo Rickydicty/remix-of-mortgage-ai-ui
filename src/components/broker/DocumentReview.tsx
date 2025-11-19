@@ -333,8 +333,13 @@ const DocumentReview = ({ clientId, clientName, applicationId, onUpdate }: Docum
                           </Badge>
                         </div>
 
+                        {/* Full AI Analysis for Broker */}
                         {doc.analysis_text && (
-                          <div className="bg-muted/50 rounded p-3 mt-2 mb-3">
+                          <div className="bg-primary/5 border border-primary/20 rounded p-3 mt-2 mb-3">
+                            <p className="text-xs font-semibold text-primary mb-2 flex items-center gap-1">
+                              🤖 AI Analysis Report
+                              {doc.score && <span className="ml-auto">Score: {doc.score}/100</span>}
+                            </p>
                             <p className="text-sm text-foreground">
                               {expandedDocs.has(doc.id) ? doc.analysis_text : truncateText(doc.analysis_text)}
                             </p>
@@ -406,6 +411,7 @@ const DocumentReview = ({ clientId, clientName, applicationId, onUpdate }: Docum
                               <p className="font-medium">{doc.filename}</p>
                               <p className="text-sm text-muted-foreground">
                                 {doc.document_type.replace(/_/g, ' ')}
+                                {doc.score && ` • AI Score: ${doc.score}/100`}
                               </p>
                             </div>
                           </div>
@@ -413,6 +419,34 @@ const DocumentReview = ({ clientId, clientName, applicationId, onUpdate }: Docum
                             {doc.status}
                           </Badge>
                         </div>
+                        
+                        {/* Full AI Analysis for Broker */}
+                        {doc.analysis_text && (
+                          <div className="bg-primary/5 border border-primary/20 rounded p-3 mt-2 mb-3">
+                            <p className="text-xs font-semibold text-primary mb-2 flex items-center gap-1">
+                              🤖 AI Analysis Report
+                              {doc.score && <span className="ml-auto">Score: {doc.score}/100</span>}
+                            </p>
+                            <p className="text-sm text-foreground">
+                              {expandedDocs.has(doc.id) ? doc.analysis_text : truncateText(doc.analysis_text)}
+                            </p>
+                            {doc.analysis_text.length > 200 && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => toggleExpand(doc.id)}
+                                className="mt-2 h-auto p-0 text-primary hover:text-primary/80"
+                              >
+                                {expandedDocs.has(doc.id) ? (
+                                  <>Show less <ChevronUp className="h-4 w-4 ml-1" /></>
+                                ) : (
+                                  <>Show more <ChevronDown className="h-4 w-4 ml-1" /></>
+                                )}
+                              </Button>
+                            )}
+                          </div>
+                        )}
+                        
                         <Button
                           size="sm"
                           variant="outline"
@@ -448,6 +482,7 @@ const DocumentReview = ({ clientId, clientName, applicationId, onUpdate }: Docum
                               <p className="font-medium">{doc.filename}</p>
                               <p className="text-sm text-muted-foreground">
                                 {doc.document_type.replace(/_/g, ' ')}
+                                {doc.score && ` • AI Score: ${doc.score}/100`}
                               </p>
                             </div>
                           </div>
@@ -456,8 +491,13 @@ const DocumentReview = ({ clientId, clientName, applicationId, onUpdate }: Docum
                           </Badge>
                         </div>
 
+                        {/* Full AI Analysis for Broker */}
                         {doc.analysis_text && (
-                          <div className="bg-muted/50 rounded p-3 mt-2 mb-3">
+                          <div className="bg-primary/5 border border-primary/20 rounded p-3 mt-2 mb-3">
+                            <p className="text-xs font-semibold text-primary mb-2 flex items-center gap-1">
+                              🤖 AI Analysis Report
+                              {doc.score && <span className="ml-auto">Score: {doc.score}/100</span>}
+                            </p>
                             <p className="text-sm text-foreground">
                               {expandedDocs.has(doc.id) ? doc.analysis_text : truncateText(doc.analysis_text)}
                             </p>

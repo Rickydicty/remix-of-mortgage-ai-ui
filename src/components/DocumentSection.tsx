@@ -149,17 +149,21 @@ export const DocumentSection = ({
                   </div>
                 </div>
 
-                {doc.analysis_text && (
-                  <div className={`p-3 rounded-md text-sm ${
-                    doc.status === 'approved' 
-                      ? 'bg-success/5 border border-success/20' 
-                      : doc.status === 'disapproved'
-                      ? 'bg-destructive/5 border border-destructive/20'
-                      : 'bg-warning/5 border border-warning/20'
-                  }`}>
-                    <p className="font-medium mb-1 flex items-center gap-2">
-                      {getStatusIcon(doc.status)}
-                      AI Analysis {doc.score && `(Score: ${doc.score}/100)`}
+                {/* Simplified AI Feedback for Clients */}
+                {doc.status === 'approved' && (
+                  <div className="p-3 rounded-md text-sm bg-success/5 border border-success/20">
+                    <p className="font-medium flex items-center gap-2 text-success">
+                      <CheckCircle2 className="h-4 w-4" />
+                      Document Accepted
+                    </p>
+                  </div>
+                )}
+                
+                {doc.status === 'disapproved' && doc.analysis_text && (
+                  <div className="p-3 rounded-md text-sm bg-destructive/5 border border-destructive/20">
+                    <p className="font-medium mb-2 flex items-center gap-2 text-destructive">
+                      <XCircle className="h-4 w-4" />
+                      Document Rejected
                     </p>
                     <p className="text-muted-foreground">
                       {expandedAnalysis === doc.id 
@@ -182,6 +186,15 @@ export const DocumentSection = ({
                         )}
                       </Button>
                     )}
+                  </div>
+                )}
+                
+                {doc.status === 'waiting' && (
+                  <div className="p-3 rounded-md text-sm bg-warning/5 border border-warning/20">
+                    <p className="font-medium flex items-center gap-2 text-warning">
+                      <Clock className="h-4 w-4" />
+                      Under Review
+                    </p>
                   </div>
                 )}
               </div>
