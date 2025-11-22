@@ -16,6 +16,17 @@ export type Database = {
     Tables: {
       applications: {
         Row: {
+          aip_approved_amount: number | null
+          aip_conditions: Json | null
+          aip_issue_date: string | null
+          aip_lender_name: string | null
+          aip_letter_url: string | null
+          aip_max_term: number | null
+          aip_monthly_repayment: number | null
+          aip_rate_range_max: number | null
+          aip_rate_range_min: number | null
+          aip_status: string | null
+          aip_validity_period: number | null
           application_number: string
           assigned_broker_id: string | null
           created_at: string
@@ -26,6 +37,17 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          aip_approved_amount?: number | null
+          aip_conditions?: Json | null
+          aip_issue_date?: string | null
+          aip_lender_name?: string | null
+          aip_letter_url?: string | null
+          aip_max_term?: number | null
+          aip_monthly_repayment?: number | null
+          aip_rate_range_max?: number | null
+          aip_rate_range_min?: number | null
+          aip_status?: string | null
+          aip_validity_period?: number | null
           application_number: string
           assigned_broker_id?: string | null
           created_at?: string
@@ -36,6 +58,17 @@ export type Database = {
           user_id: string
         }
         Update: {
+          aip_approved_amount?: number | null
+          aip_conditions?: Json | null
+          aip_issue_date?: string | null
+          aip_lender_name?: string | null
+          aip_letter_url?: string | null
+          aip_max_term?: number | null
+          aip_monthly_repayment?: number | null
+          aip_rate_range_max?: number | null
+          aip_rate_range_min?: number | null
+          aip_status?: string | null
+          aip_validity_period?: number | null
           application_number?: string
           assigned_broker_id?: string | null
           created_at?: string

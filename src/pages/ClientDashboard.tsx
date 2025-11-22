@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useNavigate } from "react-router-dom";
 import { Building2, LogOut, Upload, MessageSquare, FileText, PenTool, User } from "lucide-react";
 import ProgressTracker from "@/components/ProgressTracker";
@@ -15,6 +16,7 @@ import { DocumentUpload } from "@/components/DocumentUpload";
 import { DocumentList } from "@/components/DocumentList";
 import ClientMessaging from "@/components/broker/ClientMessaging";
 import { SignatureDialog } from "@/components/SignatureDialog";
+import AIPTab from "@/components/client/AIPTab";
 
 interface Application {
   id: string;
@@ -38,6 +40,7 @@ const ClientDashboard = () => {
   const [brokerProfile, setBrokerProfile] = useState<Profile | null>(null);
   const [documentProgress, setDocumentProgress] = useState(0);
   const [signatureDialog, setSignatureDialog] = useState({ open: false, documentType: '' });
+  const [activeTab, setActiveTab] = useState("documents");
 
   useEffect(() => {
     fetchApplicationData();
@@ -246,88 +249,132 @@ const ClientDashboard = () => {
           </CardContent>
         </Card>
 
-        <div className="grid lg:grid-cols-3 gap-8">
-          {/* Main Content */}
-          <div className="lg:col-span-2 space-y-8">
-            {/* Document Upload */}
-            <DocumentUpload onUploadComplete={handleUploadComplete} />
+        {/* Tabs for Different Sections */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-3 mb-6">
+            <TabsTrigger value="documents">Documents & Conditions</TabsTrigger>
+            <TabsTrigger value="aip">AIP</TabsTrigger>
+            <TabsTrigger value="signatures">E-Signatures</TabsTrigger>
+          </TabsList>
 
-            {/* Document List */}
-            <DocumentList refreshTrigger={refreshTrigger} />
+          {/* Documents Tab */}
+          <TabsContent value="documents">
+            <div className="space-y-8">
+              {/* Document Upload */}
+              <DocumentUpload onUploadComplete={handleUploadComplete} />
 
-            {/* Submit for Review */}
-            {canSubmitForReview() && (
-              <Card className="border-primary bg-primary/5">
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="font-semibold text-lg mb-1">Ready for Review</h3>
+              {/* Document List */}
+              <DocumentList refreshTrigger={refreshTrigger} />
+
+              {/* Submit for Review */}
+              {canSubmitForReview() && (
+                <Card className="border-primary bg-primary/5">
+                  <CardContent className="pt-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="font-semibold text-lg mb-1">Ready for Review</h3>
+                        <p className="text-sm text-muted-foreground">
+                          All required documents uploaded. Submit to broker for review.
+                        </p>
+                      </div>
+                      <Button onClick={handleSubmitForReview} size="lg">
+                        Submit for Review
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Waiting for Broker Review */}
+              {application?.status === 'pending_review' && (
+                <Card className="border-warning bg-warning/5">
+                  <CardContent className="pt-6">
+                    <div className="text-center py-4">
+                      <h3 className="font-semibold text-lg mb-2">Under Review</h3>
                       <p className="text-sm text-muted-foreground">
-                        All required documents uploaded. Submit to broker for review.
+                        Your documents are being reviewed by your broker. You'll be notified once the review is complete.
                       </p>
                     </div>
-                    <Button onClick={handleSubmitForReview} size="lg">
-                      Submit for Review
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Need to Upload More Documents */}
+              {application?.status === 'needs_documents' && (
+                <Card className="border-destructive bg-destructive/5">
+                  <CardContent className="pt-6">
+                    <div className="text-center py-4">
+                      <h3 className="font-semibold text-lg mb-2 text-destructive">Additional Documents Required</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Your broker has requested additional documents. Please check your messages and upload the required documents.
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Valuation & Solicitor */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="h-5 w-5 text-secondary" />
+                    Valuation & Solicitor
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Valuation Report</Label>
+                    <Button variant="outline" className="w-full">
+                      <Upload className="h-4 w-4 mr-2" />
+                      Upload Valuation Report
                     </Button>
                   </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Waiting for Broker Review */}
-            {application?.status === 'pending_review' && (
-              <Card className="border-warning bg-warning/5">
-                <CardContent className="pt-6">
-                  <div className="text-center py-4">
-                    <h3 className="font-semibold text-lg mb-2">Under Review</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Your documents are being reviewed by your broker. You'll be notified once the review is complete.
-                    </p>
+                  <div className="space-y-2">
+                    <Label>Solicitor Contact</Label>
+                    <Input placeholder="Solicitor Name" />
+                    <Input placeholder="Email" type="email" />
+                    <Input placeholder="Phone" type="tel" />
                   </div>
                 </CardContent>
               </Card>
-            )}
 
-            {/* Need to Upload More Documents */}
-            {application?.status === 'needs_documents' && (
-              <Card className="border-destructive bg-destructive/5">
-                <CardContent className="pt-6">
-                  <div className="text-center py-4">
-                    <h3 className="font-semibold text-lg mb-2 text-destructive">Additional Documents Required</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Your broker has requested additional documents. Please check your messages and upload the required documents.
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+              {/* Broker Messaging */}
+              {application?.assigned_broker_id ? (
+                <ClientMessaging 
+                  clientId={application.assigned_broker_id} 
+                  clientName={brokerProfile?.full_name || brokerProfile?.email || 'Broker'} 
+                  applicationId={application.id}
+                />
+              ) : (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <MessageSquare className="h-5 w-5 text-success" />
+                      Support Chat
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="h-64 border border-border rounded-lg p-4 overflow-y-auto bg-muted/30 flex items-center justify-center">
+                      <p className="text-muted-foreground text-sm">A broker will be assigned to your application soon</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </TabsContent>
 
-            {/* Valuation & Solicitor */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5 text-secondary" />
-                  Valuation & Solicitor
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Valuation Report</Label>
-                  <Button variant="outline" className="w-full">
-                    <Upload className="h-4 w-4 mr-2" />
-                    Upload Valuation Report
-                  </Button>
-                </div>
-                <div className="space-y-2">
-                  <Label>Solicitor Contact</Label>
-                  <Input placeholder="Solicitor Name" />
-                  <Input placeholder="Email" type="email" />
-                  <Input placeholder="Phone" type="tel" />
-                </div>
-              </CardContent>
-            </Card>
+          {/* AIP Tab */}
+          <TabsContent value="aip">
+            <AIPTab
+              aipData={application as any}
+              brokerProfile={brokerProfile}
+              onNavigateToDocuments={() => setActiveTab("documents")}
+              onOpenMessaging={() => setActiveTab("documents")}
+            />
+          </TabsContent>
 
-            {/* E-Signatures */}
+          {/* E-Signatures Tab */}
+          <TabsContent value="signatures">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -369,35 +416,8 @@ const ClientDashboard = () => {
                 )}
               </CardContent>
             </Card>
-
-            {/* Broker Messaging */}
-            {application?.assigned_broker_id ? (
-              <ClientMessaging 
-                clientId={application.assigned_broker_id} 
-                clientName={brokerProfile?.full_name || brokerProfile?.email || 'Broker'} 
-                applicationId={application.id}
-              />
-            ) : (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <MessageSquare className="h-5 w-5 text-success" />
-                    Support Chat
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="h-64 border border-border rounded-lg p-4 overflow-y-auto bg-muted/30 flex items-center justify-center">
-                    <p className="text-muted-foreground text-sm">A broker will be assigned to your application soon</p>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-
-          {/* Sidebar */}
-          <div className="space-y-6">
-          </div>
-        </div>
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* Signature Dialog */}
