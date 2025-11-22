@@ -20,14 +20,32 @@ const BrokerTrackerTab = () => {
     try {
       const { data, error } = await supabase
         .from('applications')
-        .select(`
-          *,
-          profiles:user_id (full_name, email)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setApplications(data || []);
+
+      // Fetch user profiles for the applications
+      if (data && data.length > 0) {
+        const userIds = [...new Set(data.map(app => app.user_id))];
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id, full_name, email')
+          .in('id', userIds);
+
+        if (!profilesError && profilesData) {
+          // Map profiles to applications
+          const appsWithProfiles = data.map(app => ({
+            ...app,
+            profile: profilesData.find(p => p.id === app.user_id)
+          }));
+          setApplications(appsWithProfiles);
+        } else {
+          setApplications(data);
+        }
+      } else {
+        setApplications([]);
+      }
     } catch (error) {
       console.error('Error fetching applications:', error);
     } finally {
@@ -112,7 +130,7 @@ const BrokerTrackerTab = () => {
                 >
                   <div className="font-mono text-sm font-medium">{app.application_number}</div>
                   <div className="font-medium">
-                    {app.profiles?.full_name || app.profiles?.email || 'Unknown'}
+                    {app.profile?.full_name || app.profile?.email || 'Unknown'}
                   </div>
                   <div>
                     <Badge variant="outline">{getStageLabel(app.current_step)}</Badge>
