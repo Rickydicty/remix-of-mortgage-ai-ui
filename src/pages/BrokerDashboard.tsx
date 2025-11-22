@@ -31,7 +31,6 @@ const BrokerDashboard = () => {
     { id: "tasks", label: "Tasks", icon: ListTodo, path: "/dashboard/broker/tasks" },
     { id: "tracker", label: "Tracker", icon: Activity, path: "/dashboard/broker/tracker" },
     { id: "application", label: "Application", icon: FileText, path: "/dashboard/broker/application" },
-    { id: "aip", label: "AIP Management", icon: FileCheck, path: "/dashboard/broker/aip" },
     { id: "rates", label: "Mortgage Rates", icon: TrendingUp, path: "/dashboard/broker/rates" },
     { id: "library", label: "Library", icon: BookOpen, path: "/dashboard/broker/library" },
     { id: "admin", label: "Admin", icon: Settings, path: "/dashboard/broker/admin" },
