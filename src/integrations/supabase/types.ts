@@ -14,10 +14,116 @@ export type Database = {
   }
   public: {
     Tables: {
+      aip_audit_logs: {
+        Row: {
+          actor_id: string | null
+          actor_type: string | null
+          application_id: string
+          changes: Json | null
+          created_at: string | null
+          document_id: string | null
+          event_description: string
+          event_type: string
+          id: string
+        }
+        Insert: {
+          actor_id?: string | null
+          actor_type?: string | null
+          application_id: string
+          changes?: Json | null
+          created_at?: string | null
+          document_id?: string | null
+          event_description: string
+          event_type: string
+          id?: string
+        }
+        Update: {
+          actor_id?: string | null
+          actor_type?: string | null
+          application_id?: string
+          changes?: Json | null
+          created_at?: string | null
+          document_id?: string | null
+          event_description?: string
+          event_type?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "aip_audit_logs_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      aip_conditions: {
+        Row: {
+          application_id: string
+          assigned_to: string | null
+          condition_type: string
+          created_at: string | null
+          description: string
+          document_ids: Json | null
+          id: string
+          overridden_at: string | null
+          overridden_by: string | null
+          override_reason: string | null
+          severity: string
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          application_id: string
+          assigned_to?: string | null
+          condition_type: string
+          created_at?: string | null
+          description: string
+          document_ids?: Json | null
+          id?: string
+          overridden_at?: string | null
+          overridden_by?: string | null
+          override_reason?: string | null
+          severity?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          application_id?: string
+          assigned_to?: string | null
+          condition_type?: string
+          created_at?: string | null
+          description?: string
+          document_ids?: Json | null
+          id?: string
+          overridden_at?: string | null
+          overridden_by?: string | null
+          override_reason?: string | null
+          severity?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "aip_conditions_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       applications: {
         Row: {
+          aip_affordability_data: Json | null
+          aip_ai_prediction: Json | null
           aip_approved_amount: number | null
+          aip_approved_date: string | null
+          aip_assigned_underwriter: string | null
           aip_conditions: Json | null
+          aip_eligibility_score: number | null
+          aip_internal_messages: Json | null
           aip_issue_date: string | null
           aip_lender_name: string | null
           aip_letter_url: string | null
@@ -25,7 +131,11 @@ export type Database = {
           aip_monthly_repayment: number | null
           aip_rate_range_max: number | null
           aip_rate_range_min: number | null
+          aip_risk_flags: Json | null
           aip_status: string | null
+          aip_submitted_date: string | null
+          aip_turnaround_hours: number | null
+          aip_underwriter_notes: string | null
           aip_validity_period: number | null
           application_number: string
           assigned_broker_id: string | null
@@ -37,8 +147,14 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          aip_affordability_data?: Json | null
+          aip_ai_prediction?: Json | null
           aip_approved_amount?: number | null
+          aip_approved_date?: string | null
+          aip_assigned_underwriter?: string | null
           aip_conditions?: Json | null
+          aip_eligibility_score?: number | null
+          aip_internal_messages?: Json | null
           aip_issue_date?: string | null
           aip_lender_name?: string | null
           aip_letter_url?: string | null
@@ -46,7 +162,11 @@ export type Database = {
           aip_monthly_repayment?: number | null
           aip_rate_range_max?: number | null
           aip_rate_range_min?: number | null
+          aip_risk_flags?: Json | null
           aip_status?: string | null
+          aip_submitted_date?: string | null
+          aip_turnaround_hours?: number | null
+          aip_underwriter_notes?: string | null
           aip_validity_period?: number | null
           application_number: string
           assigned_broker_id?: string | null
@@ -58,8 +178,14 @@ export type Database = {
           user_id: string
         }
         Update: {
+          aip_affordability_data?: Json | null
+          aip_ai_prediction?: Json | null
           aip_approved_amount?: number | null
+          aip_approved_date?: string | null
+          aip_assigned_underwriter?: string | null
           aip_conditions?: Json | null
+          aip_eligibility_score?: number | null
+          aip_internal_messages?: Json | null
           aip_issue_date?: string | null
           aip_lender_name?: string | null
           aip_letter_url?: string | null
@@ -67,7 +193,11 @@ export type Database = {
           aip_monthly_repayment?: number | null
           aip_rate_range_max?: number | null
           aip_rate_range_min?: number | null
+          aip_risk_flags?: Json | null
           aip_status?: string | null
+          aip_submitted_date?: string | null
+          aip_turnaround_hours?: number | null
+          aip_underwriter_notes?: string | null
           aip_validity_period?: number | null
           application_number?: string
           assigned_broker_id?: string | null
@@ -237,6 +367,65 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      valuations: {
+        Row: {
+          application_id: string
+          appointment_date: string | null
+          completed_at: string | null
+          created_at: string | null
+          id: string
+          notes: string | null
+          ordered_at: string | null
+          ordered_by: string | null
+          report_url: string | null
+          status: string
+          updated_at: string | null
+          valuation_amount: number | null
+          valuer_contact: string | null
+          valuer_name: string | null
+        }
+        Insert: {
+          application_id: string
+          appointment_date?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          ordered_at?: string | null
+          ordered_by?: string | null
+          report_url?: string | null
+          status?: string
+          updated_at?: string | null
+          valuation_amount?: number | null
+          valuer_contact?: string | null
+          valuer_name?: string | null
+        }
+        Update: {
+          application_id?: string
+          appointment_date?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          ordered_at?: string | null
+          ordered_by?: string | null
+          report_url?: string | null
+          status?: string
+          updated_at?: string | null
+          valuation_amount?: number | null
+          valuer_contact?: string | null
+          valuer_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "valuations_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
