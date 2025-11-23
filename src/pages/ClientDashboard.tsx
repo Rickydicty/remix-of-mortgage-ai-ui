@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useNavigate } from "react-router-dom";
-import { Building2, LogOut, Upload, MessageSquare, FileText, PenTool, User } from "lucide-react";
+import { Building2, LogOut, Upload, MessageSquare, FileText, PenTool, User, FileCheck, Download } from "lucide-react";
 import ProgressTracker from "@/components/ProgressTracker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,6 +17,7 @@ import { DocumentList } from "@/components/DocumentList";
 import ClientMessaging from "@/components/broker/ClientMessaging";
 import { SignatureDialog } from "@/components/SignatureDialog";
 import AIPTab from "@/components/client/AIPTab";
+import { format, addDays } from "date-fns";
 
 interface Application {
   id: string;
@@ -24,6 +25,11 @@ interface Application {
   status: string;
   current_step: number;
   assigned_broker_id: string | null;
+  aip_letter_url: string | null;
+  aip_approved_amount: number | null;
+  aip_lender_name: string | null;
+  aip_issue_date: string | null;
+  aip_validity_period: number | null;
 }
 
 interface Profile {
@@ -251,9 +257,10 @@ const ClientDashboard = () => {
 
         {/* Tabs for Different Sections */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-6">
+          <TabsList className="grid w-full grid-cols-4 mb-6">
             <TabsTrigger value="documents">Documents & Conditions</TabsTrigger>
             <TabsTrigger value="aip">AIP</TabsTrigger>
+            <TabsTrigger value="aip-application">AIP Application</TabsTrigger>
             <TabsTrigger value="signatures">E-Signatures</TabsTrigger>
           </TabsList>
 
@@ -371,6 +378,90 @@ const ClientDashboard = () => {
               onNavigateToDocuments={() => setActiveTab("documents")}
               onOpenMessaging={() => setActiveTab("documents")}
             />
+          </TabsContent>
+
+          {/* AIP Application Tab */}
+          <TabsContent value="aip-application">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileCheck className="h-5 w-5 text-primary" />
+                  Agreement in Principle Letter
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {application?.aip_letter_url ? (
+                  <>
+                    <div className="p-4 bg-success/10 border border-success/20 rounded-lg">
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 bg-success/20 rounded-full">
+                          <FileCheck className="h-5 w-5 text-success" />
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-success mb-1">AIP Letter Available</h3>
+                          <p className="text-sm text-muted-foreground mb-3">
+                            Your Agreement in Principle has been issued. Download your letter below.
+                          </p>
+                          <div className="flex gap-2">
+                            <Button 
+                              onClick={() => window.open(application.aip_letter_url!, '_blank')}
+                              className="gap-2"
+                            >
+                              <Download className="h-4 w-4" />
+                              Download AIP Letter
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="p-4 border rounded-lg">
+                        <p className="text-xs text-muted-foreground mb-1">Approved Amount</p>
+                        <p className="text-2xl font-bold text-success">
+                          £{application.aip_approved_amount?.toLocaleString()}
+                        </p>
+                      </div>
+                      <div className="p-4 border rounded-lg">
+                        <p className="text-xs text-muted-foreground mb-1">Lender</p>
+                        <p className="text-lg font-semibold">{application.aip_lender_name || 'N/A'}</p>
+                      </div>
+                      <div className="p-4 border rounded-lg">
+                        <p className="text-xs text-muted-foreground mb-1">Issue Date</p>
+                        <p className="text-lg font-semibold">
+                          {application.aip_issue_date 
+                            ? format(new Date(application.aip_issue_date), 'dd MMM yyyy')
+                            : 'N/A'
+                          }
+                        </p>
+                      </div>
+                      <div className="p-4 border rounded-lg">
+                        <p className="text-xs text-muted-foreground mb-1">Valid Until</p>
+                        <p className="text-lg font-semibold">
+                          {application.aip_issue_date 
+                            ? format(
+                                addDays(new Date(application.aip_issue_date), application.aip_validity_period || 90),
+                                'dd MMM yyyy'
+                              )
+                            : 'N/A'
+                          }
+                        </p>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-center py-12">
+                    <div className="inline-flex p-4 bg-muted rounded-full mb-4">
+                      <FileCheck className="h-8 w-8 text-muted-foreground" />
+                    </div>
+                    <h3 className="font-semibold text-lg mb-2">AIP Letter Not Yet Issued</h3>
+                    <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                      Your Agreement in Principle is being processed. Once approved, your AIP letter will be available here for download.
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* E-Signatures Tab */}

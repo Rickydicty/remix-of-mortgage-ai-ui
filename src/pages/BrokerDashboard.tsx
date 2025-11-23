@@ -15,6 +15,7 @@ import BrokerRatesTab from "@/components/broker/RatesTab";
 import BrokerLibraryTab from "@/components/broker/LibraryTab";
 import BrokerAdminTab from "@/components/broker/AdminTab";
 import BrokerAIPPage from "@/pages/BrokerAIPPage";
+import BrokerLenderComparisonTab from "@/components/broker/LenderComparisonTab";
 
 const BrokerDashboard = () => {
   const navigate = useNavigate();
@@ -32,6 +33,7 @@ const BrokerDashboard = () => {
     { id: "tracker", label: "Tracker", icon: Activity, path: "/dashboard/broker/tracker" },
     { id: "application", label: "Application", icon: FileText, path: "/dashboard/broker/application" },
     { id: "rates", label: "Mortgage Rates", icon: TrendingUp, path: "/dashboard/broker/rates" },
+    { id: "lenders", label: "Lender Comparison", icon: Building2, path: "/dashboard/broker/lenders" },
     { id: "library", label: "Library", icon: BookOpen, path: "/dashboard/broker/library" },
     { id: "admin", label: "Admin", icon: Settings, path: "/dashboard/broker/admin" },
   ];
@@ -100,6 +102,7 @@ const BrokerDashboard = () => {
           <Route path="application/*" element={<BrokerApplicationTab />} />
           <Route path="aip/:applicationId" element={<BrokerAIPPage />} />
           <Route path="rates" element={<BrokerRatesTab />} />
+          <Route path="lenders" element={<BrokerLenderComparisonTab />} />
           <Route path="library" element={<BrokerLibraryTab />} />
           <Route path="admin" element={<BrokerAdminTab />} />
         </Routes>
