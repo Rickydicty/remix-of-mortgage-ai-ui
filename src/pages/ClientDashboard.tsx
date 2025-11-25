@@ -18,6 +18,7 @@ import ClientMessaging from "@/components/broker/ClientMessaging";
 import { SignatureDialog } from "@/components/SignatureDialog";
 import AIPTab from "@/components/client/AIPTab";
 import { format, addDays } from "date-fns";
+import { AIPDocumentsList } from "@/components/client/AIPDocumentsList";
 
 interface Application {
   id: string;
@@ -381,7 +382,7 @@ const ClientDashboard = () => {
           </TabsContent>
 
           {/* AIP Application Tab */}
-          <TabsContent value="aip-application">
+          <TabsContent value="aip-application" className="space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -460,6 +461,19 @@ const ClientDashboard = () => {
                     </p>
                   </div>
                 )}
+              </CardContent>
+            </Card>
+
+            {/* AIP Documents Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-secondary" />
+                  AIP Documents
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <AIPDocumentsList applicationId={application?.id} />
               </CardContent>
             </Card>
           </TabsContent>
