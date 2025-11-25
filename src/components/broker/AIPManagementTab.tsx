@@ -15,6 +15,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { AIPDocumentUpload } from "./AIPDocumentUpload";
 
 interface AIPCondition {
   id: string;
@@ -399,10 +400,10 @@ const AIPManagementTab = ({ applicationId }: AIPManagementTabProps) => {
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <span>Document Management</span>
-                <Button size="sm">
-                  <Upload className="h-4 w-4 mr-2" />
-                  Upload Document
-                </Button>
+                <AIPDocumentUpload 
+                  applicationId={applicationId} 
+                  onUploadComplete={fetchAIPData}
+                />
               </CardTitle>
             </CardHeader>
             <CardContent>
