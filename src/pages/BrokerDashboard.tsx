@@ -13,7 +13,6 @@ import BrokerTrackerTab from "@/components/broker/TrackerTab";
 import BrokerApplicationTab from "@/components/broker/ApplicationTab";
 import BrokerRatesTab from "@/components/broker/RatesTab";
 import BrokerLibraryTab from "@/components/broker/LibraryTab";
-import BrokerAdminTab from "@/components/broker/AdminTab";
 import BrokerAIPPage from "@/pages/BrokerAIPPage";
 import BrokerLenderComparisonTab from "@/components/broker/LenderComparisonTab";
 
@@ -35,7 +34,6 @@ const BrokerDashboard = () => {
     { id: "rates", label: "Mortgage Rates", icon: TrendingUp, path: "/dashboard/broker/rates" },
     { id: "lenders", label: "Lender Comparison", icon: Building2, path: "/dashboard/broker/lenders" },
     { id: "library", label: "Library", icon: BookOpen, path: "/dashboard/broker/library" },
-    { id: "admin", label: "Admin", icon: Settings, path: "/dashboard/broker/admin" },
   ];
 
   const isActiveTab = (path: string) => {
@@ -104,7 +102,6 @@ const BrokerDashboard = () => {
           <Route path="rates" element={<BrokerRatesTab />} />
           <Route path="lenders" element={<BrokerLenderComparisonTab />} />
           <Route path="library" element={<BrokerLibraryTab />} />
-          <Route path="admin" element={<BrokerAdminTab />} />
         </Routes>
       </div>
     </div>
