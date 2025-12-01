@@ -1,117 +1,138 @@
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Upload, FileText, Bot } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Search as SearchIcon } from "lucide-react";
 
 const BrokerLibraryTab = () => {
-  // TODO: Fetch document templates from database or storage
-  const templates: any[] = [];
+  const [documentName, setDocumentName] = useState("");
+  const [category, setCategory] = useState("all");
+  const [uploadDateFrom, setUploadDateFrom] = useState("");
+  const [uploadDateTo, setUploadDateTo] = useState("");
+
+  // Sample documents data
+  const documents = [
+    { name: "BI- Application Form", description: "Required for ALL cases", category: "Brokers Ireland Mortgages Docs", datePosted: "11/03/2020 09:15:28" },
+    { name: "BI- Salary Cert", description: "Accepted across all of our lenders", category: "Brokers Ireland Mortgages Docs", datePosted: "11/03/2020 09:16:03" },
+    { name: "Cover memo sample", description: "", category: "Brokers Ireland Mortgages Docs", datePosted: "21/03/2024 12:56:18" },
+    { name: "BPFI Salary cert", description: "", category: "Brokers Ireland Mortgages Docs", datePosted: "29/01/2025 13:51:51" },
+    { name: "BOI calc - ( May 2025)", description: "", category: "Bank of Ireland", datePosted: "16/06/2025 12:24:42" },
+    { name: "BOI- Editable application form", description: "", category: "Bank of Ireland", datePosted: "21/01/2025 11:04:00" },
+    { name: "BOI- Cost of credit calc", description: "", category: "Bank of Ireland", datePosted: "22/01/2025 15:20:36" },
+    { name: "BOI - CHANGE IN PROPOSAL", description: "", category: "Bank of Ireland", datePosted: "28/01/2025 12:13:56" },
+    { name: "BOI- Fees&Charges", description: "", category: "Bank of Ireland", datePosted: "24/07/2024 08:40:41" },
+    { name: "BOI- Document checklist", description: "", category: "Bank of Ireland", datePosted: "24/07/2024 08:42:14" },
+  ];
+
+  const handleSearch = () => {
+    // TODO: Implement search functionality
+    console.log("Searching...", { documentName, category, uploadDateFrom, uploadDateTo });
+  };
+
+  const handleReset = () => {
+    setDocumentName("");
+    setCategory("all");
+    setUploadDateFrom("");
+    setUploadDateTo("");
+  };
 
   return (
     <div className="space-y-6">
-      {/* Search & Upload */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Document Library</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-3">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search templates, checklists, forms..." className="pl-10" />
-            </div>
-            <Button>
-              <Upload className="h-4 w-4 mr-2" />
-              Upload Document
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Template Categories */}
-      {templates.map((category) => (
-        <Card key={category.category}>
-          <CardHeader>
-            <CardTitle className="text-lg">{category.category}</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {category.items.map((item) => (
-              <div
-                key={item.name}
-                className="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-accent/50 transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <FileText className="h-5 w-5 text-muted-foreground" />
-                  <div>
-                    <p className="font-medium">{item.name}</p>
-                    <p className="text-xs text-muted-foreground">{item.type}</p>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Button size="sm" variant="outline">
-                    View
-                  </Button>
-                  <Button size="sm" variant="outline">
-                    Download
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      ))}
-
-      {/* AI Smart Templates */}
+      {/* Search Section */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Bot className="h-5 w-5 text-secondary" />
-            AI Smart Templates
+            <SearchIcon className="h-5 w-5" />
+            Search
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Generate custom documents using AI based on client data
-          </p>
-          <div className="grid md:grid-cols-2 gap-4">
-            <div className="p-4 border border-border rounded-lg">
-              <h4 className="font-medium mb-2">Generate Cover Letter</h4>
-              <p className="text-sm text-muted-foreground mb-3">
-                Auto-generate lender submission cover letter with client details
-              </p>
-              <Button size="sm" className="w-full">
-                Generate
-              </Button>
+        <CardContent>
+          <div className="grid gap-4">
+            {/* Document Name and Category */}
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Document name:</label>
+                <Input
+                  value={documentName}
+                  onChange={(e) => setDocumentName(e.target.value)}
+                  placeholder="Enter document name"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Category:</label>
+                <Select value={category} onValueChange={setCategory}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">-All-</SelectItem>
+                    <SelectItem value="brokers-ireland">Brokers Ireland Mortgages Docs</SelectItem>
+                    <SelectItem value="bank-of-ireland">Bank of Ireland</SelectItem>
+                    <SelectItem value="aib">AIB</SelectItem>
+                    <SelectItem value="ptsb">PTSB</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            <div className="p-4 border border-border rounded-lg">
-              <h4 className="font-medium mb-2">Create Client Summary</h4>
-              <p className="text-sm text-muted-foreground mb-3">
-                AI-powered application summary for internal use
-              </p>
-              <Button size="sm" className="w-full">
-                Generate
-              </Button>
+
+            {/* Upload Date Range */}
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Upload Date - from:</label>
+                <Input
+                  type="date"
+                  value={uploadDateFrom}
+                  onChange={(e) => setUploadDateFrom(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">to:</label>
+                <Input
+                  type="date"
+                  value={uploadDateTo}
+                  onChange={(e) => setUploadDateTo(e.target.value)}
+                />
+              </div>
+            </div>
+
+            {/* Search and Reset Buttons */}
+            <div className="flex gap-2 justify-end">
+              <Button onClick={handleSearch}>Search</Button>
+              <Button variant="outline" onClick={handleReset}>Reset</Button>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Training Resources */}
+      {/* Documents Table */}
       <Card>
-        <CardHeader>
-          <CardTitle>Training & FAQ Bot</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="p-4 bg-muted rounded-lg">
-            <h4 className="font-medium mb-2">Quick Help</h4>
-            <p className="text-sm text-muted-foreground mb-3">
-              Ask the AI assistant about lender criteria, processes, or compliance
-            </p>
-            <Input placeholder="e.g., What documents does Haven need for self-employed?" />
-            <Button size="sm" className="mt-2">
-              Ask AI
-            </Button>
-          </div>
+        <CardContent className="pt-6">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Document Name</TableHead>
+                <TableHead>Description</TableHead>
+                <TableHead>Category</TableHead>
+                <TableHead>Date Posted</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {documents.map((doc, index) => (
+                <TableRow key={index}>
+                  <TableCell>
+                    <a href="#" className="text-primary hover:underline">
+                      {doc.name}
+                    </a>
+                  </TableCell>
+                  <TableCell>{doc.description}</TableCell>
+                  <TableCell>{doc.category}</TableCell>
+                  <TableCell>{doc.datePosted}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
     </div>
