@@ -8,11 +8,32 @@ import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import DocumentReview from "./DocumentReview";
 
+interface PreEligibilityData {
+  applicant_type: string;
+  employment_type: string;
+  residency_status: string;
+  credit_history: string;
+  income_1: number;
+  income_2: number | null;
+  monthly_commitments: number;
+  property_value: number;
+  deposit_amount: number;
+  first_time_buyer: boolean;
+  desired_term: number;
+  borrowing_capacity_low: number | null;
+  borrowing_capacity_high: number | null;
+  estimated_monthly_payment: number | null;
+  eligibility_score: number | null;
+  phone: string | null;
+  email: string | null;
+}
+
 const ApplicationTab = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [application, setApplication] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
+  const [preEligibility, setPreEligibility] = useState<PreEligibilityData | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Get application ID from URL query parameter
@@ -41,16 +62,29 @@ const ApplicationTab = () => {
       if (appError) throw appError;
       setApplication(appData);
 
-      // Fetch client profile
+      // Fetch client profile and pre-eligibility data
       if (appData?.user_id) {
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', appData.user_id)
-          .single();
+        const [profileResult, preEligibilityResult] = await Promise.all([
+          supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', appData.user_id)
+            .single(),
+          supabase
+            .from('pre_eligibility_data')
+            .select('*')
+            .eq('user_id', appData.user_id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle()
+        ]);
 
-        if (profileError) throw profileError;
-        setProfile(profileData);
+        if (profileResult.error) throw profileResult.error;
+        setProfile(profileResult.data);
+        
+        if (preEligibilityResult.data) {
+          setPreEligibility(preEligibilityResult.data);
+        }
       }
     } catch (error) {
       console.error('Error fetching application:', error);
@@ -144,16 +178,7 @@ const ApplicationTab = () => {
         </CardContent>
       </Card>
 
-      {/* Document Review for pending_review status - ALWAYS VISIBLE FOR DEBUG */}
-      {application && (
-        <Card className="border-2 border-primary">
-          <CardContent className="pt-6">
-            <p className="text-sm mb-2">Debug: Application Status = <strong>{application.status}</strong></p>
-            <p className="text-sm mb-2">Application ID = {application.id}</p>
-          </CardContent>
-        </Card>
-      )}
-      
+      {/* Document Review for pending_review status */}
       {(application?.status === 'pending_review' || application?.status === 'in_review') && (
         <DocumentReview
           clientId={application.user_id}
@@ -190,15 +215,15 @@ const ApplicationTab = () => {
 
       {/* Sub-Tab Content */}
       <Routes>
-        <Route index element={<SummaryTab application={application} profile={profile} />} />
-        <Route path="summary" element={<SummaryTab application={application} profile={profile} />} />
-        <Route path="personal" element={<PersonalTab profile={profile} />} />
-        <Route path="income" element={<IncomeTab />} />
-        <Route path="financial" element={<FinancialTab />} />
-        <Route path="mortgage" element={<MortgageTab />} />
-        <Route path="property" element={<PropertyTab />} />
+        <Route index element={<SummaryTab application={application} profile={profile} preEligibility={preEligibility} />} />
+        <Route path="summary" element={<SummaryTab application={application} profile={profile} preEligibility={preEligibility} />} />
+        <Route path="personal" element={<PersonalTab profile={profile} preEligibility={preEligibility} />} />
+        <Route path="income" element={<IncomeTab preEligibility={preEligibility} />} />
+        <Route path="financial" element={<FinancialTab preEligibility={preEligibility} />} />
+        <Route path="mortgage" element={<MortgageTab preEligibility={preEligibility} />} />
+        <Route path="property" element={<PropertyTab preEligibility={preEligibility} />} />
         <Route path="docs" element={<DocsTab applicationId={applicationId} userId={application?.user_id} />} />
-        <Route path="declarations" element={<DeclarationsTab />} />
+        <Route path="declarations" element={<DeclarationsTab preEligibility={preEligibility} />} />
         <Route path="transactions" element={<TransactionsTab />} />
         <Route path="lender" element={<LenderTab />} />
         <Route path="notes" element={<NotesTab />} />
@@ -210,9 +235,8 @@ const ApplicationTab = () => {
     </div>
   );
 };
-
 // Summary Tab Component
-const SummaryTab = ({ application, profile }: { application: any; profile: any }) => {
+const SummaryTab = ({ application, profile, preEligibility }: { application: any; profile: any; preEligibility: PreEligibilityData | null }) => {
   if (!application) {
     return (
       <Card>
@@ -222,6 +246,11 @@ const SummaryTab = ({ application, profile }: { application: any; profile: any }
       </Card>
     );
   }
+
+  const formatCurrency = (amount: number | null | undefined) => {
+    if (!amount) return 'Not provided';
+    return `€${amount.toLocaleString()}`;
+  };
 
   return (
     <div className="space-y-6">
@@ -237,11 +266,11 @@ const SummaryTab = ({ application, profile }: { application: any; profile: any }
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Email</p>
-              <p className="font-semibold">{profile?.email || 'Not provided'}</p>
+              <p className="font-semibold">{profile?.email || preEligibility?.email || 'Not provided'}</p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Phone</p>
-              <p className="font-semibold">{profile?.phone || 'Not provided'}</p>
+              <p className="font-semibold">{profile?.phone || preEligibility?.phone || 'Not provided'}</p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Application Number</p>
@@ -254,6 +283,14 @@ const SummaryTab = ({ application, profile }: { application: any; profile: any }
             <div>
               <p className="text-sm text-muted-foreground">Status</p>
               <p className="font-semibold">{application.status?.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Property Value</p>
+              <p className="font-semibold">{formatCurrency(preEligibility?.property_value)}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Loan Amount</p>
+              <p className="font-semibold">{formatCurrency(preEligibility ? preEligibility.property_value - preEligibility.deposit_amount : null)}</p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Created</p>
@@ -271,209 +308,311 @@ const SummaryTab = ({ application, profile }: { application: any; profile: any }
 };
 
 // Personal Tab Component
-const PersonalTab = ({ profile }: { profile: any }) => (
-  <Card>
-    <CardHeader>
-      <CardTitle>Personal Details</CardTitle>
-    </CardHeader>
-    <CardContent>
-      <div className="grid md:grid-cols-2 gap-6">
-        <div>
-          <p className="text-sm text-muted-foreground">Full Name</p>
-          <p className="font-medium">John Patrick Doe</p>
-        </div>
-        <div>
-          <p className="text-sm text-muted-foreground">Date of Birth</p>
-          <p className="font-medium">15 March 1989 (35 years)</p>
-        </div>
-        <div>
-          <p className="text-sm text-muted-foreground">PPS Number</p>
-          <p className="font-medium">1234567AB</p>
-        </div>
-        <div>
-          <p className="text-sm text-muted-foreground">Residency Status</p>
-          <p className="font-medium">Irish Citizen ✓</p>
-        </div>
-        <div>
-          <p className="text-sm text-muted-foreground">Current Address</p>
-          <p className="font-medium">123 Main Street, Dublin 2, Ireland</p>
-        </div>
-        <div>
-          <p className="text-sm text-muted-foreground">Years at Address</p>
-          <p className="font-medium">3 years</p>
-        </div>
-      </div>
-    </CardContent>
-  </Card>
-);
+const PersonalTab = ({ profile, preEligibility }: { profile: any; preEligibility: PreEligibilityData | null }) => {
+  const getResidencyLabel = (status: string | null | undefined) => {
+    if (!status) return 'Not provided';
+    const labels: Record<string, string> = {
+      'irish_citizen': 'Irish Citizen',
+      'eu_citizen': 'EU Citizen',
+      'non_eu_with_visa': 'Non-EU with Visa',
+      'other': 'Other'
+    };
+    return labels[status] || status;
+  };
 
-const IncomeTab = () => (
-  <Card>
-    <CardHeader>
-      <CardTitle>Income & Employment - AI Parsed</CardTitle>
-    </CardHeader>
-    <CardContent>
-      <div className="space-y-4">
-        <div className="p-4 bg-success/10 rounded-lg">
-          <h4 className="font-medium text-success mb-2">Verified Income: €65,000/year</h4>
-          <p className="text-sm">Source: 6 months payslips • Confidence: 98%</p>
-        </div>
-        <div className="border border-border rounded-lg overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-muted">
-              <tr>
-                <th className="p-3 text-left">Month</th>
-                <th className="p-3 text-right">Gross</th>
-                <th className="p-3 text-right">Tax</th>
-                <th className="p-3 text-right">Net</th>
-              </tr>
-            </thead>
-            <tbody>
-              {["Nov 2024", "Oct 2024", "Sep 2024", "Aug 2024", "Jul 2024", "Jun 2024"].map((month) => (
-                <tr key={month} className="border-t border-border">
-                  <td className="p-3">{month}</td>
-                  <td className="p-3 text-right">€5,417</td>
-                  <td className="p-3 text-right">€1,625</td>
-                  <td className="p-3 text-right font-medium">€3,792</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </CardContent>
-  </Card>
-);
-
-const FinancialTab = () => (
-  <Card>
-    <CardHeader>
-      <CardTitle>Financial & Credit Analysis</CardTitle>
-    </CardHeader>
-    <CardContent className="space-y-4">
-      <div className="grid md:grid-cols-2 gap-4">
-        <div className="p-4 border border-border rounded-lg">
-          <h4 className="font-medium mb-2">Monthly Commitments</h4>
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span>Rent</span>
-              <span className="font-medium">€1,200</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Car Loan</span>
-              <span className="font-medium">€350</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Credit Card</span>
-              <span className="font-medium">€100</span>
-            </div>
-            <div className="flex justify-between pt-2 border-t border-border font-bold">
-              <span>Total</span>
-              <span>€1,650</span>
-            </div>
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Personal Details</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="grid md:grid-cols-2 gap-6">
+          <div>
+            <p className="text-sm text-muted-foreground">Full Name</p>
+            <p className="font-medium">{profile?.full_name || 'Not provided'}</p>
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">Email</p>
+            <p className="font-medium">{profile?.email || preEligibility?.email || 'Not provided'}</p>
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">Phone</p>
+            <p className="font-medium">{profile?.phone || preEligibility?.phone || 'Not provided'}</p>
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">Applicant Type</p>
+            <p className="font-medium capitalize">{preEligibility?.applicant_type?.replace('_', ' ') || 'Not provided'}</p>
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">Residency Status</p>
+            <p className="font-medium">{getResidencyLabel(preEligibility?.residency_status)}</p>
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">First Time Buyer</p>
+            <p className="font-medium">{preEligibility?.first_time_buyer ? 'Yes' : preEligibility?.first_time_buyer === false ? 'No' : 'Not provided'}</p>
           </div>
         </div>
-        <div className="p-4 border border-border rounded-lg">
-          <h4 className="font-medium mb-2">Credit Score</h4>
-          <div className="flex items-center gap-4">
-            <div className="text-4xl font-bold text-success">750</div>
-            <div className="flex-1">
-              <div className="h-3 bg-muted rounded-full overflow-hidden">
-                <div className="h-full bg-success" style={{ width: "85%" }} />
+      </CardContent>
+    </Card>
+  );
+};
+
+const IncomeTab = ({ preEligibility }: { preEligibility: PreEligibilityData | null }) => {
+  const formatCurrency = (amount: number | null | undefined) => {
+    if (!amount) return '€0';
+    return `€${amount.toLocaleString()}`;
+  };
+
+  const getEmploymentLabel = (type: string | null | undefined) => {
+    if (!type) return 'Not provided';
+    const labels: Record<string, string> = {
+      'paye': 'PAYE Employee',
+      'self_employed': 'Self Employed',
+      'contractor': 'Contractor',
+      'public_servant': 'Public Servant'
+    };
+    return labels[type] || type;
+  };
+
+  const totalIncome = (preEligibility?.income_1 || 0) + (preEligibility?.income_2 || 0);
+  const monthlyIncome = totalIncome / 12;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Income & Employment</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          <div className="p-4 bg-success/10 rounded-lg">
+            <h4 className="font-medium text-success mb-2">Total Annual Income: {formatCurrency(totalIncome)}</h4>
+            <p className="text-sm">Monthly: {formatCurrency(monthlyIncome)}</p>
+          </div>
+          <div className="grid md:grid-cols-2 gap-4">
+            <div className="p-4 border border-border rounded-lg">
+              <h4 className="font-medium mb-2">Applicant 1 Income</h4>
+              <p className="text-2xl font-bold">{formatCurrency(preEligibility?.income_1)}/year</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Employment: {getEmploymentLabel(preEligibility?.employment_type)}
+              </p>
+            </div>
+            {preEligibility?.income_2 && preEligibility.income_2 > 0 && (
+              <div className="p-4 border border-border rounded-lg">
+                <h4 className="font-medium mb-2">Applicant 2 Income</h4>
+                <p className="text-2xl font-bold">{formatCurrency(preEligibility.income_2)}/year</p>
               </div>
-              <p className="text-xs text-muted-foreground mt-1">Excellent</p>
-            </div>
+            )}
           </div>
+          {preEligibility?.borrowing_capacity_low && preEligibility?.borrowing_capacity_high && (
+            <div className="p-4 bg-primary/5 rounded-lg">
+              <h4 className="font-medium mb-2">Estimated Borrowing Capacity</h4>
+              <p className="text-lg">
+                {formatCurrency(preEligibility.borrowing_capacity_low)} - {formatCurrency(preEligibility.borrowing_capacity_high)}
+              </p>
+            </div>
+          )}
         </div>
-      </div>
-      <div className="p-4 bg-warning/10 rounded-lg">
-        <h4 className="font-medium text-warning mb-2">AI Detected Risks</h4>
-        <ul className="text-sm space-y-1">
-          <li>• Large deposit (€5,000) on March 15 - source verification needed</li>
-          <li>• High rent-to-income ratio (18.5%)</li>
-        </ul>
-      </div>
-    </CardContent>
-  </Card>
-);
+      </CardContent>
+    </Card>
+  );
+};
 
-const MortgageTab = () => (
-  <Card>
-    <CardHeader>
-      <CardTitle>Mortgage Details - Auto Calculated</CardTitle>
-    </CardHeader>
-    <CardContent className="space-y-4">
-      <div className="grid md:grid-cols-3 gap-4">
-        <div className="p-4 bg-primary/5 rounded-lg">
-          <p className="text-sm text-muted-foreground mb-1">Property Value</p>
-          <p className="text-2xl font-bold">€350,000</p>
-        </div>
-        <div className="p-4 bg-primary/5 rounded-lg">
-          <p className="text-sm text-muted-foreground mb-1">Deposit</p>
-          <p className="text-2xl font-bold">€50,000 (14%)</p>
-        </div>
-        <div className="p-4 bg-primary/5 rounded-lg">
-          <p className="text-sm text-muted-foreground mb-1">Loan Amount</p>
-          <p className="text-2xl font-bold">€300,000</p>
-        </div>
-      </div>
-      <div className="grid md:grid-cols-2 gap-4">
-        <div className="p-4 border border-border rounded-lg">
-          <h4 className="font-medium mb-3">Affordability Ratio</h4>
-          <div className="flex items-center gap-4">
-            <div className="text-3xl font-bold text-success">32%</div>
-            <div className="flex-1">
-              <p className="text-sm text-muted-foreground">Within safe limits (&lt;35%)</p>
-            </div>
-          </div>
-        </div>
-        <div className="p-4 border border-border rounded-lg">
-          <h4 className="font-medium mb-3">LTV Ratio</h4>
-          <div className="flex items-center gap-4">
-            <div className="text-3xl font-bold text-success">86%</div>
-            <div className="flex-1">
-              <p className="text-sm text-muted-foreground">Good for first-time buyer</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </CardContent>
-  </Card>
-);
+const FinancialTab = ({ preEligibility }: { preEligibility: PreEligibilityData | null }) => {
+  const formatCurrency = (amount: number | null | undefined) => {
+    if (!amount) return '€0';
+    return `€${amount.toLocaleString()}`;
+  };
 
-const PropertyTab = () => (
-  <Card>
-    <CardHeader>
-      <CardTitle>Property Details</CardTitle>
-    </CardHeader>
-    <CardContent className="space-y-4">
-      <div className="grid md:grid-cols-2 gap-6">
-        <div>
-          <p className="text-sm text-muted-foreground">Address</p>
-          <p className="font-medium">45 Oak Avenue, Dublin 6W, D6W K2R4</p>
+  const getCreditLabel = (history: string | null | undefined) => {
+    if (!history) return 'Not provided';
+    const labels: Record<string, string> = {
+      'excellent': 'Excellent',
+      'good': 'Good',
+      'fair': 'Fair',
+      'poor': 'Poor'
+    };
+    return labels[history] || history;
+  };
+
+  const getCreditColor = (history: string | null | undefined) => {
+    switch (history) {
+      case 'excellent': return 'text-success';
+      case 'good': return 'text-success';
+      case 'fair': return 'text-warning';
+      case 'poor': return 'text-destructive';
+      default: return 'text-muted-foreground';
+    }
+  };
+
+  const getCreditScore = (history: string | null | undefined) => {
+    switch (history) {
+      case 'excellent': return { score: 800, width: '95%' };
+      case 'good': return { score: 700, width: '80%' };
+      case 'fair': return { score: 600, width: '60%' };
+      case 'poor': return { score: 500, width: '40%' };
+      default: return { score: 0, width: '0%' };
+    }
+  };
+
+  const creditInfo = getCreditScore(preEligibility?.credit_history);
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Financial & Credit Analysis</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid md:grid-cols-2 gap-4">
+          <div className="p-4 border border-border rounded-lg">
+            <h4 className="font-medium mb-2">Monthly Commitments</h4>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between pt-2 border-t border-border font-bold">
+                <span>Total Monthly Commitments</span>
+                <span>{formatCurrency(preEligibility?.monthly_commitments)}</span>
+              </div>
+            </div>
+          </div>
+          <div className="p-4 border border-border rounded-lg">
+            <h4 className="font-medium mb-2">Credit History</h4>
+            <div className="flex items-center gap-4">
+              <div className={`text-4xl font-bold ${getCreditColor(preEligibility?.credit_history)}`}>
+                {creditInfo.score > 0 ? creditInfo.score : 'N/A'}
+              </div>
+              <div className="flex-1">
+                <div className="h-3 bg-muted rounded-full overflow-hidden">
+                  <div className={`h-full ${getCreditColor(preEligibility?.credit_history)} bg-current`} style={{ width: creditInfo.width }} />
+                </div>
+                <p className={`text-xs mt-1 ${getCreditColor(preEligibility?.credit_history)}`}>
+                  {getCreditLabel(preEligibility?.credit_history)}
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
-        <div>
-          <p className="text-sm text-muted-foreground">Property Type</p>
-          <p className="font-medium">3-bed semi-detached house</p>
+        {preEligibility?.eligibility_score && (
+          <div className="p-4 bg-primary/5 rounded-lg">
+            <h4 className="font-medium mb-2">Eligibility Score</h4>
+            <div className="flex items-center gap-4">
+              <div className="text-3xl font-bold text-primary">{preEligibility.eligibility_score}%</div>
+              <div className="flex-1">
+                <div className="h-3 bg-muted rounded-full overflow-hidden">
+                  <div className="h-full bg-primary" style={{ width: `${preEligibility.eligibility_score}%` }} />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
+
+const MortgageTab = ({ preEligibility }: { preEligibility: PreEligibilityData | null }) => {
+  const formatCurrency = (amount: number | null | undefined) => {
+    if (!amount) return '€0';
+    return `€${amount.toLocaleString()}`;
+  };
+
+  const propertyValue = preEligibility?.property_value || 0;
+  const deposit = preEligibility?.deposit_amount || 0;
+  const loanAmount = propertyValue - deposit;
+  const ltv = propertyValue > 0 ? ((loanAmount / propertyValue) * 100).toFixed(1) : 0;
+  const depositPercent = propertyValue > 0 ? ((deposit / propertyValue) * 100).toFixed(1) : 0;
+
+  const totalIncome = (preEligibility?.income_1 || 0) + (preEligibility?.income_2 || 0);
+  const monthlyIncome = totalIncome / 12;
+  const monthlyRepayment = preEligibility?.estimated_monthly_payment || 0;
+  const affordabilityRatio = monthlyIncome > 0 ? ((monthlyRepayment / monthlyIncome) * 100).toFixed(1) : 0;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Mortgage Details</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid md:grid-cols-3 gap-4">
+          <div className="p-4 bg-primary/5 rounded-lg">
+            <p className="text-sm text-muted-foreground mb-1">Property Value</p>
+            <p className="text-2xl font-bold">{formatCurrency(propertyValue)}</p>
+          </div>
+          <div className="p-4 bg-primary/5 rounded-lg">
+            <p className="text-sm text-muted-foreground mb-1">Deposit</p>
+            <p className="text-2xl font-bold">{formatCurrency(deposit)} ({depositPercent}%)</p>
+          </div>
+          <div className="p-4 bg-primary/5 rounded-lg">
+            <p className="text-sm text-muted-foreground mb-1">Loan Amount</p>
+            <p className="text-2xl font-bold">{formatCurrency(loanAmount)}</p>
+          </div>
         </div>
-        <div>
-          <p className="text-sm text-muted-foreground">Purchase Price</p>
-          <p className="font-medium">€350,000</p>
+        <div className="grid md:grid-cols-3 gap-4">
+          <div className="p-4 border border-border rounded-lg">
+            <h4 className="font-medium mb-3">LTV Ratio</h4>
+            <div className="flex items-center gap-4">
+              <div className={`text-3xl font-bold ${Number(ltv) <= 90 ? 'text-success' : 'text-warning'}`}>{ltv}%</div>
+              <div className="flex-1">
+                <p className="text-sm text-muted-foreground">
+                  {preEligibility?.first_time_buyer ? 'First-time buyer' : 'Existing homeowner'}
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="p-4 border border-border rounded-lg">
+            <h4 className="font-medium mb-3">Mortgage Term</h4>
+            <div className="text-3xl font-bold">{preEligibility?.desired_term || 25} years</div>
+          </div>
+          <div className="p-4 border border-border rounded-lg">
+            <h4 className="font-medium mb-3">Est. Monthly Payment</h4>
+            <div className="text-3xl font-bold text-primary">{formatCurrency(monthlyRepayment)}</div>
+            <p className="text-sm text-muted-foreground mt-1">
+              Affordability: {affordabilityRatio}%
+            </p>
+          </div>
         </div>
-        <div>
-          <p className="text-sm text-muted-foreground">Valuation Status</p>
-          <p className="font-medium text-warning">Pending</p>
+      </CardContent>
+    </Card>
+  );
+};
+
+const PropertyTab = ({ preEligibility }: { preEligibility: PreEligibilityData | null }) => {
+  const formatCurrency = (amount: number | null | undefined) => {
+    if (!amount) return '€0';
+    return `€${amount.toLocaleString()}`;
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Property Details</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid md:grid-cols-2 gap-6">
+          <div>
+            <p className="text-sm text-muted-foreground">Purchase Price</p>
+            <p className="font-medium">{formatCurrency(preEligibility?.property_value)}</p>
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">Buyer Type</p>
+            <p className="font-medium">{preEligibility?.first_time_buyer ? 'First Time Buyer' : 'Existing Homeowner'}</p>
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">Deposit Amount</p>
+            <p className="font-medium">{formatCurrency(preEligibility?.deposit_amount)}</p>
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">Valuation Status</p>
+            <p className="font-medium text-warning">Pending</p>
+          </div>
         </div>
-      </div>
-      <div className="p-4 bg-muted rounded-lg">
-        <h4 className="font-medium mb-2">AI Valuation Range</h4>
-        <p className="text-sm text-muted-foreground">
-          Based on comparable properties: €340,000 - €360,000
-        </p>
-      </div>
-    </CardContent>
-  </Card>
-);
+        <div className="p-4 bg-muted rounded-lg">
+          <h4 className="font-medium mb-2">Note</h4>
+          <p className="text-sm text-muted-foreground">
+            Property address and detailed information will be added once provided by the client.
+          </p>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
 
 const DocsTab = ({ applicationId, userId }: { applicationId: string | null; userId: string | null }) => {
   if (!applicationId || !userId) {
@@ -496,20 +635,28 @@ const DocsTab = ({ applicationId, userId }: { applicationId: string | null; user
   );
 };
 
-const DeclarationsTab = () => (
+const DeclarationsTab = ({ preEligibility }: { preEligibility: PreEligibilityData | null }) => (
   <Card>
     <CardHeader>
-      <CardTitle>Declarations & Inconsistencies</CardTitle>
+      <CardTitle>Declarations & Checks</CardTitle>
     </CardHeader>
     <CardContent className="space-y-3">
-      <div className="p-4 bg-success/10 rounded-lg">
-        <p className="text-sm font-medium text-success">✓ No adverse credit events declared</p>
+      <div className={`p-4 rounded-lg ${preEligibility?.credit_history === 'excellent' || preEligibility?.credit_history === 'good' ? 'bg-success/10' : 'bg-warning/10'}`}>
+        <p className={`text-sm font-medium ${preEligibility?.credit_history === 'excellent' || preEligibility?.credit_history === 'good' ? 'text-success' : 'text-warning'}`}>
+          {preEligibility?.credit_history === 'excellent' || preEligibility?.credit_history === 'good' 
+            ? '✓ Credit history declared as ' + (preEligibility?.credit_history || 'unknown')
+            : '⚠ Credit history declared as ' + (preEligibility?.credit_history || 'unknown') + ' - review recommended'}
+        </p>
       </div>
       <div className="p-4 bg-success/10 rounded-lg">
-        <p className="text-sm font-medium text-success">✓ Employment history consistent</p>
+        <p className="text-sm font-medium text-success">
+          ✓ Residency status: {preEligibility?.residency_status?.replace('_', ' ') || 'Not provided'}
+        </p>
       </div>
-      <div className="p-4 bg-warning/10 rounded-lg">
-        <p className="text-sm font-medium text-warning">⚠ AI detected 2-month gap in 2022 - needs clarification</p>
+      <div className="p-4 bg-success/10 rounded-lg">
+        <p className="text-sm font-medium text-success">
+          ✓ Employment type: {preEligibility?.employment_type?.replace('_', ' ') || 'Not provided'}
+        </p>
       </div>
     </CardContent>
   </Card>
