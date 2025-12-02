@@ -6,12 +6,23 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useNavigate } from "react-router-dom";
-import { Building2, ArrowRight, TrendingUp } from "lucide-react";
+import { Building2, ArrowRight, TrendingUp, Loader2 } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const PreEligibility = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [showResults, setShowResults] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [calculatedResults, setCalculatedResults] = useState({
+    borrowingLow: 0,
+    borrowingHigh: 0,
+    monthlyPayment: 0,
+    eligibilityScore: 0,
+  });
   const [formData, setFormData] = useState({
     applicantType: "",
     employmentType: "",
@@ -28,17 +39,89 @@ const PreEligibility = () => {
     email: "",
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const calculateResults = () => {
+    const income1 = parseFloat(formData.income1) || 0;
+    const income2 = parseFloat(formData.income2) || 0;
+    const totalIncome = income1 + income2;
+    const commitments = parseFloat(formData.monthlyCommitments) || 0;
+    const deposit = parseFloat(formData.depositAmount) || 0;
+    
+    // Simple calculation based on income multiplier
+    const baseMultiplier = formData.firstTimeBuyer ? 4 : 3.5;
+    const borrowingLow = Math.round(totalIncome * baseMultiplier * 0.9);
+    const borrowingHigh = Math.round(totalIncome * baseMultiplier * 1.1);
+    
+    // Calculate monthly payment at 3.4% interest
+    const loanAmount = (borrowingLow + borrowingHigh) / 2;
+    const monthlyRate = 0.034 / 12;
+    const numPayments = formData.desiredTerm[0] * 12;
+    const monthlyPayment = Math.round(
+      (loanAmount * monthlyRate * Math.pow(1 + monthlyRate, numPayments)) /
+      (Math.pow(1 + monthlyRate, numPayments) - 1)
+    );
+    
+    // Calculate eligibility score
+    let score = 70;
+    if (formData.creditHistory === "good") score += 15;
+    else if (formData.creditHistory === "fair") score += 5;
+    if (formData.firstTimeBuyer) score += 5;
+    if (commitments < totalIncome * 0.3 / 12) score += 5;
+    if (deposit > parseFloat(formData.propertyValue) * 0.2) score += 5;
+    score = Math.min(score, 100);
+    
+    return { borrowingLow, borrowingHigh, monthlyPayment, eligibilityScore: score };
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setShowResults(true);
+    
+    if (!user) {
+      toast.error("You must be logged in to submit");
+      return;
+    }
+    
+    setIsSubmitting(true);
+    
+    try {
+      const results = calculateResults();
+      
+      const { error } = await supabase
+        .from('pre_eligibility_data')
+        .insert({
+          user_id: user.id,
+          applicant_type: formData.applicantType,
+          employment_type: formData.employmentType,
+          income_1: parseFloat(formData.income1) || 0,
+          income_2: formData.income2 ? parseFloat(formData.income2) : null,
+          monthly_commitments: parseFloat(formData.monthlyCommitments) || 0,
+          deposit_amount: parseFloat(formData.depositAmount) || 0,
+          property_value: parseFloat(formData.propertyValue) || 0,
+          residency_status: formData.residencyStatus,
+          credit_history: formData.creditHistory,
+          first_time_buyer: formData.firstTimeBuyer,
+          desired_term: formData.desiredTerm[0],
+          phone: formData.phone || null,
+          email: formData.email || null,
+          borrowing_capacity_low: results.borrowingLow,
+          borrowing_capacity_high: results.borrowingHigh,
+          estimated_monthly_payment: results.monthlyPayment,
+          eligibility_score: results.eligibilityScore,
+        });
+      
+      if (error) throw error;
+      
+      setCalculatedResults(results);
+      setShowResults(true);
+      toast.success("Your eligibility data has been saved!");
+    } catch (error: any) {
+      console.error("Error saving pre-eligibility data:", error);
+      toast.error("Failed to save your data. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (showResults) {
-    const borrowingLow = 250000;
-    const borrowingHigh = 320000;
-    const monthlyPayment = 1450;
-    const eligibilityScore = 85;
-
     return (
       <div className="min-h-screen bg-background">
         <header className="border-b border-border bg-card">
@@ -68,7 +151,7 @@ const PreEligibility = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold text-primary mb-2">
-                  €{borrowingLow.toLocaleString()} - €{borrowingHigh.toLocaleString()}
+                  €{calculatedResults.borrowingLow.toLocaleString()} - €{calculatedResults.borrowingHigh.toLocaleString()}
                 </div>
                 <p className="text-sm text-muted-foreground">
                   Estimated range based on your income and commitments
@@ -82,7 +165,7 @@ const PreEligibility = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold text-secondary mb-2">
-                  €{monthlyPayment.toLocaleString()}
+                  €{calculatedResults.monthlyPayment.toLocaleString()}
                 </div>
                 <p className="text-sm text-muted-foreground">
                   Approximate monthly payment at 3.4% over {formData.desiredTerm[0]} years
@@ -97,16 +180,20 @@ const PreEligibility = () => {
             </CardHeader>
             <CardContent>
               <div className="flex items-center gap-4 mb-4">
-                <div className="text-5xl font-bold text-success">{eligibilityScore}%</div>
+                <div className="text-5xl font-bold text-success">{calculatedResults.eligibilityScore}%</div>
                 <div className="flex-1">
                   <div className="h-4 bg-muted rounded-full overflow-hidden">
                     <div
                       className="h-full bg-success"
-                      style={{ width: `${eligibilityScore}%` }}
+                      style={{ width: `${calculatedResults.eligibilityScore}%` }}
                     />
                   </div>
                   <p className="text-sm text-muted-foreground mt-2">
-                    Strong eligibility - You're likely to be approved by multiple lenders
+                    {calculatedResults.eligibilityScore >= 80 
+                      ? "Strong eligibility - You're likely to be approved by multiple lenders"
+                      : calculatedResults.eligibilityScore >= 60
+                      ? "Good eligibility - Several lenders may approve your application"
+                      : "Moderate eligibility - Consider improving your credit profile"}
                   </p>
                 </div>
               </div>
@@ -156,12 +243,12 @@ const PreEligibility = () => {
           </Card>
 
           <div className="text-center">
-            <Button size="lg" onClick={() => navigate("/signup")}>
+            <Button size="lg" onClick={() => navigate("/dashboard/client")}>
               <TrendingUp className="mr-2 h-5 w-5" />
-              Start Full Application
+              Go to Dashboard
             </Button>
             <p className="text-sm text-muted-foreground mt-4">
-              Create an account to continue with your mortgage application
+              Continue to your dashboard to complete your mortgage application
             </p>
           </div>
         </div>
@@ -177,12 +264,9 @@ const PreEligibility = () => {
             <Building2 className="h-8 w-8 text-primary" />
             <span className="text-xl font-bold">AI Mortgage Platform</span>
           </div>
-          <div className="flex gap-3">
-            <Button variant="ghost" onClick={() => navigate("/login")}>
-              Login
-            </Button>
-            <Button onClick={() => navigate("/signup")}>Sign Up</Button>
-          </div>
+          <Button variant="outline" onClick={() => navigate("/dashboard/client")}>
+            Go to Dashboard
+          </Button>
         </div>
       </header>
 
@@ -433,9 +517,18 @@ const PreEligibility = () => {
                 </div>
               </div>
 
-              <Button type="submit" size="lg" className="w-full">
-                Get My Quote
-                <ArrowRight className="ml-2 h-5 w-5" />
+              <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    Get My Quote
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </>
+                )}
               </Button>
             </form>
           </CardContent>
