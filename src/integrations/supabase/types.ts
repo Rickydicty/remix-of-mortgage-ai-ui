@@ -290,6 +290,78 @@ export type Database = {
           },
         ]
       }
+      pre_eligibility_data: {
+        Row: {
+          applicant_type: string
+          borrowing_capacity_high: number | null
+          borrowing_capacity_low: number | null
+          created_at: string
+          credit_history: string
+          deposit_amount: number
+          desired_term: number
+          eligibility_score: number | null
+          email: string | null
+          employment_type: string
+          estimated_monthly_payment: number | null
+          first_time_buyer: boolean
+          id: string
+          income_1: number
+          income_2: number | null
+          monthly_commitments: number
+          phone: string | null
+          property_value: number
+          residency_status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          applicant_type: string
+          borrowing_capacity_high?: number | null
+          borrowing_capacity_low?: number | null
+          created_at?: string
+          credit_history: string
+          deposit_amount: number
+          desired_term?: number
+          eligibility_score?: number | null
+          email?: string | null
+          employment_type: string
+          estimated_monthly_payment?: number | null
+          first_time_buyer?: boolean
+          id?: string
+          income_1: number
+          income_2?: number | null
+          monthly_commitments: number
+          phone?: string | null
+          property_value: number
+          residency_status: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          applicant_type?: string
+          borrowing_capacity_high?: number | null
+          borrowing_capacity_low?: number | null
+          created_at?: string
+          credit_history?: string
+          deposit_amount?: number
+          desired_term?: number
+          eligibility_score?: number | null
+          email?: string | null
+          employment_type?: string
+          estimated_monthly_payment?: number | null
+          first_time_buyer?: boolean
+          id?: string
+          income_1?: number
+          income_2?: number | null
+          monthly_commitments?: number
+          phone?: string | null
+          property_value?: number
+          residency_status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
