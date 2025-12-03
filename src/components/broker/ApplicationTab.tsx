@@ -2,10 +2,14 @@ import { Routes, Route, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { User, Briefcase, CreditCard, Home, FileText, CheckSquare, Building2, MessageSquare, History, Shield, AlertCircle } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import DocumentReview from "./DocumentReview";
 
 interface PreEligibilityData {
@@ -36,7 +40,6 @@ const ApplicationTab = () => {
   const [preEligibility, setPreEligibility] = useState<PreEligibilityData | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Get application ID from URL query parameter
   const searchParams = new URLSearchParams(location.search);
   const applicationId = searchParams.get('id');
 
@@ -52,7 +55,6 @@ const ApplicationTab = () => {
     if (!applicationId) return;
 
     try {
-      // Fetch application
       const { data: appData, error: appError } = await supabase
         .from('applications')
         .select('*')
@@ -62,7 +64,6 @@ const ApplicationTab = () => {
       if (appError) throw appError;
       setApplication(appData);
 
-      // Fetch client profile and pre-eligibility data
       if (appData?.user_id) {
         const [profileResult, preEligibilityResult] = await Promise.all([
           supabase
@@ -93,40 +94,26 @@ const ApplicationTab = () => {
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case 'approved':
-      case 'aip_pending':
-        return 'bg-success/10 text-success border-success/20';
-      case 'pending_review':
-      case 'in_review':
-        return 'bg-warning/10 text-warning border-warning/20';
-      case 'pending':
-      case 'draft':
-        return 'bg-muted/10 text-muted-foreground border-muted/20';
-      case 'needs_documents':
-        return 'bg-destructive/10 text-destructive border-destructive/20';
-      default:
-        return 'bg-muted/10 text-muted-foreground border-muted/20';
-    }
-  };
+  // Row 1 tabs
+  const row1Tabs = [
+    { id: "security", label: "Additional Security" },
+    { id: "alternative", label: "Alternative Lending" },
+    { id: "declarations", label: "Declarations" },
+    { id: "docs", label: "Docs & Conditions" },
+    { id: "transactions", label: "Transactions" },
+    { id: "lender", label: "Select Lender" },
+    { id: "notes", label: "Notes and Messages" },
+    { id: "log", label: "Action Log" },
+  ];
 
-  const subTabs = [
-    { id: "summary", label: "Summary", icon: FileText },
-    { id: "personal", label: "Personal", icon: User },
-    { id: "income", label: "Income", icon: Briefcase },
-    { id: "financial", label: "Financial", icon: CreditCard },
-    { id: "mortgage", label: "Mortgage", icon: Home },
-    { id: "property", label: "Property", icon: Building2 },
-    { id: "docs", label: "Docs", icon: FileText },
-    { id: "declarations", label: "Declarations", icon: CheckSquare },
-    { id: "transactions", label: "Transactions", icon: History },
-    { id: "lender", label: "Select Lender", icon: Building2 },
-    { id: "notes", label: "Notes", icon: MessageSquare },
-    { id: "log", label: "Action Log", icon: History },
-    { id: "security", label: "Security", icon: Shield },
-    { id: "alternative", label: "Alternative", icon: AlertCircle },
-    { id: "tasks", label: "Tasks", icon: CheckSquare },
+  // Row 2 tabs (main tabs)
+  const row2Tabs = [
+    { id: "summary", label: "Summary" },
+    { id: "personal", label: "Personal Details" },
+    { id: "income", label: "Income & Employment" },
+    { id: "financial", label: "Financial & Credit History" },
+    { id: "mortgage", label: "Mortgage Details" },
+    { id: "property", label: "Property Details" },
   ];
 
   const currentPath = location.pathname;
@@ -140,42 +127,45 @@ const ApplicationTab = () => {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Client Header */}
-      <Card>
-        <CardContent className="pt-6">
-          {loading ? (
-            <div className="text-center py-4">Loading...</div>
-          ) : !applicationId || !application ? (
-            <div>
-              <h2 className="text-2xl font-bold">No Application Selected</h2>
-              <p className="text-muted-foreground">Select an application from the Web tab to view details</p>
-            </div>
-          ) : (
-            <div className="flex items-center justify-between">
-              <div className="space-y-2">
-                <h2 className="text-2xl font-bold">
-                  {profile?.full_name || profile?.email || 'Client'}
-                </h2>
-                <div className="flex gap-4 text-sm">
-                  <p className="text-muted-foreground">
-                    Application: <span className="font-semibold">{application.application_number}</span>
-                  </p>
-                  <p className="text-muted-foreground">
-                    Step: <span className="font-semibold">{application.current_step} of 6</span>
-                  </p>
-                  <Badge className={getStatusColor(application.status)}>
-                    {application.status?.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
-                  </Badge>
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <Button variant="outline">Export PDF</Button>
-                <Button>Submit to Lender</Button>
-              </div>
-            </div>
-          )}
-        </CardContent>
+    <div className="space-y-4">
+      {/* Tab Navigation - Two Rows */}
+      <Card className="overflow-hidden">
+        <div className="border-b border-border">
+          {/* Row 1 */}
+          <div className="flex flex-wrap bg-muted/30">
+            {row1Tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => navigate(`${basePath}/${tab.id}${applicationId ? `?id=${applicationId}` : ''}`)}
+                className={cn(
+                  "px-4 py-2 text-sm font-medium border-r border-b border-border transition-colors",
+                  isActive(tab.id)
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted/50 hover:bg-muted text-foreground"
+                )}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+          {/* Row 2 */}
+          <div className="flex flex-wrap bg-background">
+            {row2Tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => navigate(tab.id === "summary" ? `${basePath}${applicationId ? `?id=${applicationId}` : ''}` : `${basePath}/${tab.id}${applicationId ? `?id=${applicationId}` : ''}`)}
+                className={cn(
+                  "px-4 py-2 text-sm font-medium border-r border-border transition-colors",
+                  isActive(tab.id)
+                    ? "bg-primary text-primary-foreground"
+                    : "hover:bg-muted/50 text-foreground"
+                )}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
       </Card>
 
       {/* Document Review for pending_review status */}
@@ -188,432 +178,1118 @@ const ApplicationTab = () => {
         />
       )}
 
-      {/* Sub-Tab Navigation */}
-      <Card>
-        <CardContent className="pt-4">
-          <div className="flex flex-wrap gap-2">
-            {subTabs.map((tab) => {
-              const Icon = tab.icon;
-              return (
-                <Button
-                  key={tab.id}
-                  variant={isActive(tab.id) ? "default" : "outline"}
-                  size="sm"
-                  onClick={() =>
-                    navigate(tab.id === "summary" ? basePath : `${basePath}/${tab.id}`)
-                  }
-                  className={cn("gap-2")}
-                >
-                  <Icon className="h-4 w-4" />
-                  {tab.label}
-                </Button>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Sub-Tab Content */}
-      <Routes>
-        <Route index element={<SummaryTab application={application} profile={profile} preEligibility={preEligibility} />} />
-        <Route path="summary" element={<SummaryTab application={application} profile={profile} preEligibility={preEligibility} />} />
-        <Route path="personal" element={<PersonalTab profile={profile} preEligibility={preEligibility} />} />
-        <Route path="income" element={<IncomeTab preEligibility={preEligibility} />} />
-        <Route path="financial" element={<FinancialTab preEligibility={preEligibility} />} />
-        <Route path="mortgage" element={<MortgageTab preEligibility={preEligibility} />} />
-        <Route path="property" element={<PropertyTab preEligibility={preEligibility} />} />
-        <Route path="docs" element={<DocsTab applicationId={applicationId} userId={application?.user_id} />} />
-        <Route path="declarations" element={<DeclarationsTab preEligibility={preEligibility} />} />
-        <Route path="transactions" element={<TransactionsTab />} />
-        <Route path="lender" element={<LenderTab />} />
-        <Route path="notes" element={<NotesTab />} />
-        <Route path="log" element={<ActionLogTab />} />
-        <Route path="security" element={<SecurityTab />} />
-        <Route path="alternative" element={<AlternativeTab />} />
-        <Route path="tasks" element={<TasksTab />} />
-      </Routes>
+      {/* Tab Content */}
+      {loading ? (
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-center py-4">Loading...</div>
+          </CardContent>
+        </Card>
+      ) : !applicationId || !application ? (
+        <Card>
+          <CardContent className="pt-6">
+            <h2 className="text-xl font-bold">No Application Selected</h2>
+            <p className="text-muted-foreground">Select an application from the Web tab to view details</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <Routes>
+          <Route index element={<SummaryTab application={application} profile={profile} preEligibility={preEligibility} />} />
+          <Route path="summary" element={<SummaryTab application={application} profile={profile} preEligibility={preEligibility} />} />
+          <Route path="personal" element={<PersonalTab profile={profile} preEligibility={preEligibility} />} />
+          <Route path="income" element={<IncomeTab preEligibility={preEligibility} />} />
+          <Route path="financial" element={<FinancialTab preEligibility={preEligibility} />} />
+          <Route path="mortgage" element={<MortgageTab preEligibility={preEligibility} />} />
+          <Route path="property" element={<PropertyTab preEligibility={preEligibility} />} />
+          <Route path="docs" element={<DocsTab applicationId={applicationId} userId={application?.user_id} />} />
+          <Route path="declarations" element={<DeclarationsTab preEligibility={preEligibility} />} />
+          <Route path="transactions" element={<TransactionsTab />} />
+          <Route path="lender" element={<LenderTab />} />
+          <Route path="notes" element={<NotesTab />} />
+          <Route path="log" element={<ActionLogTab />} />
+          <Route path="security" element={<SecurityTab />} />
+          <Route path="alternative" element={<AlternativeTab />} />
+        </Routes>
+      )}
     </div>
   );
 };
+
 // Summary Tab Component
 const SummaryTab = ({ application, profile, preEligibility }: { application: any; profile: any; preEligibility: PreEligibilityData | null }) => {
-  if (!application) {
-    return (
-      <Card>
-        <CardContent className="pt-6">
-          <p className="text-center text-muted-foreground">No application data available</p>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  const formatCurrency = (amount: number | null | undefined) => {
-    if (!amount) return 'Not provided';
-    return `€${amount.toLocaleString()}`;
+  const formatDate = (date: string | null) => {
+    if (!date) return '';
+    return new Date(date).toLocaleDateString('en-GB');
   };
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Application Summary</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid md:grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm text-muted-foreground">Client Name</p>
-              <p className="font-semibold">{profile?.full_name || 'Not provided'}</p>
+    <Card>
+      <CardContent className="pt-6 space-y-6">
+        {/* Main Info Grid */}
+        <div className="grid md:grid-cols-2 gap-x-12 gap-y-4">
+          <div className="space-y-4">
+            <div className="flex items-center gap-4">
+              <Label className="w-48 text-muted-foreground">Application ID:</Label>
+              <span className="font-medium">{application?.application_number || '[new application]'}</span>
             </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Email</p>
-              <p className="font-semibold">{profile?.email || preEligibility?.email || 'Not provided'}</p>
+            <div className="flex items-center gap-4">
+              <Label className="w-48 text-muted-foreground">Status:</Label>
+              <Select defaultValue={application?.status || 'draft'}>
+                <SelectTrigger className="w-64">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="draft">New Application</SelectItem>
+                  <SelectItem value="pending_review">Pending Review</SelectItem>
+                  <SelectItem value="in_review">In Review</SelectItem>
+                  <SelectItem value="aip_pending">AIP Pending</SelectItem>
+                  <SelectItem value="approved">Approved</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Phone</p>
-              <p className="font-semibold">{profile?.phone || preEligibility?.phone || 'Not provided'}</p>
+            <div className="flex items-center gap-4">
+              <Label className="w-48 text-muted-foreground">Provider, Product:</Label>
+              <span className="text-muted-foreground">[not selected]</span>
             </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Application Number</p>
-              <p className="font-semibold">{application.application_number}</p>
+            <div className="flex items-center gap-4">
+              <Label className="w-48 text-muted-foreground">BINS Underwriter:</Label>
+              <Input className="w-64" placeholder="" />
             </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Current Step</p>
-              <p className="font-semibold">Step {application.current_step} of 6</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Status</p>
-              <p className="font-semibold">{application.status?.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Property Value</p>
-              <p className="font-semibold">{formatCurrency(preEligibility?.property_value)}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Loan Amount</p>
-              <p className="font-semibold">{formatCurrency(preEligibility ? preEligibility.property_value - preEligibility.deposit_amount : null)}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Created</p>
-              <p className="font-semibold">{new Date(application.created_at).toLocaleDateString()}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Last Updated</p>
-              <p className="font-semibold">{new Date(application.updated_at).toLocaleDateString()}</p>
+            <div className="flex items-center gap-4">
+              <Label className="w-48 text-muted-foreground">Projected Completion Date:</Label>
+              <Input className="w-40" type="date" />
             </div>
           </div>
-        </CardContent>
-      </Card>
-    </div>
+          <div className="space-y-4">
+            <div className="flex items-center gap-4">
+              <Label className="w-48 text-muted-foreground">Broker:</Label>
+              <span className="font-medium text-primary underline cursor-pointer">Rockcourt Financial Services</span>
+            </div>
+            <div className="flex items-center gap-4">
+              <Label className="w-48 text-muted-foreground">Financial Advisor:</Label>
+              <span className="font-medium">Kay Condon</span>
+            </div>
+            <div className="flex items-center gap-4">
+              <Label className="w-48 text-muted-foreground">Broker Tel No:</Label>
+              <Input className="w-40" defaultValue="012091955" />
+            </div>
+            <div className="flex items-center gap-4">
+              <Label className="w-48 text-muted-foreground">Broker Fax No:</Label>
+              <Input className="w-40" defaultValue="00000000" />
+            </div>
+            <div className="flex items-center gap-4">
+              <Label className="w-48 text-muted-foreground">BINS Administrator:</Label>
+              <Input className="w-64" placeholder="" />
+            </div>
+            <div className="flex items-center gap-4">
+              <Label className="w-48 text-muted-foreground">Date Paper Application Received:</Label>
+              <Input className="w-40" type="date" />
+            </div>
+            <div className="flex items-center gap-4">
+              <Label className="w-48 text-muted-foreground">Application Submitted Date:</Label>
+              <span className="font-medium">{formatDate(application?.created_at)}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Customers Section */}
+        <div>
+          <h3 className="font-semibold text-primary bg-primary/10 px-3 py-1 mb-2">⊿ Customers</h3>
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted/50">
+                <TableHead>Title</TableHead>
+                <TableHead>First Name</TableHead>
+                <TableHead>Surname</TableHead>
+                <TableHead>Home Phone</TableHead>
+                <TableHead>Mobile Phone</TableHead>
+                <TableHead>Date of Birth</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow>
+                <TableCell></TableCell>
+                <TableCell>{profile?.full_name?.split(' ')[0] || ''}</TableCell>
+                <TableCell>{profile?.full_name?.split(' ').slice(1).join(' ') || ''}</TableCell>
+                <TableCell></TableCell>
+                <TableCell>{profile?.phone || preEligibility?.phone || ''}</TableCell>
+                <TableCell></TableCell>
+              </TableRow>
+              {preEligibility?.applicant_type === 'joint' && (
+                <TableRow>
+                  <TableCell></TableCell>
+                  <TableCell></TableCell>
+                  <TableCell></TableCell>
+                  <TableCell></TableCell>
+                  <TableCell></TableCell>
+                  <TableCell></TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
+
+        {/* Properties Section */}
+        <div>
+          <h3 className="font-semibold text-primary bg-primary/10 px-3 py-1 mb-2">⊿ Properties</h3>
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted/50">
+                <TableHead>Address</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>New or Secondhand</TableHead>
+                <TableHead>Estimated Closing Date</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow>
+                <TableCell></TableCell>
+                <TableCell></TableCell>
+                <TableCell></TableCell>
+                <TableCell></TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex justify-center gap-4 pt-4">
+          <Button variant="outline">Print</Button>
+          <Button variant="outline">Save</Button>
+          <Button variant="outline">Generic Letter</Button>
+          <Button variant="outline">Create Application Copy</Button>
+        </div>
+
+        {/* Navigation */}
+        <div className="flex justify-end gap-2">
+          <Button variant="outline" size="sm">Previous</Button>
+          <Button variant="outline" size="sm">Next</Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 
 // Personal Tab Component
 const PersonalTab = ({ profile, preEligibility }: { profile: any; preEligibility: PreEligibilityData | null }) => {
-  const getResidencyLabel = (status: string | null | undefined) => {
-    if (!status) return 'Not provided';
-    const labels: Record<string, string> = {
-      'irish_citizen': 'Irish Citizen',
-      'eu_citizen': 'EU Citizen',
-      'non_eu_with_visa': 'Non-EU with Visa',
-      'other': 'Other'
-    };
-    return labels[status] || status;
-  };
+  const isJoint = preEligibility?.applicant_type === 'joint';
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Personal Details</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="grid md:grid-cols-2 gap-6">
-          <div>
-            <p className="text-sm text-muted-foreground">Full Name</p>
-            <p className="font-medium">{profile?.full_name || 'Not provided'}</p>
+      <CardContent className="pt-6">
+        <div className="grid md:grid-cols-2 gap-8">
+          {/* Applicant 1 */}
+          <div className="space-y-4">
+            <h3 className="font-bold text-primary text-lg">Applicant 1</h3>
+            <div className="space-y-3">
+              <div className="flex items-center gap-4">
+                <Label className="w-40 text-muted-foreground">Forenames<span className="text-destructive">*</span></Label>
+                <Input className="flex-1" defaultValue={profile?.full_name?.split(' ')[0] || ''} />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-40 text-muted-foreground">Surname<span className="text-destructive">*</span></Label>
+                <Input className="flex-1" defaultValue={profile?.full_name?.split(' ').slice(1).join(' ') || ''} />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-40 text-muted-foreground">Other/Previous Names</Label>
+                <Input className="flex-1" />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-40 text-muted-foreground">Gender</Label>
+                <Select>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="male">Male</SelectItem>
+                    <SelectItem value="female">Female</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-40 text-muted-foreground">Title</Label>
+                <Select>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="mr">Mr</SelectItem>
+                    <SelectItem value="mrs">Mrs</SelectItem>
+                    <SelectItem value="ms">Ms</SelectItem>
+                    <SelectItem value="miss">Miss</SelectItem>
+                    <SelectItem value="dr">Dr</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-40 text-muted-foreground">Date of Birth (dd/mm/yyyy)</Label>
+                <Input className="flex-1" type="date" />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-40 text-muted-foreground">Nationality</Label>
+                <Input className="flex-1" defaultValue="Irish" />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-40 text-muted-foreground">PPS Number</Label>
+                <Input className="flex-1" />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-40 text-muted-foreground">Marital Status</Label>
+                <Select>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="single">Single</SelectItem>
+                    <SelectItem value="married">Married</SelectItem>
+                    <SelectItem value="divorced">Divorced</SelectItem>
+                    <SelectItem value="widowed">Widowed</SelectItem>
+                    <SelectItem value="separated">Separated</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-40 text-muted-foreground">No. of Children</Label>
+                <Input className="w-20" type="number" />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-40 text-muted-foreground">Children's Ages</Label>
+                <Input className="flex-1" placeholder="e.g., 5, 8, 12" />
+              </div>
+            </div>
           </div>
-          <div>
-            <p className="text-sm text-muted-foreground">Email</p>
-            <p className="font-medium">{profile?.email || preEligibility?.email || 'Not provided'}</p>
+
+          {/* Applicant 2 */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-4">
+              <h3 className="font-bold text-primary text-lg">Applicant 2</h3>
+              <div className="flex items-center gap-4 ml-4">
+                <div className="flex items-center gap-2">
+                  <Checkbox id="enabled" checked={isJoint} />
+                  <Label htmlFor="enabled" className="text-sm">Enabled</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Checkbox id="guarantor" />
+                  <Label htmlFor="guarantor" className="text-sm">Guarantor</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Checkbox id="copyAddress" />
+                  <Label htmlFor="copyAddress" className="text-sm">Copy Address</Label>
+                </div>
+              </div>
+            </div>
+            <div className={cn("space-y-3", !isJoint && "opacity-50 pointer-events-none")}>
+              <div className="flex items-center gap-4">
+                <Label className="w-40 text-muted-foreground">Forenames<span className="text-destructive">*</span></Label>
+                <Input className="flex-1" />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-40 text-muted-foreground">Surname<span className="text-destructive">*</span></Label>
+                <Input className="flex-1" />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-40 text-muted-foreground">Other/Previous Names</Label>
+                <Input className="flex-1" />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-40 text-muted-foreground">Gender</Label>
+                <Select>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="male">Male</SelectItem>
+                    <SelectItem value="female">Female</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-40 text-muted-foreground">Title</Label>
+                <Select>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="mr">Mr</SelectItem>
+                    <SelectItem value="mrs">Mrs</SelectItem>
+                    <SelectItem value="ms">Ms</SelectItem>
+                    <SelectItem value="miss">Miss</SelectItem>
+                    <SelectItem value="dr">Dr</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-40 text-muted-foreground">Date of Birth (dd/mm/yyyy)</Label>
+                <Input className="flex-1" type="date" />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-40 text-muted-foreground">Nationality</Label>
+                <Input className="flex-1" defaultValue="Irish" />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-40 text-muted-foreground">PPS Number</Label>
+                <Input className="flex-1" />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-40 text-muted-foreground">Marital Status</Label>
+                <Select>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="single">Single</SelectItem>
+                    <SelectItem value="married">Married</SelectItem>
+                    <SelectItem value="divorced">Divorced</SelectItem>
+                    <SelectItem value="widowed">Widowed</SelectItem>
+                    <SelectItem value="separated">Separated</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-40 text-muted-foreground">No. of Children</Label>
+                <Input className="w-20" type="number" />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-40 text-muted-foreground">Children's Ages</Label>
+                <Input className="flex-1" placeholder="e.g., 5, 8, 12" />
+              </div>
+            </div>
           </div>
-          <div>
-            <p className="text-sm text-muted-foreground">Phone</p>
-            <p className="font-medium">{profile?.phone || preEligibility?.phone || 'Not provided'}</p>
-          </div>
-          <div>
-            <p className="text-sm text-muted-foreground">Applicant Type</p>
-            <p className="font-medium capitalize">{preEligibility?.applicant_type?.replace('_', ' ') || 'Not provided'}</p>
-          </div>
-          <div>
-            <p className="text-sm text-muted-foreground">Residency Status</p>
-            <p className="font-medium">{getResidencyLabel(preEligibility?.residency_status)}</p>
-          </div>
-          <div>
-            <p className="text-sm text-muted-foreground">First Time Buyer</p>
-            <p className="font-medium">{preEligibility?.first_time_buyer ? 'Yes' : preEligibility?.first_time_buyer === false ? 'No' : 'Not provided'}</p>
-          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex justify-center gap-4 pt-6 border-t mt-6">
+          <Button variant="outline">Applicant One & Two</Button>
+          <Button variant="outline">Applicant Three & Four</Button>
+          <Button variant="outline">Save</Button>
+        </div>
+        <div className="flex justify-end gap-2 mt-4">
+          <Button variant="outline" size="sm">Previous</Button>
+          <Button variant="outline" size="sm">Next</Button>
         </div>
       </CardContent>
     </Card>
   );
 };
 
+// Income Tab Component
 const IncomeTab = ({ preEligibility }: { preEligibility: PreEligibilityData | null }) => {
-  const formatCurrency = (amount: number | null | undefined) => {
-    if (!amount) return '€0';
-    return `€${amount.toLocaleString()}`;
-  };
-
-  const getEmploymentLabel = (type: string | null | undefined) => {
-    if (!type) return 'Not provided';
-    const labels: Record<string, string> = {
-      'paye': 'PAYE Employee',
-      'self_employed': 'Self Employed',
-      'contractor': 'Contractor',
-      'public_servant': 'Public Servant'
-    };
-    return labels[type] || type;
-  };
-
-  const totalIncome = (preEligibility?.income_1 || 0) + (preEligibility?.income_2 || 0);
-  const monthlyIncome = totalIncome / 12;
+  const isJoint = preEligibility?.applicant_type === 'joint';
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Income & Employment</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          <div className="p-4 bg-success/10 rounded-lg">
-            <h4 className="font-medium text-success mb-2">Total Annual Income: {formatCurrency(totalIncome)}</h4>
-            <p className="text-sm">Monthly: {formatCurrency(monthlyIncome)}</p>
-          </div>
-          <div className="grid md:grid-cols-2 gap-4">
-            <div className="p-4 border border-border rounded-lg">
-              <h4 className="font-medium mb-2">Applicant 1 Income</h4>
-              <p className="text-2xl font-bold">{formatCurrency(preEligibility?.income_1)}/year</p>
-              <p className="text-sm text-muted-foreground mt-1">
-                Employment: {getEmploymentLabel(preEligibility?.employment_type)}
-              </p>
-            </div>
-            {preEligibility?.income_2 && preEligibility.income_2 > 0 && (
-              <div className="p-4 border border-border rounded-lg">
-                <h4 className="font-medium mb-2">Applicant 2 Income</h4>
-                <p className="text-2xl font-bold">{formatCurrency(preEligibility.income_2)}/year</p>
+      <CardContent className="pt-6">
+        <p className="text-destructive text-center mb-4">Fill in personal details first</p>
+        <div className="grid md:grid-cols-2 gap-8">
+          {/* Applicant 1 */}
+          <div className="space-y-4">
+            <h3 className="font-bold text-primary text-lg">Applicant 1</h3>
+            <h4 className="font-semibold bg-primary/10 px-3 py-1">⊿ Current Income</h4>
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Label className="w-56 text-sm text-muted-foreground">Gross basic wage/salary per annum</Label>
+                <span className="text-muted-foreground">€</span>
+                <Input className="w-28" type="number" defaultValue={preEligibility?.income_1 || ''} />
+                <Select>
+                  <SelectTrigger className="w-36">
+                    <SelectValue placeholder="Income frequency" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="annual">Annual</SelectItem>
+                    <SelectItem value="monthly">Monthly</SelectItem>
+                    <SelectItem value="weekly">Weekly</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-            )}
-          </div>
-          {preEligibility?.borrowing_capacity_low && preEligibility?.borrowing_capacity_high && (
-            <div className="p-4 bg-primary/5 rounded-lg">
-              <h4 className="font-medium mb-2">Estimated Borrowing Capacity</h4>
-              <p className="text-lg">
-                {formatCurrency(preEligibility.borrowing_capacity_low)} - {formatCurrency(preEligibility.borrowing_capacity_high)}
-              </p>
+              <div className="flex items-center gap-2">
+                <Label className="w-56 text-sm text-muted-foreground">Overtime per annum</Label>
+                <span className="text-muted-foreground">€</span>
+                <Input className="w-28" type="number" />
+                <Select>
+                  <SelectTrigger className="w-36">
+                    <SelectValue placeholder="Income frequency" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="annual">Annual</SelectItem>
+                    <SelectItem value="monthly">Monthly</SelectItem>
+                    <SelectItem value="weekly">Weekly</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-2">
+                <Label className="w-56 text-sm text-muted-foreground">Bonuses per annum</Label>
+                <span className="text-muted-foreground">€</span>
+                <Input className="w-28" type="number" />
+                <Select>
+                  <SelectTrigger className="w-36">
+                    <SelectValue placeholder="Income frequency" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="annual">Annual</SelectItem>
+                    <SelectItem value="monthly">Monthly</SelectItem>
+                    <SelectItem value="weekly">Weekly</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-2">
+                <Label className="w-56 text-sm text-muted-foreground">Commissions per annum</Label>
+                <span className="text-muted-foreground">€</span>
+                <Input className="w-28" type="number" />
+                <Select>
+                  <SelectTrigger className="w-36">
+                    <SelectValue placeholder="Income frequency" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="annual">Annual</SelectItem>
+                    <SelectItem value="monthly">Monthly</SelectItem>
+                    <SelectItem value="weekly">Weekly</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-2">
+                <Label className="w-56 text-sm text-muted-foreground">Other income (non rental) per annum</Label>
+                <span className="text-muted-foreground">€</span>
+                <Input className="w-28" type="number" />
+                <Select>
+                  <SelectTrigger className="w-36">
+                    <SelectValue placeholder="Income frequency" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="annual">Annual</SelectItem>
+                    <SelectItem value="monthly">Monthly</SelectItem>
+                    <SelectItem value="weekly">Weekly</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-2">
+                <Label className="w-56 text-sm text-muted-foreground">Other Income Details</Label>
+                <Input className="flex-1" />
+              </div>
+              <div className="flex items-center gap-2">
+                <Label className="w-56 text-sm text-muted-foreground">Lodger income per annum</Label>
+                <span className="text-muted-foreground">€</span>
+                <Input className="w-28" type="number" />
+              </div>
+              <div className="flex items-center gap-2">
+                <Label className="w-56 text-sm text-muted-foreground">Residential investment income per annum</Label>
+                <span className="text-muted-foreground">€</span>
+                <Input className="w-28" type="number" />
+              </div>
+              <div className="flex items-center gap-2 pt-4">
+                <Label className="w-56 text-sm text-muted-foreground">Other Household Income (spouse income if not applicant)</Label>
+                <span className="text-muted-foreground">€</span>
+                <Input className="w-28" type="number" />
+              </div>
             </div>
-          )}
+          </div>
+
+          {/* Applicant 2 */}
+          <div className={cn("space-y-4", !isJoint && "opacity-50 pointer-events-none")}>
+            <h3 className="font-bold text-primary text-lg">Applicant 2</h3>
+            <h4 className="font-semibold bg-primary/10 px-3 py-1">⊿ Current Income</h4>
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Label className="w-56 text-sm text-muted-foreground">Gross basic wage/salary per annum</Label>
+                <span className="text-muted-foreground">€</span>
+                <Input className="w-28" type="number" defaultValue={preEligibility?.income_2 || ''} />
+                <Select>
+                  <SelectTrigger className="w-36">
+                    <SelectValue placeholder="Income frequency" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="annual">Annual</SelectItem>
+                    <SelectItem value="monthly">Monthly</SelectItem>
+                    <SelectItem value="weekly">Weekly</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-2">
+                <Label className="w-56 text-sm text-muted-foreground">Overtime per annum</Label>
+                <span className="text-muted-foreground">€</span>
+                <Input className="w-28" type="number" />
+                <Select>
+                  <SelectTrigger className="w-36">
+                    <SelectValue placeholder="Income frequency" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="annual">Annual</SelectItem>
+                    <SelectItem value="monthly">Monthly</SelectItem>
+                    <SelectItem value="weekly">Weekly</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-2">
+                <Label className="w-56 text-sm text-muted-foreground">Bonuses per annum</Label>
+                <span className="text-muted-foreground">€</span>
+                <Input className="w-28" type="number" />
+                <Select>
+                  <SelectTrigger className="w-36">
+                    <SelectValue placeholder="Income frequency" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="annual">Annual</SelectItem>
+                    <SelectItem value="monthly">Monthly</SelectItem>
+                    <SelectItem value="weekly">Weekly</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-2">
+                <Label className="w-56 text-sm text-muted-foreground">Commissions per annum</Label>
+                <span className="text-muted-foreground">€</span>
+                <Input className="w-28" type="number" />
+                <Select>
+                  <SelectTrigger className="w-36">
+                    <SelectValue placeholder="Income frequency" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="annual">Annual</SelectItem>
+                    <SelectItem value="monthly">Monthly</SelectItem>
+                    <SelectItem value="weekly">Weekly</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-2">
+                <Label className="w-56 text-sm text-muted-foreground">Other income (non rental) per annum</Label>
+                <span className="text-muted-foreground">€</span>
+                <Input className="w-28" type="number" />
+                <Select>
+                  <SelectTrigger className="w-36">
+                    <SelectValue placeholder="Income frequency" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="annual">Annual</SelectItem>
+                    <SelectItem value="monthly">Monthly</SelectItem>
+                    <SelectItem value="weekly">Weekly</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-2">
+                <Label className="w-56 text-sm text-muted-foreground">Other Income Details</Label>
+                <Input className="flex-1" />
+              </div>
+              <div className="flex items-center gap-2">
+                <Label className="w-56 text-sm text-muted-foreground">Lodger income per annum</Label>
+                <span className="text-muted-foreground">€</span>
+                <Input className="w-28" type="number" />
+              </div>
+              <div className="flex items-center gap-2">
+                <Label className="w-56 text-sm text-muted-foreground">Residential investment income per annum</Label>
+                <span className="text-muted-foreground">€</span>
+                <Input className="w-28" type="number" />
+              </div>
+              <div className="flex items-center gap-2 pt-4">
+                <Label className="w-56 text-sm text-muted-foreground">Other Household Income (spouse income if not applicant)</Label>
+                <span className="text-muted-foreground">€</span>
+                <Input className="w-28" type="number" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex justify-center gap-4 pt-6 border-t mt-6">
+          <Button variant="outline">Applicant One & Two</Button>
+          <Button variant="outline">Applicant Three & Four</Button>
+          <Button variant="outline">Save</Button>
+        </div>
+        <div className="flex justify-end gap-2 mt-4">
+          <Button variant="outline" size="sm">Previous</Button>
+          <Button variant="outline" size="sm">Next</Button>
         </div>
       </CardContent>
     </Card>
   );
 };
 
+// Financial Tab Component
 const FinancialTab = ({ preEligibility }: { preEligibility: PreEligibilityData | null }) => {
-  const formatCurrency = (amount: number | null | undefined) => {
-    if (!amount) return '€0';
-    return `€${amount.toLocaleString()}`;
-  };
-
-  const getCreditLabel = (history: string | null | undefined) => {
-    if (!history) return 'Not provided';
-    const labels: Record<string, string> = {
-      'excellent': 'Excellent',
-      'good': 'Good',
-      'fair': 'Fair',
-      'poor': 'Poor'
-    };
-    return labels[history] || history;
-  };
-
-  const getCreditColor = (history: string | null | undefined) => {
-    switch (history) {
-      case 'excellent': return 'text-success';
-      case 'good': return 'text-success';
-      case 'fair': return 'text-warning';
-      case 'poor': return 'text-destructive';
-      default: return 'text-muted-foreground';
-    }
-  };
-
-  const getCreditScore = (history: string | null | undefined) => {
-    switch (history) {
-      case 'excellent': return { score: 800, width: '95%' };
-      case 'good': return { score: 700, width: '80%' };
-      case 'fair': return { score: 600, width: '60%' };
-      case 'poor': return { score: 500, width: '40%' };
-      default: return { score: 0, width: '0%' };
-    }
-  };
-
-  const creditInfo = getCreditScore(preEligibility?.credit_history);
+  const isJoint = preEligibility?.applicant_type === 'joint';
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Financial & Credit Analysis</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid md:grid-cols-2 gap-4">
-          <div className="p-4 border border-border rounded-lg">
-            <h4 className="font-medium mb-2">Monthly Commitments</h4>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between pt-2 border-t border-border font-bold">
-                <span>Total Monthly Commitments</span>
-                <span>{formatCurrency(preEligibility?.monthly_commitments)}</span>
+      <CardContent className="pt-6">
+        <div className="grid md:grid-cols-2 gap-8">
+          {/* Applicant 1 */}
+          <div className="space-y-4">
+            <h3 className="font-bold text-primary text-lg">Applicant 1</h3>
+            <div className="space-y-3">
+              <div className="flex items-center gap-4">
+                <Label className="w-48 text-muted-foreground">Current Bank/Building Society</Label>
+                <Input className="flex-1" />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-48 text-muted-foreground text-right">Address Line 1</Label>
+                <Input className="flex-1" />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-48 text-muted-foreground text-right">Address Line 2</Label>
+                <Input className="flex-1" />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-48 text-muted-foreground text-right">Address Line 3</Label>
+                <Input className="flex-1" />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-48 text-muted-foreground text-right">County</Label>
+                <Select>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="dublin">Dublin</SelectItem>
+                    <SelectItem value="cork">Cork</SelectItem>
+                    <SelectItem value="galway">Galway</SelectItem>
+                    <SelectItem value="limerick">Limerick</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-48 text-muted-foreground text-right">Country</Label>
+                <Input className="flex-1" defaultValue="Ireland" />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-48 text-muted-foreground">Account Type</Label>
+                <Input className="flex-1" />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-48 text-muted-foreground">Account Number</Label>
+                <Input className="flex-1" />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-48 text-muted-foreground">Sort Code</Label>
+                <Input className="flex-1" />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-48 text-muted-foreground">How long have you held this account</Label>
+                <Input className="w-16" type="number" placeholder="" />
+                <span className="text-sm text-muted-foreground">years,</span>
+                <Input className="w-16" type="number" placeholder="" />
+                <span className="text-sm text-muted-foreground">months</span>
               </div>
             </div>
           </div>
-          <div className="p-4 border border-border rounded-lg">
-            <h4 className="font-medium mb-2">Credit History</h4>
-            <div className="flex items-center gap-4">
-              <div className={`text-4xl font-bold ${getCreditColor(preEligibility?.credit_history)}`}>
-                {creditInfo.score > 0 ? creditInfo.score : 'N/A'}
+
+          {/* Applicant 2 */}
+          <div className={cn("space-y-4", !isJoint && "opacity-50 pointer-events-none")}>
+            <h3 className="font-bold text-primary text-lg">Applicant 2</h3>
+            <div className="space-y-3">
+              <div className="flex items-center gap-4">
+                <Label className="w-48 text-muted-foreground">Current Bank/Building Society</Label>
+                <Input className="flex-1" />
               </div>
-              <div className="flex-1">
-                <div className="h-3 bg-muted rounded-full overflow-hidden">
-                  <div className={`h-full ${getCreditColor(preEligibility?.credit_history)} bg-current`} style={{ width: creditInfo.width }} />
-                </div>
-                <p className={`text-xs mt-1 ${getCreditColor(preEligibility?.credit_history)}`}>
-                  {getCreditLabel(preEligibility?.credit_history)}
-                </p>
+              <div className="flex items-center gap-4">
+                <Label className="w-48 text-muted-foreground text-right">Address Line 1</Label>
+                <Input className="flex-1" />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-48 text-muted-foreground text-right">Address Line 2</Label>
+                <Input className="flex-1" />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-48 text-muted-foreground text-right">Address Line 3</Label>
+                <Input className="flex-1" />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-48 text-muted-foreground text-right">County</Label>
+                <Select>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="dublin">Dublin</SelectItem>
+                    <SelectItem value="cork">Cork</SelectItem>
+                    <SelectItem value="galway">Galway</SelectItem>
+                    <SelectItem value="limerick">Limerick</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-48 text-muted-foreground text-right">Country</Label>
+                <Input className="flex-1" defaultValue="Ireland" />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-48 text-muted-foreground">Account Type</Label>
+                <Input className="flex-1" />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-48 text-muted-foreground">Account Number</Label>
+                <Input className="flex-1" />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-48 text-muted-foreground">Sort Code</Label>
+                <Input className="flex-1" />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-48 text-muted-foreground">How long have you held this account</Label>
+                <Input className="w-16" type="number" placeholder="" />
+                <span className="text-sm text-muted-foreground">years,</span>
+                <Input className="w-16" type="number" placeholder="" />
+                <span className="text-sm text-muted-foreground">months</span>
               </div>
             </div>
           </div>
         </div>
-        {preEligibility?.eligibility_score && (
-          <div className="p-4 bg-primary/5 rounded-lg">
-            <h4 className="font-medium mb-2">Eligibility Score</h4>
-            <div className="flex items-center gap-4">
-              <div className="text-3xl font-bold text-primary">{preEligibility.eligibility_score}%</div>
-              <div className="flex-1">
-                <div className="h-3 bg-muted rounded-full overflow-hidden">
-                  <div className="h-full bg-primary" style={{ width: `${preEligibility.eligibility_score}%` }} />
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+
+        {/* Saving Account Information */}
+        <div className="mt-6">
+          <h4 className="font-semibold text-primary bg-primary/10 px-3 py-1 mb-2">⊿ Saving Account Information</h4>
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted/50">
+                <TableHead>Applicant</TableHead>
+                <TableHead>Financial Institution</TableHead>
+                <TableHead>A/C Number</TableHead>
+                <TableHead>Date Opened</TableHead>
+                <TableHead>Monthly Savings (€)</TableHead>
+                <TableHead>Balance (€)</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow>
+                <TableCell></TableCell>
+                <TableCell></TableCell>
+                <TableCell></TableCell>
+                <TableCell></TableCell>
+                <TableCell></TableCell>
+                <TableCell></TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex justify-center gap-4 pt-6 border-t mt-6">
+          <Button variant="outline">Applicant One & Two</Button>
+          <Button variant="outline">Applicant Three & Four</Button>
+          <Button variant="outline">Save</Button>
+        </div>
+        <div className="flex justify-end gap-2 mt-4">
+          <Button variant="outline" size="sm">Previous</Button>
+          <Button variant="outline" size="sm">Next</Button>
+        </div>
       </CardContent>
     </Card>
   );
 };
 
+// Mortgage Tab Component
 const MortgageTab = ({ preEligibility }: { preEligibility: PreEligibilityData | null }) => {
-  const formatCurrency = (amount: number | null | undefined) => {
-    if (!amount) return '€0';
-    return `€${amount.toLocaleString()}`;
-  };
-
-  const propertyValue = preEligibility?.property_value || 0;
-  const deposit = preEligibility?.deposit_amount || 0;
-  const loanAmount = propertyValue - deposit;
-  const ltv = propertyValue > 0 ? ((loanAmount / propertyValue) * 100).toFixed(1) : 0;
-  const depositPercent = propertyValue > 0 ? ((deposit / propertyValue) * 100).toFixed(1) : 0;
-
-  const totalIncome = (preEligibility?.income_1 || 0) + (preEligibility?.income_2 || 0);
-  const monthlyIncome = totalIncome / 12;
-  const monthlyRepayment = preEligibility?.estimated_monthly_payment || 0;
-  const affordabilityRatio = monthlyIncome > 0 ? ((monthlyRepayment / monthlyIncome) * 100).toFixed(1) : 0;
-
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Mortgage Details</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid md:grid-cols-3 gap-4">
-          <div className="p-4 bg-primary/5 rounded-lg">
-            <p className="text-sm text-muted-foreground mb-1">Property Value</p>
-            <p className="text-2xl font-bold">{formatCurrency(propertyValue)}</p>
+      <CardContent className="pt-6">
+        <p className="text-destructive text-center mb-4">Fill all the required fields</p>
+        <div className="grid md:grid-cols-2 gap-x-12 gap-y-4">
+          <div className="flex items-center gap-4">
+            <Label className="w-48 text-muted-foreground">Customer Type<span className="text-destructive">*</span></Label>
+            <Select>
+              <SelectTrigger className="flex-1 bg-yellow-50 border-yellow-300">
+                <SelectValue placeholder="Select" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ftb">First Time Buyer</SelectItem>
+                <SelectItem value="mover">Mover</SelectItem>
+                <SelectItem value="remortgage">Remortgage</SelectItem>
+                <SelectItem value="investor">Investor</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-          <div className="p-4 bg-primary/5 rounded-lg">
-            <p className="text-sm text-muted-foreground mb-1">Deposit</p>
-            <p className="text-2xl font-bold">{formatCurrency(deposit)} ({depositPercent}%)</p>
-          </div>
-          <div className="p-4 bg-primary/5 rounded-lg">
-            <p className="text-sm text-muted-foreground mb-1">Loan Amount</p>
-            <p className="text-2xl font-bold">{formatCurrency(loanAmount)}</p>
+          <div className="flex items-center gap-4">
+            <Label className="w-48 text-muted-foreground">Max approval required<span className="text-destructive">*</span></Label>
+            <Checkbox />
           </div>
         </div>
-        <div className="grid md:grid-cols-3 gap-4">
-          <div className="p-4 border border-border rounded-lg">
-            <h4 className="font-medium mb-3">LTV Ratio</h4>
+
+        <div className="grid md:grid-cols-2 gap-x-12 gap-y-4 mt-4">
+          <div className="space-y-2">
             <div className="flex items-center gap-4">
-              <div className={`text-3xl font-bold ${Number(ltv) <= 90 ? 'text-success' : 'text-warning'}`}>{ltv}%</div>
+              <Label className="w-48 text-muted-foreground">First Time Buyer</Label>
               <div className="flex-1">
-                <p className="text-sm text-muted-foreground">
-                  {preEligibility?.first_time_buyer ? 'First-time buyer' : 'Existing homeowner'}
-                </p>
+                <div className="flex items-center gap-8">
+                  <span className="w-32">First Applicant</span>
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-1">
+                      <input type="radio" name="ftb1" id="ftb1yes" defaultChecked={preEligibility?.first_time_buyer} />
+                      <Label htmlFor="ftb1yes">Yes</Label>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <input type="radio" name="ftb1" id="ftb1no" defaultChecked={!preEligibility?.first_time_buyer} />
+                      <Label htmlFor="ftb1no">No</Label>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-8">
+                  <span className="w-32">Second Applicant</span>
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-1">
+                      <input type="radio" name="ftb2" id="ftb2yes" />
+                      <Label htmlFor="ftb2yes">Yes</Label>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <input type="radio" name="ftb2" id="ftb2no" />
+                      <Label htmlFor="ftb2no">No</Label>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-8">
+                  <span className="w-32">Third Applicant</span>
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-1">
+                      <input type="radio" name="ftb3" id="ftb3yes" />
+                      <Label htmlFor="ftb3yes">Yes</Label>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <input type="radio" name="ftb3" id="ftb3no" />
+                      <Label htmlFor="ftb3no">No</Label>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-8">
+                  <span className="w-32">Fourth Applicant</span>
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-1">
+                      <input type="radio" name="ftb4" id="ftb4yes" />
+                      <Label htmlFor="ftb4yes">Yes</Label>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <input type="radio" name="ftb4" id="ftb4no" />
+                      <Label htmlFor="ftb4no">No</Label>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-          <div className="p-4 border border-border rounded-lg">
-            <h4 className="font-medium mb-3">Mortgage Term</h4>
-            <div className="text-3xl font-bold">{preEligibility?.desired_term || 25} years</div>
+        </div>
+
+        <div className="flex items-center gap-4 mt-4">
+          <Label className="text-muted-foreground">If joint application, is title of property to be in joint names</Label>
+          <Checkbox />
+        </div>
+
+        <div className="flex items-center gap-4 mt-4">
+          <Label className="w-48 text-muted-foreground">Purpose of Loan<span className="text-destructive">*</span></Label>
+          <Select>
+            <SelectTrigger className="w-64 bg-yellow-50 border-yellow-300">
+              <SelectValue placeholder="Select" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="purchase">Purchase</SelectItem>
+              <SelectItem value="remortgage">Remortgage</SelectItem>
+              <SelectItem value="equity">Equity Release</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Section One (Purchase Only) */}
+        <div className="mt-6">
+          <h4 className="font-semibold bg-primary/10 px-3 py-1 mb-4">⊿ Section One (Purchase Only)</h4>
+          <div className="grid md:grid-cols-2 gap-x-12 gap-y-4">
+            <div className="flex items-center gap-4">
+              <Label className="w-48 text-muted-foreground">Purchase price/cost of Building</Label>
+              <span className="text-muted-foreground">€</span>
+              <Input className="flex-1 bg-yellow-50 border-yellow-300" type="number" defaultValue={preEligibility?.property_value || ''} />
+            </div>
+            <div className="flex items-center gap-4">
+              <Label className="w-48 text-muted-foreground">Savings*</Label>
+              <span className="text-muted-foreground">€</span>
+              <Input className="flex-1" type="number" defaultValue={preEligibility?.deposit_amount || ''} />
+            </div>
+            <div className="flex items-center gap-4">
+              <Label className="w-48 text-muted-foreground">Site Price (if applicable)</Label>
+              <span className="text-muted-foreground">€</span>
+              <Input className="flex-1" type="number" />
+            </div>
+            <div className="flex items-center gap-4">
+              <Label className="w-48 text-muted-foreground">Grant</Label>
+              <span className="text-muted-foreground">€</span>
+              <Input className="flex-1" type="number" />
+            </div>
+            <div className="flex items-center gap-4">
+              <Label className="w-48 text-muted-foreground">Legal & stamp duty (if applicable)</Label>
+              <span className="text-muted-foreground">€</span>
+              <Input className="flex-1" type="number" />
+            </div>
+            <div className="flex items-center gap-4">
+              <Label className="w-48 text-muted-foreground">Gifts</Label>
+              <span className="text-muted-foreground">€</span>
+              <Input className="flex-1" type="number" />
+            </div>
           </div>
-          <div className="p-4 border border-border rounded-lg">
-            <h4 className="font-medium mb-3">Est. Monthly Payment</h4>
-            <div className="text-3xl font-bold text-primary">{formatCurrency(monthlyRepayment)}</div>
-            <p className="text-sm text-muted-foreground mt-1">
-              Affordability: {affordabilityRatio}%
-            </p>
-          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex justify-center gap-4 pt-6 border-t mt-6">
+          <Button variant="outline">Save</Button>
+        </div>
+        <div className="flex justify-end gap-2 mt-4">
+          <Button variant="outline" size="sm">Previous</Button>
+          <Button variant="outline" size="sm">Next</Button>
         </div>
       </CardContent>
     </Card>
   );
 };
 
+// Property Tab Component
 const PropertyTab = ({ preEligibility }: { preEligibility: PreEligibilityData | null }) => {
-  const formatCurrency = (amount: number | null | undefined) => {
-    if (!amount) return '€0';
-    return `€${amount.toLocaleString()}`;
-  };
-
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Property Details</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid md:grid-cols-2 gap-6">
-          <div>
-            <p className="text-sm text-muted-foreground">Purchase Price</p>
-            <p className="font-medium">{formatCurrency(preEligibility?.property_value)}</p>
+      <CardContent className="pt-6">
+        <h4 className="font-semibold text-primary bg-primary/10 px-3 py-1 mb-4">⊿ Property</h4>
+        <div className="grid md:grid-cols-2 gap-x-12 gap-y-4">
+          <div className="space-y-4">
+            <div className="flex items-center gap-4">
+              <Label className="w-32 text-muted-foreground">Purchase Price</Label>
+              <Input className="flex-1" type="number" defaultValue={preEligibility?.property_value || ''} />
+            </div>
+            <div className="flex items-center gap-4">
+              <Label className="w-32 text-muted-foreground">Proposed Rent</Label>
+              <Input className="flex-1" type="number" />
+            </div>
           </div>
-          <div>
-            <p className="text-sm text-muted-foreground">Buyer Type</p>
-            <p className="font-medium">{preEligibility?.first_time_buyer ? 'First Time Buyer' : 'Existing Homeowner'}</p>
-          </div>
-          <div>
-            <p className="text-sm text-muted-foreground">Deposit Amount</p>
-            <p className="font-medium">{formatCurrency(preEligibility?.deposit_amount)}</p>
-          </div>
-          <div>
-            <p className="text-sm text-muted-foreground">Valuation Status</p>
-            <p className="font-medium text-warning">Pending</p>
+          <div className="space-y-4">
+            <div className="flex items-center gap-4">
+              <Label className="w-56 text-muted-foreground">Loan Amount For this Property</Label>
+              <Input className="flex-1" type="number" defaultValue={preEligibility ? preEligibility.property_value - preEligibility.deposit_amount : ''} />
+            </div>
+            <div className="flex items-center gap-4">
+              <Label className="w-56 text-muted-foreground">Will this property be used as security on this loan?</Label>
+              <Checkbox />
+            </div>
+            <div className="flex items-center gap-4">
+              <Label className="w-56 text-muted-foreground">Security Strength</Label>
+              <Select>
+                <SelectTrigger className="flex-1">
+                  <SelectValue placeholder="Select" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="strong">Strong</SelectItem>
+                  <SelectItem value="average">Average</SelectItem>
+                  <SelectItem value="weak">Weak</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
-        <div className="p-4 bg-muted rounded-lg">
-          <h4 className="font-medium mb-2">Note</h4>
-          <p className="text-sm text-muted-foreground">
-            Property address and detailed information will be added once provided by the client.
-          </p>
+
+        {/* Address */}
+        <div className="grid md:grid-cols-2 gap-x-12 gap-y-4 mt-6">
+          <div className="space-y-4">
+            <div className="flex items-center gap-4">
+              <Label className="w-32 text-muted-foreground text-right">Address Line 1</Label>
+              <Input className="flex-1" />
+            </div>
+            <div className="flex items-center gap-4">
+              <Label className="w-32 text-muted-foreground text-right">Address Line 2</Label>
+              <Input className="flex-1" />
+            </div>
+            <div className="flex items-center gap-4">
+              <Label className="w-32 text-muted-foreground text-right">Address Line 3</Label>
+              <Input className="flex-1" />
+            </div>
+            <div className="flex items-center gap-4">
+              <Label className="w-32 text-muted-foreground text-right">County</Label>
+              <Select>
+                <SelectTrigger className="flex-1">
+                  <SelectValue placeholder="Select" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="dublin">Dublin</SelectItem>
+                  <SelectItem value="cork">Cork</SelectItem>
+                  <SelectItem value="galway">Galway</SelectItem>
+                  <SelectItem value="limerick">Limerick</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center gap-4">
+              <Label className="w-32 text-muted-foreground text-right">Country</Label>
+              <Input className="flex-1" defaultValue="Ireland" />
+            </div>
+          </div>
+          <div className="space-y-4">
+            <div className="flex items-center gap-4">
+              <Label className="w-56 text-muted-foreground">Type of Property<span className="text-destructive">*</span></Label>
+              <Select>
+                <SelectTrigger className="flex-1">
+                  <SelectValue placeholder="Select" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="detached">Detached House</SelectItem>
+                  <SelectItem value="semi-detached">Semi-Detached House</SelectItem>
+                  <SelectItem value="terraced">Terraced House</SelectItem>
+                  <SelectItem value="apartment">Apartment</SelectItem>
+                  <SelectItem value="bungalow">Bungalow</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center gap-4">
+              <Label className="w-56 text-muted-foreground">Estimated completion/closing date</Label>
+              <Input className="flex-1" type="date" />
+            </div>
+            <div className="flex items-center gap-4">
+              <Label className="w-56 text-muted-foreground">New Property</Label>
+              <Checkbox />
+            </div>
+            <div className="flex items-center gap-4">
+              <Label className="w-56 text-muted-foreground">Number of floors in block</Label>
+              <Input className="w-20" type="number" />
+            </div>
+            <div className="flex items-center gap-4">
+              <Label className="w-56 text-muted-foreground">Estimated Value</Label>
+              <span className="text-muted-foreground">€</span>
+              <Input className="flex-1" type="number" defaultValue={preEligibility?.property_value || ''} />
+            </div>
+          </div>
+        </div>
+
+        {/* Number of Rooms */}
+        <div className="mt-6">
+          <h4 className="font-semibold text-primary bg-primary/10 px-3 py-1 mb-4">⊿ Number of Rooms</h4>
+          <div className="grid md:grid-cols-2 gap-x-12 gap-y-4">
+            <div className="flex items-center gap-4">
+              <Label className="w-32 text-muted-foreground">Living rooms</Label>
+              <Input className="w-20" type="number" />
+            </div>
+            <div className="flex items-center gap-4">
+              <Label className="w-32 text-muted-foreground">Dining rooms</Label>
+              <Input className="w-20" type="number" />
+            </div>
+            <div className="flex items-center gap-4">
+              <Label className="w-32 text-muted-foreground">Bedrooms</Label>
+              <Input className="w-20" type="number" />
+            </div>
+            <div className="flex items-center gap-4">
+              <Label className="w-32 text-muted-foreground">Bathrooms</Label>
+              <Input className="w-20" type="number" />
+            </div>
+          </div>
+        </div>
+
+        {/* Pagination and Actions */}
+        <div className="flex items-center justify-between mt-6 border-t pt-4">
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm">|&lt;</Button>
+            <Button variant="outline" size="sm">&lt;</Button>
+            <span className="text-sm">1 of 1</span>
+            <Button variant="outline" size="sm">&gt;</Button>
+            <Button variant="outline" size="sm">&gt;|</Button>
+            <Button variant="outline" size="sm">+</Button>
+            <Button variant="outline" size="sm">×</Button>
+            <Button variant="outline">Save</Button>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm">Previous</Button>
+            <Button variant="outline" size="sm">Next</Button>
+          </div>
         </div>
       </CardContent>
     </Card>
   );
 };
 
+// Docs Tab
 const DocsTab = ({ applicationId, userId }: { applicationId: string | null; userId: string | null }) => {
   if (!applicationId || !userId) {
     return (
@@ -635,6 +1311,7 @@ const DocsTab = ({ applicationId, userId }: { applicationId: string | null; user
   );
 };
 
+// Declarations Tab
 const DeclarationsTab = ({ preEligibility }: { preEligibility: PreEligibilityData | null }) => (
   <Card>
     <CardHeader>
@@ -662,47 +1339,47 @@ const DeclarationsTab = ({ preEligibility }: { preEligibility: PreEligibilityDat
   </Card>
 );
 
+// Transactions Tab
 const TransactionsTab = () => (
   <Card>
     <CardHeader>
       <CardTitle>Categorized Transactions - AI Parsed</CardTitle>
     </CardHeader>
     <CardContent>
-      <div className="border border-border rounded-lg overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-muted">
-            <tr>
-              <th className="p-3 text-left">Date</th>
-              <th className="p-3 text-left">Description</th>
-              <th className="p-3 text-left">Category</th>
-              <th className="p-3 text-right">Amount</th>
-            </tr>
-          </thead>
-          <tbody>
-            {[
-              { date: "Dec 1", desc: "Salary Credit", cat: "Income", amount: "+€3,792" },
-              { date: "Dec 2", desc: "Rent Payment", cat: "Housing", amount: "-€1,200" },
-              { date: "Dec 5", desc: "Tesco Groceries", cat: "Food", amount: "-€85" },
-              { date: "Dec 8", desc: "Paddy Power", cat: "Gambling ⚠", amount: "-€50" },
-            ].map((tx, i) => (
-              <tr key={i} className="border-t border-border">
-                <td className="p-3">{tx.date}</td>
-                <td className="p-3">{tx.desc}</td>
-                <td className="p-3">
-                  <span className={tx.cat.includes("⚠") ? "text-warning" : ""}>{tx.cat}</span>
-                </td>
-                <td className={`p-3 text-right font-medium ${tx.amount.startsWith("+") ? "text-success" : ""}`}>
-                  {tx.amount}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <Table>
+        <TableHeader>
+          <TableRow className="bg-muted/50">
+            <TableHead>Date</TableHead>
+            <TableHead>Description</TableHead>
+            <TableHead>Category</TableHead>
+            <TableHead className="text-right">Amount</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {[
+            { date: "Dec 1", desc: "Salary Credit", cat: "Income", amount: "+€3,792" },
+            { date: "Dec 2", desc: "Rent Payment", cat: "Housing", amount: "-€1,200" },
+            { date: "Dec 5", desc: "Tesco Groceries", cat: "Food", amount: "-€85" },
+            { date: "Dec 8", desc: "Paddy Power", cat: "Gambling ⚠", amount: "-€50" },
+          ].map((tx, i) => (
+            <TableRow key={i}>
+              <TableCell>{tx.date}</TableCell>
+              <TableCell>{tx.desc}</TableCell>
+              <TableCell>
+                <span className={tx.cat.includes("⚠") ? "text-warning" : ""}>{tx.cat}</span>
+              </TableCell>
+              <TableCell className={`text-right font-medium ${tx.amount.startsWith("+") ? "text-success" : ""}`}>
+                {tx.amount}
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </CardContent>
   </Card>
 );
 
+// Lender Tab
 const LenderTab = () => (
   <Card>
     <CardHeader>
@@ -729,6 +1406,7 @@ const LenderTab = () => (
   </Card>
 );
 
+// Notes Tab
 const NotesTab = () => (
   <Card>
     <CardHeader>
@@ -754,6 +1432,7 @@ const NotesTab = () => (
   </Card>
 );
 
+// Action Log Tab
 const ActionLogTab = () => (
   <Card>
     <CardHeader>
@@ -779,6 +1458,7 @@ const ActionLogTab = () => (
   </Card>
 );
 
+// Security Tab
 const SecurityTab = () => (
   <Card>
     <CardHeader>
@@ -790,6 +1470,7 @@ const SecurityTab = () => (
   </Card>
 );
 
+// Alternative Tab
 const AlternativeTab = () => (
   <Card>
     <CardHeader>
@@ -802,25 +1483,6 @@ const AlternativeTab = () => (
       <div className="p-3 border border-border rounded-lg">
         <h4 className="font-medium">Finance Ireland</h4>
         <p className="text-sm text-muted-foreground">Higher rates but flexible criteria</p>
-      </div>
-    </CardContent>
-  </Card>
-);
-
-const TasksTab = () => (
-  <Card>
-    <CardHeader>
-      <CardTitle>Tasks & Admin - Compliance Summary</CardTitle>
-    </CardHeader>
-    <CardContent className="space-y-3">
-      <div className="p-3 bg-success/10 rounded-lg">
-        <p className="text-sm font-medium text-success">✓ AML checks completed</p>
-      </div>
-      <div className="p-3 bg-success/10 rounded-lg">
-        <p className="text-sm font-medium text-success">✓ Data protection acknowledged</p>
-      </div>
-      <div className="p-3 bg-warning/10 rounded-lg">
-        <p className="text-sm font-medium text-warning">○ Final sign-off pending</p>
       </div>
     </CardContent>
   </Card>
