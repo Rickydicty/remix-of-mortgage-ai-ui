@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import DocumentReview from "./DocumentReview";
 
@@ -1289,144 +1290,233 @@ const PropertyTab = ({ preEligibility }: { preEligibility: PreEligibilityData | 
   );
 };
 
-// Docs Tab
+// Docs Tab - Docs & Conditions
 const DocsTab = ({ applicationId, userId }: { applicationId: string | null; userId: string | null }) => {
-  if (!applicationId || !userId) {
-    return (
-      <Card>
-        <CardContent className="pt-6">
-          <p className="text-center text-muted-foreground">No application selected</p>
-        </CardContent>
-      </Card>
-    );
-  }
+  const [documents, setDocuments] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (userId) {
+      fetchDocuments();
+    }
+  }, [userId]);
+
+  const fetchDocuments = async () => {
+    if (!userId) return;
+    const { data } = await supabase
+      .from('documents')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+    if (data) setDocuments(data);
+  };
 
   return (
-    <DocumentReview
-      clientId={userId}
-      clientName="Client"
-      applicationId={applicationId}
-      onUpdate={() => {}}
-    />
+    <Card>
+      <CardContent className="pt-6">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-primary/10">
+              <TableHead>Q No.</TableHead>
+              <TableHead>Document Name</TableHead>
+              <TableHead>Type</TableHead>
+              <TableHead>Applicant</TableHead>
+              <TableHead>Request Date</TableHead>
+              <TableHead>Request By</TableHead>
+              <TableHead>Received Date</TableHead>
+              <TableHead>Received</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {documents.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                  No documents found
+                </TableCell>
+              </TableRow>
+            ) : (
+              documents.map((doc, i) => (
+                <TableRow key={doc.id}>
+                  <TableCell>{i + 1}</TableCell>
+                  <TableCell>{doc.filename}</TableCell>
+                  <TableCell>{doc.document_type}</TableCell>
+                  <TableCell>Applicant 1</TableCell>
+                  <TableCell>{new Date(doc.created_at).toLocaleDateString('en-GB')}</TableCell>
+                  <TableCell>Broker</TableCell>
+                  <TableCell>{doc.status === 'approved' ? new Date(doc.updated_at).toLocaleDateString('en-GB') : ''}</TableCell>
+                  <TableCell>
+                    <Checkbox checked={doc.status === 'approved'} />
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+
+        <div className="flex justify-between mt-6">
+          <Button variant="outline">Add document requirement &gt;&gt;</Button>
+          <Button variant="outline">Save received documents and Submit</Button>
+        </div>
+
+        <div className="flex justify-end gap-2 mt-4">
+          <Button variant="outline" size="sm">Previous</Button>
+          <Button variant="outline" size="sm">Next</Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 
-// Declarations Tab
+// Declarations Tab - Comments & Declarations
 const DeclarationsTab = ({ preEligibility }: { preEligibility: PreEligibilityData | null }) => (
   <Card>
-    <CardHeader>
-      <CardTitle>Declarations & Checks</CardTitle>
-    </CardHeader>
-    <CardContent className="space-y-3">
-      <div className={`p-4 rounded-lg ${preEligibility?.credit_history === 'excellent' || preEligibility?.credit_history === 'good' ? 'bg-success/10' : 'bg-warning/10'}`}>
-        <p className={`text-sm font-medium ${preEligibility?.credit_history === 'excellent' || preEligibility?.credit_history === 'good' ? 'text-success' : 'text-warning'}`}>
-          {preEligibility?.credit_history === 'excellent' || preEligibility?.credit_history === 'good' 
-            ? '✓ Credit history declared as ' + (preEligibility?.credit_history || 'unknown')
-            : '⚠ Credit history declared as ' + (preEligibility?.credit_history || 'unknown') + ' - review recommended'}
-        </p>
+    <CardContent className="pt-6">
+      <h4 className="font-semibold text-primary bg-primary/10 px-3 py-1 mb-4">⊿ Comments & Declarations</h4>
+      <div className="space-y-4">
+        <div>
+          <Label className="text-muted-foreground">Broker Notes (MAX 5000 Characters)</Label>
+          <Textarea 
+            className="mt-2 min-h-[300px]" 
+            placeholder="Enter broker notes here..."
+            maxLength={5000}
+          />
+        </div>
       </div>
-      <div className="p-4 bg-success/10 rounded-lg">
-        <p className="text-sm font-medium text-success">
-          ✓ Residency status: {preEligibility?.residency_status?.replace('_', ' ') || 'Not provided'}
-        </p>
+
+      <div className="flex justify-center gap-4 pt-6 border-t mt-6">
+        <Button variant="outline">Save</Button>
       </div>
-      <div className="p-4 bg-success/10 rounded-lg">
-        <p className="text-sm font-medium text-success">
-          ✓ Employment type: {preEligibility?.employment_type?.replace('_', ' ') || 'Not provided'}
-        </p>
+      <div className="flex justify-end gap-2 mt-4">
+        <Button variant="outline" size="sm">Previous</Button>
+        <Button variant="outline" size="sm">Next</Button>
       </div>
     </CardContent>
   </Card>
 );
 
-// Transactions Tab
+// Transactions Tab - Transaction History
 const TransactionsTab = () => (
   <Card>
-    <CardHeader>
-      <CardTitle>Categorized Transactions - AI Parsed</CardTitle>
-    </CardHeader>
-    <CardContent>
-      <Table>
-        <TableHeader>
-          <TableRow className="bg-muted/50">
-            <TableHead>Date</TableHead>
-            <TableHead>Description</TableHead>
-            <TableHead>Category</TableHead>
-            <TableHead className="text-right">Amount</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {[
-            { date: "Dec 1", desc: "Salary Credit", cat: "Income", amount: "+€3,792" },
-            { date: "Dec 2", desc: "Rent Payment", cat: "Housing", amount: "-€1,200" },
-            { date: "Dec 5", desc: "Tesco Groceries", cat: "Food", amount: "-€85" },
-            { date: "Dec 8", desc: "Paddy Power", cat: "Gambling ⚠", amount: "-€50" },
-          ].map((tx, i) => (
-            <TableRow key={i}>
-              <TableCell>{tx.date}</TableCell>
-              <TableCell>{tx.desc}</TableCell>
-              <TableCell>
-                <span className={tx.cat.includes("⚠") ? "text-warning" : ""}>{tx.cat}</span>
-              </TableCell>
-              <TableCell className={`text-right font-medium ${tx.amount.startsWith("+") ? "text-success" : ""}`}>
-                {tx.amount}
-              </TableCell>
+    <CardContent className="pt-6">
+      <h4 className="font-semibold mb-4">Transaction History</h4>
+      <div className="min-h-[200px] border border-border rounded-lg p-4">
+        {/* Transaction history content area */}
+      </div>
+
+      <h4 className="font-semibold mt-6 mb-4">Broker Position</h4>
+      <div className="min-h-[200px] border border-border rounded-lg p-4">
+        {/* Broker position content area */}
+      </div>
+
+      <div className="flex justify-end gap-2 mt-4">
+        <Button variant="outline" size="sm">Previous</Button>
+        <Button variant="outline" size="sm">Next</Button>
+      </div>
+    </CardContent>
+  </Card>
+);
+
+// Lender Tab - Select Lender
+const LenderTab = () => {
+  const lenders = [
+    { id: 'haven', name: 'Haven' },
+    { id: 'ics', name: 'ICS (Dilosk)' },
+    { id: 'pepper', name: 'Pepper HomeLoans' },
+    { id: 'ptsb', name: 'Permanent TSB' },
+    { id: 'boi', name: 'Bank of Ireland' },
+    { id: 'aib', name: 'AIB' },
+  ];
+
+  return (
+    <Card>
+      <CardContent className="pt-6">
+        <p className="text-destructive text-center mb-4">
+          Application not complete (Personal Details, Income & Employment, Property Details, Mortgage Details)
+        </p>
+
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-primary/10">
+              <TableHead className="w-12">
+                <div className="flex items-center gap-2">
+                  <Checkbox />
+                  <span>(All)</span>
+                </div>
+              </TableHead>
+              <TableHead>Provider Name</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </CardContent>
-  </Card>
-);
+          </TableHeader>
+          <TableBody>
+            {lenders.map((lender) => (
+              <TableRow key={lender.id}>
+                <TableCell>
+                  <Checkbox />
+                </TableCell>
+                <TableCell>{lender.name}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
 
-// Lender Tab
-const LenderTab = () => (
-  <Card>
-    <CardHeader>
-      <CardTitle>Top 3 Lender Matches - AI Recommended</CardTitle>
-    </CardHeader>
-    <CardContent className="space-y-4">
-      {[
-        { name: "Bank of Ireland", match: 95, rate: "3.1%", notes: "Best for first-time buyers" },
-        { name: "AIB", match: 92, rate: "3.3%", notes: "Green mortgage discount available" },
-        { name: "Haven", match: 88, rate: "3.5%", notes: "Flexible overpayment options" },
-      ].map((lender) => (
-        <div key={lender.name} className="p-4 border border-border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer">
-          <div className="flex items-center justify-between mb-2">
-            <h4 className="font-bold text-lg">{lender.name}</h4>
-            <div className="flex items-center gap-3">
-              <span className="text-2xl font-bold text-primary">{lender.rate}</span>
-              <span className="text-success font-medium">{lender.match}% Match</span>
-            </div>
-          </div>
-          <p className="text-sm text-muted-foreground">{lender.notes}</p>
+        <p className="text-sm text-muted-foreground mt-4">
+          * Denotes that some fields must be changed before submitting the application to" the Lender.
+        </p>
+
+        <div className="mt-6">
+          <Button variant="outline">Submit to PIBA</Button>
         </div>
-      ))}
-    </CardContent>
-  </Card>
-);
 
-// Notes Tab
+        <div className="flex justify-end gap-2 mt-4">
+          <Button variant="outline" size="sm">Previous</Button>
+          <Button variant="outline" size="sm">Next</Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+// Notes Tab - Notes and Messages
 const NotesTab = () => (
   <Card>
-    <CardHeader>
-      <CardTitle>Notes & Messages - Unified Thread</CardTitle>
-    </CardHeader>
-    <CardContent className="space-y-4">
-      <div className="space-y-3">
-        {[
-          { from: "broker", message: "Requested clarification on March deposit", time: "2 hours ago" },
-          { from: "ai", message: "Detected gambling transaction - review recommended", time: "1 day ago" },
-          { from: "client", message: "Uploaded updated bank statement", time: "2 days ago" },
-        ].map((note, i) => (
-          <div key={i} className="p-3 border border-border rounded-lg">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-xs font-medium capitalize">{note.from}</span>
-              <span className="text-xs text-muted-foreground">{note.time}</span>
-            </div>
-            <p className="text-sm">{note.message}</p>
-          </div>
-        ))}
+    <CardContent className="pt-6">
+      <div className="flex gap-4">
+        <Textarea 
+          className="flex-1 min-h-[150px]" 
+          placeholder="Enter note..."
+        />
+        <div className="space-y-3">
+          <Select defaultValue="other">
+            <SelectTrigger className="w-40">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="other">Other</SelectItem>
+              <SelectItem value="general">General</SelectItem>
+              <SelectItem value="urgent">Urgent</SelectItem>
+              <SelectItem value="followup">Follow Up</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button variant="outline">Add note</Button>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-4 mt-4">
+        <div className="flex items-center gap-2">
+          <Checkbox id="broker" />
+          <Label htmlFor="broker">Broker</Label>
+        </div>
+        <div className="flex items-center gap-2">
+          <Checkbox id="bins" defaultChecked />
+          <Label htmlFor="bins">BINS</Label>
+        </div>
+        <div className="flex items-center gap-2">
+          <Checkbox id="lender" />
+          <Label htmlFor="lender">Lender</Label>
+        </div>
+      </div>
+
+      <div className="flex justify-end gap-2 mt-4">
+        <Button variant="outline" size="sm">Previous</Button>
+        <Button variant="outline" size="sm">Next</Button>
       </div>
     </CardContent>
   </Card>
@@ -1435,54 +1525,222 @@ const NotesTab = () => (
 // Action Log Tab
 const ActionLogTab = () => (
   <Card>
-    <CardHeader>
-      <CardTitle>Action Log - Timeline</CardTitle>
-    </CardHeader>
-    <CardContent className="space-y-2">
-      {[
-        { action: "AI verified payslips", by: "AI System", time: "1 hour ago" },
-        { action: "Broker requested bank clarification", by: "Sarah O'Connor", time: "2 hours ago" },
-        { action: "Client uploaded documents", by: "John Doe", time: "1 day ago" },
-        { action: "Application created", by: "Sarah O'Connor", time: "3 days ago" },
-      ].map((log, i) => (
-        <div key={i} className="flex items-start gap-3 p-3 border-l-2 border-primary pl-4">
-          <div className="flex-1">
-            <p className="text-sm font-medium">{log.action}</p>
-            <p className="text-xs text-muted-foreground">
-              {log.by} • {log.time}
-            </p>
-          </div>
-        </div>
-      ))}
+    <CardContent className="pt-6">
+      <p className="text-muted-foreground">No Action Log records found</p>
+
+      <div className="flex justify-end gap-2 mt-4">
+        <Button variant="outline" size="sm">Previous</Button>
+        <Button variant="outline" size="sm">Next</Button>
+      </div>
     </CardContent>
   </Card>
 );
 
-// Security Tab
+// Security Tab - Additional Security (Properties as security)
 const SecurityTab = () => (
   <Card>
-    <CardHeader>
-      <CardTitle>Additional Security</CardTitle>
-    </CardHeader>
-    <CardContent>
-      <p className="text-sm text-muted-foreground">No additional security or guarantor required for this application.</p>
+    <CardContent className="pt-6">
+      <h4 className="font-semibold text-primary bg-primary/10 px-3 py-1 mb-4">⊿ Properties as security</h4>
+      
+      <div className="space-y-4">
+        <div className="flex items-center gap-4">
+          <Label className="w-48 text-muted-foreground">Lending Institution<span className="text-destructive">*</span></Label>
+          <Select>
+            <SelectTrigger className="flex-1">
+              <SelectValue placeholder="Select" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="boi">Bank of Ireland</SelectItem>
+              <SelectItem value="aib">AIB</SelectItem>
+              <SelectItem value="ptsb">Permanent TSB</SelectItem>
+              <SelectItem value="haven">Haven</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex items-center gap-4">
+          <Label className="w-48 text-muted-foreground">Market Value<span className="text-destructive">*</span></Label>
+          <span className="text-muted-foreground">€</span>
+          <Input className="flex-1" type="number" defaultValue="0" />
+        </div>
+        <div className="flex items-center gap-4">
+          <Label className="w-48 text-muted-foreground">Current Loan Balance</Label>
+          <span className="text-muted-foreground">€</span>
+          <Input className="flex-1" type="number" defaultValue="0" />
+        </div>
+        <div className="flex items-center gap-4">
+          <Label className="w-48 text-muted-foreground">Current Monthly Repayment</Label>
+          <span className="text-muted-foreground">€</span>
+          <Input className="flex-1" type="number" defaultValue="0" />
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-4 mt-4">
+          <div className="space-y-4">
+            <div className="flex items-center gap-4">
+              <Label className="w-32 text-muted-foreground text-right">Address Line 1</Label>
+              <Input className="flex-1" />
+            </div>
+            <div className="flex items-center gap-4">
+              <Label className="w-32 text-muted-foreground text-right">Address Line 2</Label>
+              <Input className="flex-1" />
+            </div>
+            <div className="flex items-center gap-4">
+              <Label className="w-32 text-muted-foreground text-right">Address Line 3</Label>
+              <Input className="flex-1" />
+            </div>
+            <div className="flex items-center gap-4">
+              <Label className="w-32 text-muted-foreground text-right">County</Label>
+              <Select>
+                <SelectTrigger className="flex-1">
+                  <SelectValue placeholder="Select" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="dublin">Dublin</SelectItem>
+                  <SelectItem value="cork">Cork</SelectItem>
+                  <SelectItem value="galway">Galway</SelectItem>
+                  <SelectItem value="limerick">Limerick</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center gap-4">
+              <Label className="w-32 text-muted-foreground text-right">Country</Label>
+              <Input className="flex-1" defaultValue="Ireland" />
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-4 mt-4">
+          <Label className="w-48 text-muted-foreground">Type Of Security<span className="text-destructive">*</span></Label>
+          <Select>
+            <SelectTrigger className="flex-1">
+              <SelectValue placeholder="Select" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="residential">Residential Property</SelectItem>
+              <SelectItem value="commercial">Commercial Property</SelectItem>
+              <SelectItem value="land">Land</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {/* Pagination */}
+      <div className="flex items-center justify-center gap-2 mt-6">
+        <Button variant="outline" size="sm">|&lt;</Button>
+        <Button variant="outline" size="sm">&lt;</Button>
+        <span className="text-sm">0 of 0</span>
+        <Button variant="outline" size="sm">&gt;</Button>
+        <Button variant="outline" size="sm">&gt;|</Button>
+        <Button variant="outline" size="sm">+</Button>
+        <Button variant="outline" size="sm">×</Button>
+      </div>
+
+      <div className="flex justify-center gap-4 pt-6 border-t mt-6">
+        <Button variant="outline">Save</Button>
+      </div>
+      <div className="flex justify-end gap-2 mt-4">
+        <Button variant="outline" size="sm">Previous</Button>
+        <Button variant="outline" size="sm">Next</Button>
+      </div>
     </CardContent>
   </Card>
 );
 
-// Alternative Tab
+// Alternative Tab - Alternative Lending
 const AlternativeTab = () => (
   <Card>
-    <CardHeader>
-      <CardTitle>Alternative Lending Options</CardTitle>
-    </CardHeader>
-    <CardContent className="space-y-3">
-      <p className="text-sm text-muted-foreground">
-        If primary lenders decline, these alternative options are available:
-      </p>
-      <div className="p-3 border border-border rounded-lg">
-        <h4 className="font-medium">Finance Ireland</h4>
-        <p className="text-sm text-muted-foreground">Higher rates but flexible criteria</p>
+    <CardContent className="pt-6">
+      <h4 className="font-semibold text-primary bg-primary/10 px-3 py-1 mb-4">⊿ Please Complete this section if Alternative Lending is sought</h4>
+      
+      <div className="space-y-6">
+        {/* Question 1 */}
+        <div className="flex items-start gap-4">
+          <Label className="w-72 text-muted-foreground">Have you had a mortgage on any other property other than previously detailed?</Label>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1">
+              <input type="radio" name="otherMortgage" id="otherMortgageYes" />
+              <Label htmlFor="otherMortgageYes">Yes</Label>
+            </div>
+            <div className="flex items-center gap-1">
+              <input type="radio" name="otherMortgage" id="otherMortgageNo" defaultChecked />
+              <Label htmlFor="otherMortgageNo">No</Label>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-start gap-4">
+          <Label className="w-72 text-muted-foreground">If yes, please give Details</Label>
+          <Textarea className="flex-1 min-h-[80px]" />
+        </div>
+
+        {/* Question 2 */}
+        <div className="flex items-start gap-4">
+          <Label className="w-72 text-muted-foreground">Have there ever been any missed Repayments or revoked Credit Cards or Judgements?</Label>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1">
+              <input type="radio" name="missedRepayments" id="missedRepaymentsYes" />
+              <Label htmlFor="missedRepaymentsYes">Yes</Label>
+            </div>
+            <div className="flex items-center gap-1">
+              <input type="radio" name="missedRepayments" id="missedRepaymentsNo" defaultChecked />
+              <Label htmlFor="missedRepaymentsNo">No</Label>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <p className="text-muted-foreground">If yes, please specify by completing the following:</p>
+          <div className="space-y-2 ml-4">
+            <div className="flex items-center gap-4">
+              <span className="w-8">1.</span>
+              <Label className="w-80 text-muted-foreground">Current Mortgage - Highest Number of Installment Arrears in last 12 months</Label>
+              <Input className="w-20" type="number" defaultValue="0" />
+            </div>
+            <div className="flex items-center gap-4">
+              <span className="w-8">2.</span>
+              <Label className="w-80 text-muted-foreground">Current Mortgage - Highest Number of Installment Arrears in last 6 months</Label>
+              <Input className="w-20" type="number" defaultValue="0" />
+            </div>
+            <div className="flex items-center gap-4">
+              <span className="w-8">3.</span>
+              <Label className="w-80 text-muted-foreground">Other Facilities - Highest Number of Other Arrears in last 12 months</Label>
+              <Input className="w-20" type="number" defaultValue="0" />
+            </div>
+          </div>
+        </div>
+
+        {/* Question 3 */}
+        <div className="flex items-start gap-4">
+          <Label className="w-72 text-muted-foreground">Have any judgement proceedings relating to debt ever been brought against you or any Judgments made against you?</Label>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1">
+              <input type="radio" name="judgements" id="judgementsYes" />
+              <Label htmlFor="judgementsYes">Yes</Label>
+            </div>
+            <div className="flex items-center gap-1">
+              <input type="radio" name="judgements" id="judgementsNo" defaultChecked />
+              <Label htmlFor="judgementsNo">No</Label>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <p className="text-muted-foreground">If yes, please specify by completing the following:</p>
+          <div className="space-y-2 ml-4">
+            <div className="flex items-center gap-4">
+              <span className="w-8">1.</span>
+              <Label className="w-80 text-muted-foreground">Judgments - Total Value Judgments Outstanding in last 24 months</Label>
+              <Input className="w-20" type="number" defaultValue="0" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex justify-center gap-4 pt-6 border-t mt-6">
+        <Button variant="outline">Save</Button>
+      </div>
+      <div className="flex justify-end gap-2 mt-4">
+        <Button variant="outline" size="sm">Previous</Button>
+        <Button variant="outline" size="sm">Next</Button>
       </div>
     </CardContent>
   </Card>
