@@ -114,6 +114,320 @@ export type Database = {
           },
         ]
       }
+      application_form_data: {
+        Row: {
+          app1_address: string | null
+          app1_bonuses: number | null
+          app1_bonuses_frequency: string | null
+          app1_children_ages: string | null
+          app1_commissions: number | null
+          app1_commissions_frequency: string | null
+          app1_date_of_birth: string | null
+          app1_email: string | null
+          app1_forenames: string | null
+          app1_gender: string | null
+          app1_gross_salary: number | null
+          app1_lodger_income: number | null
+          app1_marital_status: string | null
+          app1_nationality: string | null
+          app1_no_of_children: number | null
+          app1_other_household_income: number | null
+          app1_other_income: number | null
+          app1_other_income_details: string | null
+          app1_other_income_frequency: string | null
+          app1_other_names: string | null
+          app1_overtime: number | null
+          app1_overtime_frequency: string | null
+          app1_phone: string | null
+          app1_pps_number: string | null
+          app1_residential_investment_income: number | null
+          app1_salary_frequency: string | null
+          app1_surname: string | null
+          app1_title: string | null
+          app1_years_at_address: number | null
+          app2_address: string | null
+          app2_bonuses: number | null
+          app2_bonuses_frequency: string | null
+          app2_children_ages: string | null
+          app2_commissions: number | null
+          app2_commissions_frequency: string | null
+          app2_date_of_birth: string | null
+          app2_email: string | null
+          app2_enabled: boolean | null
+          app2_forenames: string | null
+          app2_gender: string | null
+          app2_gross_salary: number | null
+          app2_is_guarantor: boolean | null
+          app2_lodger_income: number | null
+          app2_marital_status: string | null
+          app2_nationality: string | null
+          app2_no_of_children: number | null
+          app2_other_income: number | null
+          app2_other_income_details: string | null
+          app2_other_income_frequency: string | null
+          app2_other_names: string | null
+          app2_overtime: number | null
+          app2_overtime_frequency: string | null
+          app2_phone: string | null
+          app2_pps_number: string | null
+          app2_residential_investment_income: number | null
+          app2_salary_frequency: string | null
+          app2_surname: string | null
+          app2_title: string | null
+          app2_years_at_address: number | null
+          application_id: string | null
+          arrears_details: string | null
+          ber_rating: string | null
+          broker_notes: string | null
+          ccj_details: string | null
+          created_at: string
+          credit_cards: number | null
+          credit_history: string | null
+          deposit_amount: number | null
+          estimated_closing_date: string | null
+          existing_loans: number | null
+          first_time_buyer: boolean | null
+          has_arrears: boolean | null
+          has_ccj: boolean | null
+          has_judgements: boolean | null
+          has_missed_repayments: boolean | null
+          has_other_mortgage: boolean | null
+          help_to_buy: boolean | null
+          id: string
+          judgements_details: string | null
+          loan_amount: number | null
+          missed_repayments_details: string | null
+          monthly_commitments: number | null
+          mortgage_term: number | null
+          mortgage_type: string | null
+          other_mortgage_details: string | null
+          property_address: string | null
+          property_new_or_secondhand: string | null
+          property_type: string | null
+          property_value: number | null
+          savings: number | null
+          security_address: string | null
+          security_current_loan_balance: number | null
+          security_lending_institution: string | null
+          security_market_value: number | null
+          security_monthly_repayment: number | null
+          security_type: string | null
+          updated_at: string
+          user_id: string
+          year_built: number | null
+        }
+        Insert: {
+          app1_address?: string | null
+          app1_bonuses?: number | null
+          app1_bonuses_frequency?: string | null
+          app1_children_ages?: string | null
+          app1_commissions?: number | null
+          app1_commissions_frequency?: string | null
+          app1_date_of_birth?: string | null
+          app1_email?: string | null
+          app1_forenames?: string | null
+          app1_gender?: string | null
+          app1_gross_salary?: number | null
+          app1_lodger_income?: number | null
+          app1_marital_status?: string | null
+          app1_nationality?: string | null
+          app1_no_of_children?: number | null
+          app1_other_household_income?: number | null
+          app1_other_income?: number | null
+          app1_other_income_details?: string | null
+          app1_other_income_frequency?: string | null
+          app1_other_names?: string | null
+          app1_overtime?: number | null
+          app1_overtime_frequency?: string | null
+          app1_phone?: string | null
+          app1_pps_number?: string | null
+          app1_residential_investment_income?: number | null
+          app1_salary_frequency?: string | null
+          app1_surname?: string | null
+          app1_title?: string | null
+          app1_years_at_address?: number | null
+          app2_address?: string | null
+          app2_bonuses?: number | null
+          app2_bonuses_frequency?: string | null
+          app2_children_ages?: string | null
+          app2_commissions?: number | null
+          app2_commissions_frequency?: string | null
+          app2_date_of_birth?: string | null
+          app2_email?: string | null
+          app2_enabled?: boolean | null
+          app2_forenames?: string | null
+          app2_gender?: string | null
+          app2_gross_salary?: number | null
+          app2_is_guarantor?: boolean | null
+          app2_lodger_income?: number | null
+          app2_marital_status?: string | null
+          app2_nationality?: string | null
+          app2_no_of_children?: number | null
+          app2_other_income?: number | null
+          app2_other_income_details?: string | null
+          app2_other_income_frequency?: string | null
+          app2_other_names?: string | null
+          app2_overtime?: number | null
+          app2_overtime_frequency?: string | null
+          app2_phone?: string | null
+          app2_pps_number?: string | null
+          app2_residential_investment_income?: number | null
+          app2_salary_frequency?: string | null
+          app2_surname?: string | null
+          app2_title?: string | null
+          app2_years_at_address?: number | null
+          application_id?: string | null
+          arrears_details?: string | null
+          ber_rating?: string | null
+          broker_notes?: string | null
+          ccj_details?: string | null
+          created_at?: string
+          credit_cards?: number | null
+          credit_history?: string | null
+          deposit_amount?: number | null
+          estimated_closing_date?: string | null
+          existing_loans?: number | null
+          first_time_buyer?: boolean | null
+          has_arrears?: boolean | null
+          has_ccj?: boolean | null
+          has_judgements?: boolean | null
+          has_missed_repayments?: boolean | null
+          has_other_mortgage?: boolean | null
+          help_to_buy?: boolean | null
+          id?: string
+          judgements_details?: string | null
+          loan_amount?: number | null
+          missed_repayments_details?: string | null
+          monthly_commitments?: number | null
+          mortgage_term?: number | null
+          mortgage_type?: string | null
+          other_mortgage_details?: string | null
+          property_address?: string | null
+          property_new_or_secondhand?: string | null
+          property_type?: string | null
+          property_value?: number | null
+          savings?: number | null
+          security_address?: string | null
+          security_current_loan_balance?: number | null
+          security_lending_institution?: string | null
+          security_market_value?: number | null
+          security_monthly_repayment?: number | null
+          security_type?: string | null
+          updated_at?: string
+          user_id: string
+          year_built?: number | null
+        }
+        Update: {
+          app1_address?: string | null
+          app1_bonuses?: number | null
+          app1_bonuses_frequency?: string | null
+          app1_children_ages?: string | null
+          app1_commissions?: number | null
+          app1_commissions_frequency?: string | null
+          app1_date_of_birth?: string | null
+          app1_email?: string | null
+          app1_forenames?: string | null
+          app1_gender?: string | null
+          app1_gross_salary?: number | null
+          app1_lodger_income?: number | null
+          app1_marital_status?: string | null
+          app1_nationality?: string | null
+          app1_no_of_children?: number | null
+          app1_other_household_income?: number | null
+          app1_other_income?: number | null
+          app1_other_income_details?: string | null
+          app1_other_income_frequency?: string | null
+          app1_other_names?: string | null
+          app1_overtime?: number | null
+          app1_overtime_frequency?: string | null
+          app1_phone?: string | null
+          app1_pps_number?: string | null
+          app1_residential_investment_income?: number | null
+          app1_salary_frequency?: string | null
+          app1_surname?: string | null
+          app1_title?: string | null
+          app1_years_at_address?: number | null
+          app2_address?: string | null
+          app2_bonuses?: number | null
+          app2_bonuses_frequency?: string | null
+          app2_children_ages?: string | null
+          app2_commissions?: number | null
+          app2_commissions_frequency?: string | null
+          app2_date_of_birth?: string | null
+          app2_email?: string | null
+          app2_enabled?: boolean | null
+          app2_forenames?: string | null
+          app2_gender?: string | null
+          app2_gross_salary?: number | null
+          app2_is_guarantor?: boolean | null
+          app2_lodger_income?: number | null
+          app2_marital_status?: string | null
+          app2_nationality?: string | null
+          app2_no_of_children?: number | null
+          app2_other_income?: number | null
+          app2_other_income_details?: string | null
+          app2_other_income_frequency?: string | null
+          app2_other_names?: string | null
+          app2_overtime?: number | null
+          app2_overtime_frequency?: string | null
+          app2_phone?: string | null
+          app2_pps_number?: string | null
+          app2_residential_investment_income?: number | null
+          app2_salary_frequency?: string | null
+          app2_surname?: string | null
+          app2_title?: string | null
+          app2_years_at_address?: number | null
+          application_id?: string | null
+          arrears_details?: string | null
+          ber_rating?: string | null
+          broker_notes?: string | null
+          ccj_details?: string | null
+          created_at?: string
+          credit_cards?: number | null
+          credit_history?: string | null
+          deposit_amount?: number | null
+          estimated_closing_date?: string | null
+          existing_loans?: number | null
+          first_time_buyer?: boolean | null
+          has_arrears?: boolean | null
+          has_ccj?: boolean | null
+          has_judgements?: boolean | null
+          has_missed_repayments?: boolean | null
+          has_other_mortgage?: boolean | null
+          help_to_buy?: boolean | null
+          id?: string
+          judgements_details?: string | null
+          loan_amount?: number | null
+          missed_repayments_details?: string | null
+          monthly_commitments?: number | null
+          mortgage_term?: number | null
+          mortgage_type?: string | null
+          other_mortgage_details?: string | null
+          property_address?: string | null
+          property_new_or_secondhand?: string | null
+          property_type?: string | null
+          property_value?: number | null
+          savings?: number | null
+          security_address?: string | null
+          security_current_loan_balance?: number | null
+          security_lending_institution?: string | null
+          security_market_value?: number | null
+          security_monthly_repayment?: number | null
+          security_type?: string | null
+          updated_at?: string
+          user_id?: string
+          year_built?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "application_form_data_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       applications: {
         Row: {
           aip_affordability_data: Json | null
