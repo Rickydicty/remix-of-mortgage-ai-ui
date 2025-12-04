@@ -1,152 +1,342 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { Save, User, Briefcase, CreditCard, Home, FileText } from "lucide-react";
-
-interface PreEligibilityData {
-  applicant_type: string;
-  employment_type: string;
-  residency_status: string;
-  credit_history: string;
-  income_1: number;
-  income_2: number | null;
-  monthly_commitments: number;
-  property_value: number;
-  deposit_amount: number;
-  first_time_buyer: boolean;
-  desired_term: number;
-  phone: string | null;
-  email: string | null;
-}
-
-interface Profile {
-  full_name: string | null;
-  email: string | null;
-  phone: string | null;
-}
+import { Save } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface ClientApplicationTabProps {
   applicationId: string | null;
 }
 
+interface FormData {
+  // Personal - App 1
+  app1_title: string;
+  app1_forenames: string;
+  app1_surname: string;
+  app1_other_names: string;
+  app1_gender: string;
+  app1_date_of_birth: string;
+  app1_nationality: string;
+  app1_pps_number: string;
+  app1_marital_status: string;
+  app1_no_of_children: number;
+  app1_children_ages: string;
+  app1_phone: string;
+  app1_email: string;
+  app1_address: string;
+  app1_years_at_address: number;
+  
+  // Personal - App 2
+  app2_enabled: boolean;
+  app2_is_guarantor: boolean;
+  app2_title: string;
+  app2_forenames: string;
+  app2_surname: string;
+  app2_other_names: string;
+  app2_gender: string;
+  app2_date_of_birth: string;
+  app2_nationality: string;
+  app2_pps_number: string;
+  app2_marital_status: string;
+  app2_no_of_children: number;
+  app2_children_ages: string;
+  app2_phone: string;
+  app2_email: string;
+  app2_address: string;
+  app2_years_at_address: number;
+  
+  // Income - App 1
+  app1_gross_salary: number;
+  app1_salary_frequency: string;
+  app1_overtime: number;
+  app1_overtime_frequency: string;
+  app1_bonuses: number;
+  app1_bonuses_frequency: string;
+  app1_commissions: number;
+  app1_commissions_frequency: string;
+  app1_other_income: number;
+  app1_other_income_frequency: string;
+  app1_other_income_details: string;
+  app1_lodger_income: number;
+  app1_residential_investment_income: number;
+  app1_other_household_income: number;
+  
+  // Income - App 2
+  app2_gross_salary: number;
+  app2_salary_frequency: string;
+  app2_overtime: number;
+  app2_overtime_frequency: string;
+  app2_bonuses: number;
+  app2_bonuses_frequency: string;
+  app2_commissions: number;
+  app2_commissions_frequency: string;
+  app2_other_income: number;
+  app2_other_income_frequency: string;
+  app2_other_income_details: string;
+  app2_lodger_income: number;
+  app2_residential_investment_income: number;
+  
+  // Financial
+  monthly_commitments: number;
+  existing_loans: number;
+  credit_cards: number;
+  savings: number;
+  credit_history: string;
+  has_ccj: boolean;
+  ccj_details: string;
+  has_arrears: boolean;
+  arrears_details: string;
+  
+  // Mortgage
+  property_value: number;
+  deposit_amount: number;
+  loan_amount: number;
+  mortgage_term: number;
+  mortgage_type: string;
+  first_time_buyer: boolean;
+  help_to_buy: boolean;
+  
+  // Property
+  property_type: string;
+  property_address: string;
+  ber_rating: string;
+  year_built: number;
+  property_new_or_secondhand: string;
+  estimated_closing_date: string;
+  
+  // Alternative Lending
+  has_other_mortgage: boolean;
+  other_mortgage_details: string;
+  has_missed_repayments: boolean;
+  missed_repayments_details: string;
+  has_judgements: boolean;
+  judgements_details: string;
+  
+  // Additional Security
+  security_lending_institution: string;
+  security_market_value: number;
+  security_current_loan_balance: number;
+  security_monthly_repayment: number;
+  security_address: string;
+  security_type: string;
+  
+  // Notes
+  broker_notes: string;
+}
+
+const defaultFormData: FormData = {
+  app1_title: '',
+  app1_forenames: '',
+  app1_surname: '',
+  app1_other_names: '',
+  app1_gender: '',
+  app1_date_of_birth: '',
+  app1_nationality: 'Irish',
+  app1_pps_number: '',
+  app1_marital_status: '',
+  app1_no_of_children: 0,
+  app1_children_ages: '',
+  app1_phone: '',
+  app1_email: '',
+  app1_address: '',
+  app1_years_at_address: 0,
+  
+  app2_enabled: false,
+  app2_is_guarantor: false,
+  app2_title: '',
+  app2_forenames: '',
+  app2_surname: '',
+  app2_other_names: '',
+  app2_gender: '',
+  app2_date_of_birth: '',
+  app2_nationality: 'Irish',
+  app2_pps_number: '',
+  app2_marital_status: '',
+  app2_no_of_children: 0,
+  app2_children_ages: '',
+  app2_phone: '',
+  app2_email: '',
+  app2_address: '',
+  app2_years_at_address: 0,
+  
+  app1_gross_salary: 0,
+  app1_salary_frequency: 'annual',
+  app1_overtime: 0,
+  app1_overtime_frequency: 'annual',
+  app1_bonuses: 0,
+  app1_bonuses_frequency: 'annual',
+  app1_commissions: 0,
+  app1_commissions_frequency: 'annual',
+  app1_other_income: 0,
+  app1_other_income_frequency: 'annual',
+  app1_other_income_details: '',
+  app1_lodger_income: 0,
+  app1_residential_investment_income: 0,
+  app1_other_household_income: 0,
+  
+  app2_gross_salary: 0,
+  app2_salary_frequency: 'annual',
+  app2_overtime: 0,
+  app2_overtime_frequency: 'annual',
+  app2_bonuses: 0,
+  app2_bonuses_frequency: 'annual',
+  app2_commissions: 0,
+  app2_commissions_frequency: 'annual',
+  app2_other_income: 0,
+  app2_other_income_frequency: 'annual',
+  app2_other_income_details: '',
+  app2_lodger_income: 0,
+  app2_residential_investment_income: 0,
+  
+  monthly_commitments: 0,
+  existing_loans: 0,
+  credit_cards: 0,
+  savings: 0,
+  credit_history: '',
+  has_ccj: false,
+  ccj_details: '',
+  has_arrears: false,
+  arrears_details: '',
+  
+  property_value: 0,
+  deposit_amount: 0,
+  loan_amount: 0,
+  mortgage_term: 25,
+  mortgage_type: '',
+  first_time_buyer: false,
+  help_to_buy: false,
+  
+  property_type: '',
+  property_address: '',
+  ber_rating: '',
+  year_built: 0,
+  property_new_or_secondhand: '',
+  estimated_closing_date: '',
+  
+  has_other_mortgage: false,
+  other_mortgage_details: '',
+  has_missed_repayments: false,
+  missed_repayments_details: '',
+  has_judgements: false,
+  judgements_details: '',
+  
+  security_lending_institution: '',
+  security_market_value: 0,
+  security_current_loan_balance: 0,
+  security_monthly_repayment: 0,
+  security_address: '',
+  security_type: '',
+  
+  broker_notes: '',
+};
+
 const ClientApplicationTab = ({ applicationId }: ClientApplicationTabProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [activeSubTab, setActiveSubTab] = useState("personal");
-  const [preEligibilityData, setPreEligibilityData] = useState<PreEligibilityData | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const [activeTab, setActiveTab] = useState("personal");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [formData, setFormData] = useState<FormData>(defaultFormData);
+  const [formDataId, setFormDataId] = useState<string | null>(null);
 
-  // Form state
-  const [formData, setFormData] = useState({
-    // Personal Details
-    title: "Mr",
-    firstName: "",
-    middleName: "",
-    lastName: "",
-    dateOfBirth: "",
-    gender: "Male",
-    maritalStatus: "Single",
-    nationality: "Irish",
-    countryOfBirth: "Ireland",
-    ppsNumber: "",
-    phone: "",
-    email: "",
-    address: "",
-    yearsAtAddress: "",
-    
-    // Income & Employment
-    employmentStatus: "",
-    employerName: "",
-    jobTitle: "",
-    yearsEmployed: "",
-    grossIncome: "",
-    netIncome: "",
-    otherIncome: "",
-    
-    // Financial
-    monthlyExpenses: "",
-    existingLoans: "",
-    creditCards: "",
-    savings: "",
-    
-    // Mortgage
-    propertyValue: "",
-    depositAmount: "",
-    loanAmount: "",
-    term: "",
-    mortgageType: "First Time Buyer",
-    
-    // Property
-    propertyType: "House",
-    propertyAddress: "",
-    berRating: "",
-    yearBuilt: "",
-  });
+  // Tab configuration matching broker
+  const row1Tabs = [
+    { id: "security", label: "Additional Security" },
+    { id: "alternative", label: "Alternative Lending" },
+    { id: "declarations", label: "Declarations" },
+  ];
+
+  const row2Tabs = [
+    { id: "personal", label: "Personal Details" },
+    { id: "income", label: "Income & Employment" },
+    { id: "financial", label: "Financial & Credit History" },
+    { id: "mortgage", label: "Mortgage Details" },
+    { id: "property", label: "Property Details" },
+  ];
 
   useEffect(() => {
     fetchData();
-  }, [user]);
+  }, [user, applicationId]);
 
   const fetchData = async () => {
     if (!user) return;
 
     try {
-      // Fetch profile
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('full_name, email, phone')
-        .eq('id', user.id)
-        .single();
-
-      if (profileData) {
-        setProfile(profileData);
-        // Parse name
-        const nameParts = profileData.full_name?.split(' ') || [];
-        setFormData(prev => ({
-          ...prev,
-          firstName: nameParts[0] || '',
-          lastName: nameParts.slice(1).join(' ') || '',
-          email: profileData.email || '',
-          phone: profileData.phone || '',
-        }));
+      // Fetch existing form data
+      const query = supabase
+        .from('application_form_data')
+        .select('*')
+        .eq('user_id', user.id);
+      
+      if (applicationId) {
+        query.eq('application_id', applicationId);
       }
 
-      // Fetch pre-eligibility data
-      const { data: preElig } = await supabase
-        .from('pre_eligibility_data')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
+      const { data: formDataResult } = await query.order('created_at', { ascending: false }).limit(1).maybeSingle();
 
-      if (preElig) {
-        setPreEligibilityData(preElig);
-        setFormData(prev => ({
-          ...prev,
-          employmentStatus: preElig.employment_type || '',
-          grossIncome: preElig.income_1?.toString() || '',
-          otherIncome: preElig.income_2?.toString() || '',
-          monthlyExpenses: preElig.monthly_commitments?.toString() || '',
-          propertyValue: preElig.property_value?.toString() || '',
-          depositAmount: preElig.deposit_amount?.toString() || '',
-          loanAmount: (preElig.property_value - preElig.deposit_amount)?.toString() || '',
-          term: preElig.desired_term?.toString() || '',
-          mortgageType: preElig.first_time_buyer ? 'First Time Buyer' : 'Mover',
-          phone: preElig.phone || prev.phone,
-          email: preElig.email || prev.email,
-        }));
+      if (formDataResult) {
+        setFormDataId(formDataResult.id);
+        setFormData({
+          ...defaultFormData,
+          ...formDataResult,
+          app1_date_of_birth: formDataResult.app1_date_of_birth || '',
+          app2_date_of_birth: formDataResult.app2_date_of_birth || '',
+          estimated_closing_date: formDataResult.estimated_closing_date || '',
+        });
+      } else {
+        // Pre-populate from profile
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('full_name, email, phone')
+          .eq('id', user.id)
+          .single();
+
+        if (profileData) {
+          const nameParts = profileData.full_name?.split(' ') || [];
+          setFormData(prev => ({
+            ...prev,
+            app1_forenames: nameParts[0] || '',
+            app1_surname: nameParts.slice(1).join(' ') || '',
+            app1_email: profileData.email || '',
+            app1_phone: profileData.phone || '',
+          }));
+        }
+
+        // Pre-populate from pre-eligibility
+        const { data: preElig } = await supabase
+          .from('pre_eligibility_data')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (preElig) {
+          setFormData(prev => ({
+            ...prev,
+            app1_gross_salary: preElig.income_1 || 0,
+            app2_gross_salary: preElig.income_2 || 0,
+            app2_enabled: preElig.applicant_type === 'joint',
+            monthly_commitments: preElig.monthly_commitments || 0,
+            property_value: preElig.property_value || 0,
+            deposit_amount: preElig.deposit_amount || 0,
+            loan_amount: (preElig.property_value || 0) - (preElig.deposit_amount || 0),
+            mortgage_term: preElig.desired_term || 25,
+            first_time_buyer: preElig.first_time_buyer || false,
+            credit_history: preElig.credit_history || '',
+            app1_phone: preElig.phone || prev.app1_phone,
+            app1_email: preElig.email || prev.app1_email,
+          }));
+        }
       }
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -155,42 +345,40 @@ const ClientApplicationTab = ({ applicationId }: ClientApplicationTabProps) => {
     }
   };
 
-  const handleInputChange = (field: string, value: string) => {
+  const handleInputChange = (field: keyof FormData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   const handleSave = async () => {
+    if (!user) return;
     setSaving(true);
+
     try {
-      // Update profile
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({
-          full_name: `${formData.firstName} ${formData.lastName}`.trim(),
-          phone: formData.phone,
-        })
-        .eq('id', user?.id);
+      const dataToSave = {
+        user_id: user.id,
+        application_id: applicationId || null,
+        ...formData,
+        app1_date_of_birth: formData.app1_date_of_birth || null,
+        app2_date_of_birth: formData.app2_date_of_birth || null,
+        estimated_closing_date: formData.estimated_closing_date || null,
+      };
 
-      if (profileError) throw profileError;
+      if (formDataId) {
+        const { error } = await supabase
+          .from('application_form_data')
+          .update(dataToSave)
+          .eq('id', formDataId);
 
-      // Update pre-eligibility data if exists
-      if (preEligibilityData) {
-        const { error: preEligError } = await supabase
-          .from('pre_eligibility_data')
-          .update({
-            employment_type: formData.employmentStatus,
-            income_1: parseFloat(formData.grossIncome) || 0,
-            income_2: parseFloat(formData.otherIncome) || null,
-            monthly_commitments: parseFloat(formData.monthlyExpenses) || 0,
-            property_value: parseFloat(formData.propertyValue) || 0,
-            deposit_amount: parseFloat(formData.depositAmount) || 0,
-            desired_term: parseInt(formData.term) || 25,
-            phone: formData.phone,
-            email: formData.email,
-          })
-          .eq('user_id', user?.id);
+        if (error) throw error;
+      } else {
+        const { data, error } = await supabase
+          .from('application_form_data')
+          .insert(dataToSave)
+          .select()
+          .single();
 
-        if (preEligError) throw preEligError;
+        if (error) throw error;
+        setFormDataId(data.id);
       }
 
       toast({
@@ -231,542 +419,747 @@ const ClientApplicationTab = ({ applicationId }: ClientApplicationTabProps) => {
         </Button>
       </div>
 
-      {/* Sub Tabs */}
-      <Tabs value={activeSubTab} onValueChange={setActiveSubTab}>
-        <TabsList className="grid w-full grid-cols-5 mb-4">
-          <TabsTrigger value="personal" className="flex items-center gap-2">
-            <User className="h-4 w-4" />
-            Personal
-          </TabsTrigger>
-          <TabsTrigger value="income" className="flex items-center gap-2">
-            <Briefcase className="h-4 w-4" />
-            Income
-          </TabsTrigger>
-          <TabsTrigger value="financial" className="flex items-center gap-2">
-            <CreditCard className="h-4 w-4" />
-            Financial
-          </TabsTrigger>
-          <TabsTrigger value="mortgage" className="flex items-center gap-2">
-            <FileText className="h-4 w-4" />
-            Mortgage
-          </TabsTrigger>
-          <TabsTrigger value="property" className="flex items-center gap-2">
-            <Home className="h-4 w-4" />
-            Property
-          </TabsTrigger>
-        </TabsList>
+      {/* Tab Navigation - Two Rows */}
+      <Card className="overflow-hidden">
+        <div className="border-b border-border">
+          {/* Row 1 */}
+          <div className="flex flex-wrap bg-muted/30">
+            {row1Tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={cn(
+                  "px-4 py-2 text-sm font-medium border-r border-b border-border transition-colors",
+                  activeTab === tab.id
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted/50 hover:bg-muted text-foreground"
+                )}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+          {/* Row 2 */}
+          <div className="flex flex-wrap bg-background">
+            {row2Tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={cn(
+                  "px-4 py-2 text-sm font-medium border-r border-border transition-colors",
+                  activeTab === tab.id
+                    ? "bg-primary text-primary-foreground"
+                    : "hover:bg-muted/50 text-foreground"
+                )}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </Card>
 
-        {/* Personal Details Tab */}
-        <TabsContent value="personal">
-          <Card>
-            <CardHeader>
-              <CardTitle>Personal Details</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="space-y-2">
-                  <Label>Title</Label>
-                  <Select value={formData.title} onValueChange={(v) => handleInputChange('title', v)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Mr">Mr</SelectItem>
-                      <SelectItem value="Mrs">Mrs</SelectItem>
-                      <SelectItem value="Ms">Ms</SelectItem>
-                      <SelectItem value="Dr">Dr</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>First Name *</Label>
-                  <Input 
-                    value={formData.firstName} 
-                    onChange={(e) => handleInputChange('firstName', e.target.value)}
-                    placeholder="First Name"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Middle Name</Label>
-                  <Input 
-                    value={formData.middleName} 
-                    onChange={(e) => handleInputChange('middleName', e.target.value)}
-                    placeholder="Middle Name"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Last Name *</Label>
-                  <Input 
-                    value={formData.lastName} 
-                    onChange={(e) => handleInputChange('lastName', e.target.value)}
-                    placeholder="Last Name"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label>Date of Birth</Label>
-                  <Input 
-                    type="date"
-                    value={formData.dateOfBirth} 
-                    onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Gender</Label>
-                  <Select value={formData.gender} onValueChange={(v) => handleInputChange('gender', v)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Male">Male</SelectItem>
-                      <SelectItem value="Female">Female</SelectItem>
-                      <SelectItem value="Other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Marital Status</Label>
-                  <Select value={formData.maritalStatus} onValueChange={(v) => handleInputChange('maritalStatus', v)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Single">Single</SelectItem>
-                      <SelectItem value="Married">Married</SelectItem>
-                      <SelectItem value="Divorced">Divorced</SelectItem>
-                      <SelectItem value="Widowed">Widowed</SelectItem>
-                      <SelectItem value="Civil Partnership">Civil Partnership</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label>Nationality</Label>
-                  <Select value={formData.nationality} onValueChange={(v) => handleInputChange('nationality', v)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Irish">Irish</SelectItem>
-                      <SelectItem value="British">British</SelectItem>
-                      <SelectItem value="EU Citizen">EU Citizen</SelectItem>
-                      <SelectItem value="Other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Country of Birth</Label>
-                  <Input 
-                    value={formData.countryOfBirth} 
-                    onChange={(e) => handleInputChange('countryOfBirth', e.target.value)}
-                    placeholder="Country of Birth"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>PPS Number</Label>
-                  <Input 
-                    value={formData.ppsNumber} 
-                    onChange={(e) => handleInputChange('ppsNumber', e.target.value)}
-                    placeholder="PPS Number"
-                  />
-                </div>
-              </div>
-
-              <div className="border-t pt-4">
-                <h4 className="font-medium mb-4">Contact Information</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Phone Number *</Label>
-                    <Input 
-                      value={formData.phone} 
-                      onChange={(e) => handleInputChange('phone', e.target.value)}
-                      placeholder="Phone Number"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Email Address *</Label>
-                    <Input 
-                      type="email"
-                      value={formData.email} 
-                      onChange={(e) => handleInputChange('email', e.target.value)}
-                      placeholder="Email Address"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="border-t pt-4">
-                <h4 className="font-medium mb-4">Current Address</h4>
-                <div className="grid grid-cols-1 gap-4">
-                  <div className="space-y-2">
-                    <Label>Address</Label>
-                    <Textarea 
-                      value={formData.address} 
-                      onChange={(e) => handleInputChange('address', e.target.value)}
-                      placeholder="Full Address"
-                      rows={3}
-                    />
-                  </div>
-                  <div className="space-y-2 md:w-1/3">
-                    <Label>Years at Current Address</Label>
-                    <Input 
-                      type="number"
-                      value={formData.yearsAtAddress} 
-                      onChange={(e) => handleInputChange('yearsAtAddress', e.target.value)}
-                      placeholder="Years"
-                    />
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Income & Employment Tab */}
-        <TabsContent value="income">
-          <Card>
-            <CardHeader>
-              <CardTitle>Income & Employment</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Employment Status *</Label>
-                  <Select value={formData.employmentStatus} onValueChange={(v) => handleInputChange('employmentStatus', v)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="employed">Employed (PAYE)</SelectItem>
-                      <SelectItem value="self-employed">Self-Employed</SelectItem>
-                      <SelectItem value="contractor">Contractor</SelectItem>
-                      <SelectItem value="retired">Retired</SelectItem>
-                      <SelectItem value="unemployed">Unemployed</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Years in Current Employment</Label>
-                  <Input 
-                    type="number"
-                    value={formData.yearsEmployed} 
-                    onChange={(e) => handleInputChange('yearsEmployed', e.target.value)}
-                    placeholder="Years"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Employer Name</Label>
-                  <Input 
-                    value={formData.employerName} 
-                    onChange={(e) => handleInputChange('employerName', e.target.value)}
-                    placeholder="Employer Name"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Job Title / Position</Label>
-                  <Input 
-                    value={formData.jobTitle} 
-                    onChange={(e) => handleInputChange('jobTitle', e.target.value)}
-                    placeholder="Job Title"
-                  />
-                </div>
-              </div>
-
-              <div className="border-t pt-4">
-                <h4 className="font-medium mb-4">Income Details</h4>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label>Gross Annual Income (€) *</Label>
-                    <Input 
-                      type="number"
-                      value={formData.grossIncome} 
-                      onChange={(e) => handleInputChange('grossIncome', e.target.value)}
-                      placeholder="0"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Net Monthly Income (€)</Label>
-                    <Input 
-                      type="number"
-                      value={formData.netIncome} 
-                      onChange={(e) => handleInputChange('netIncome', e.target.value)}
-                      placeholder="0"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Other Income (€)</Label>
-                    <Input 
-                      type="number"
-                      value={formData.otherIncome} 
-                      onChange={(e) => handleInputChange('otherIncome', e.target.value)}
-                      placeholder="0"
-                    />
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Financial Tab */}
-        <TabsContent value="financial">
-          <Card>
-            <CardHeader>
-              <CardTitle>Financial & Credit History</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Monthly Expenses / Commitments (€) *</Label>
-                  <Input 
-                    type="number"
-                    value={formData.monthlyExpenses} 
-                    onChange={(e) => handleInputChange('monthlyExpenses', e.target.value)}
-                    placeholder="0"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Existing Loans (€)</Label>
-                  <Input 
-                    type="number"
-                    value={formData.existingLoans} 
-                    onChange={(e) => handleInputChange('existingLoans', e.target.value)}
-                    placeholder="0"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Credit Card Balance (€)</Label>
-                  <Input 
-                    type="number"
-                    value={formData.creditCards} 
-                    onChange={(e) => handleInputChange('creditCards', e.target.value)}
-                    placeholder="0"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Total Savings (€)</Label>
-                  <Input 
-                    type="number"
-                    value={formData.savings} 
-                    onChange={(e) => handleInputChange('savings', e.target.value)}
-                    placeholder="0"
-                  />
-                </div>
-              </div>
-
-              <div className="border-t pt-4">
-                <h4 className="font-medium mb-4">Credit History</h4>
-                <div className="space-y-4">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox id="ccjs" />
-                    <Label htmlFor="ccjs">Any CCJs, IVAs, or bankruptcies in the last 6 years?</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox id="defaults" />
-                    <Label htmlFor="defaults">Any missed payments or defaults in the last 3 years?</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox id="currentDebt" />
-                    <Label htmlFor="currentDebt">Are you currently in arrears on any credit agreements?</Label>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Mortgage Details Tab */}
-        <TabsContent value="mortgage">
-          <Card>
-            <CardHeader>
-              <CardTitle>Mortgage Details</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Mortgage Type</Label>
-                  <Select value={formData.mortgageType} onValueChange={(v) => handleInputChange('mortgageType', v)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="First Time Buyer">First Time Buyer</SelectItem>
-                      <SelectItem value="Mover">Mover</SelectItem>
-                      <SelectItem value="Switcher">Switcher</SelectItem>
-                      <SelectItem value="Remortgage">Remortgage</SelectItem>
-                      <SelectItem value="Buy to Let">Buy to Let</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Mortgage Term (Years) *</Label>
-                  <Input 
-                    type="number"
-                    value={formData.term} 
-                    onChange={(e) => handleInputChange('term', e.target.value)}
-                    placeholder="25"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label>Property Value (€) *</Label>
-                  <Input 
-                    type="number"
-                    value={formData.propertyValue} 
-                    onChange={(e) => handleInputChange('propertyValue', e.target.value)}
-                    placeholder="0"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Deposit Amount (€) *</Label>
-                  <Input 
-                    type="number"
-                    value={formData.depositAmount} 
-                    onChange={(e) => handleInputChange('depositAmount', e.target.value)}
-                    placeholder="0"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Loan Amount Required (€)</Label>
-                  <Input 
-                    type="number"
-                    value={formData.loanAmount} 
-                    onChange={(e) => handleInputChange('loanAmount', e.target.value)}
-                    placeholder="0"
-                    className="bg-muted"
-                    readOnly
-                  />
-                </div>
-              </div>
-
-              <div className="border-t pt-4">
-                <h4 className="font-medium mb-4">Loan-to-Value (LTV)</h4>
-                <div className="p-4 bg-muted rounded-lg">
-                  <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground">Calculated LTV:</span>
-                    <span className="text-xl font-bold">
-                      {formData.propertyValue && formData.depositAmount
-                        ? (((parseFloat(formData.propertyValue) - parseFloat(formData.depositAmount)) / parseFloat(formData.propertyValue)) * 100).toFixed(1)
-                        : 0}%
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Property Details Tab */}
-        <TabsContent value="property">
-          <Card>
-            <CardHeader>
-              <CardTitle>Property Details</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Property Type</Label>
-                  <Select value={formData.propertyType} onValueChange={(v) => handleInputChange('propertyType', v)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="House">House</SelectItem>
-                      <SelectItem value="Apartment">Apartment</SelectItem>
-                      <SelectItem value="Duplex">Duplex</SelectItem>
-                      <SelectItem value="Bungalow">Bungalow</SelectItem>
-                      <SelectItem value="Townhouse">Townhouse</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Year Built</Label>
-                  <Input 
-                    type="number"
-                    value={formData.yearBuilt} 
-                    onChange={(e) => handleInputChange('yearBuilt', e.target.value)}
-                    placeholder="e.g. 2010"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Property Address</Label>
-                <Textarea 
-                  value={formData.propertyAddress} 
-                  onChange={(e) => handleInputChange('propertyAddress', e.target.value)}
-                  placeholder="Full property address (if known)"
-                  rows={3}
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>BER Rating</Label>
-                  <Select value={formData.berRating} onValueChange={(v) => handleInputChange('berRating', v)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select rating" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="A1">A1</SelectItem>
-                      <SelectItem value="A2">A2</SelectItem>
-                      <SelectItem value="A3">A3</SelectItem>
-                      <SelectItem value="B1">B1</SelectItem>
-                      <SelectItem value="B2">B2</SelectItem>
-                      <SelectItem value="B3">B3</SelectItem>
-                      <SelectItem value="C1">C1</SelectItem>
-                      <SelectItem value="C2">C2</SelectItem>
-                      <SelectItem value="C3">C3</SelectItem>
-                      <SelectItem value="D1">D1</SelectItem>
-                      <SelectItem value="D2">D2</SelectItem>
-                      <SelectItem value="E1">E1</SelectItem>
-                      <SelectItem value="E2">E2</SelectItem>
-                      <SelectItem value="F">F</SelectItem>
-                      <SelectItem value="G">G</SelectItem>
-                      <SelectItem value="Unknown">Unknown</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="border-t pt-4">
-                <h4 className="font-medium mb-4">Property Features</h4>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox id="newBuild" />
-                    <Label htmlFor="newBuild">New Build</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox id="selfBuild" />
-                    <Label htmlFor="selfBuild">Self Build</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox id="renovation" />
-                    <Label htmlFor="renovation">Needs Renovation</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox id="listed" />
-                    <Label htmlFor="listed">Listed Building</Label>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+      {/* Tab Content */}
+      {activeTab === "personal" && <PersonalTab formData={formData} onChange={handleInputChange} />}
+      {activeTab === "income" && <IncomeTab formData={formData} onChange={handleInputChange} />}
+      {activeTab === "financial" && <FinancialTab formData={formData} onChange={handleInputChange} />}
+      {activeTab === "mortgage" && <MortgageTab formData={formData} onChange={handleInputChange} />}
+      {activeTab === "property" && <PropertyTab formData={formData} onChange={handleInputChange} />}
+      {activeTab === "security" && <SecurityTab formData={formData} onChange={handleInputChange} />}
+      {activeTab === "alternative" && <AlternativeTab formData={formData} onChange={handleInputChange} />}
+      {activeTab === "declarations" && <DeclarationsTab formData={formData} onChange={handleInputChange} />}
     </div>
+  );
+};
+
+// Personal Tab
+const PersonalTab = ({ formData, onChange }: { formData: FormData; onChange: (field: keyof FormData, value: any) => void }) => {
+  return (
+    <Card>
+      <CardContent className="pt-6">
+        <div className="grid md:grid-cols-2 gap-8">
+          {/* Applicant 1 */}
+          <div className="space-y-4">
+            <h3 className="font-bold text-primary text-lg">Applicant 1</h3>
+            <div className="space-y-3">
+              <div className="flex items-center gap-4">
+                <Label className="w-40 text-muted-foreground">Title</Label>
+                <Select value={formData.app1_title} onValueChange={(v) => onChange('app1_title', v)}>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="mr">Mr</SelectItem>
+                    <SelectItem value="mrs">Mrs</SelectItem>
+                    <SelectItem value="ms">Ms</SelectItem>
+                    <SelectItem value="miss">Miss</SelectItem>
+                    <SelectItem value="dr">Dr</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-40 text-muted-foreground">Forenames<span className="text-destructive">*</span></Label>
+                <Input className="flex-1" value={formData.app1_forenames} onChange={(e) => onChange('app1_forenames', e.target.value)} />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-40 text-muted-foreground">Surname<span className="text-destructive">*</span></Label>
+                <Input className="flex-1" value={formData.app1_surname} onChange={(e) => onChange('app1_surname', e.target.value)} />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-40 text-muted-foreground">Other/Previous Names</Label>
+                <Input className="flex-1" value={formData.app1_other_names} onChange={(e) => onChange('app1_other_names', e.target.value)} />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-40 text-muted-foreground">Gender</Label>
+                <Select value={formData.app1_gender} onValueChange={(v) => onChange('app1_gender', v)}>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="male">Male</SelectItem>
+                    <SelectItem value="female">Female</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-40 text-muted-foreground">Date of Birth</Label>
+                <Input className="flex-1" type="date" value={formData.app1_date_of_birth} onChange={(e) => onChange('app1_date_of_birth', e.target.value)} />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-40 text-muted-foreground">Nationality</Label>
+                <Input className="flex-1" value={formData.app1_nationality} onChange={(e) => onChange('app1_nationality', e.target.value)} />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-40 text-muted-foreground">PPS Number</Label>
+                <Input className="flex-1" value={formData.app1_pps_number} onChange={(e) => onChange('app1_pps_number', e.target.value)} />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-40 text-muted-foreground">Marital Status</Label>
+                <Select value={formData.app1_marital_status} onValueChange={(v) => onChange('app1_marital_status', v)}>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="single">Single</SelectItem>
+                    <SelectItem value="married">Married</SelectItem>
+                    <SelectItem value="divorced">Divorced</SelectItem>
+                    <SelectItem value="widowed">Widowed</SelectItem>
+                    <SelectItem value="separated">Separated</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-40 text-muted-foreground">No. of Children</Label>
+                <Input className="w-20" type="number" value={formData.app1_no_of_children || ''} onChange={(e) => onChange('app1_no_of_children', parseInt(e.target.value) || 0)} />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-40 text-muted-foreground">Children's Ages</Label>
+                <Input className="flex-1" placeholder="e.g., 5, 8, 12" value={formData.app1_children_ages} onChange={(e) => onChange('app1_children_ages', e.target.value)} />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-40 text-muted-foreground">Phone</Label>
+                <Input className="flex-1" value={formData.app1_phone} onChange={(e) => onChange('app1_phone', e.target.value)} />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-40 text-muted-foreground">Email</Label>
+                <Input className="flex-1" type="email" value={formData.app1_email} onChange={(e) => onChange('app1_email', e.target.value)} />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-40 text-muted-foreground">Address</Label>
+                <Textarea className="flex-1" value={formData.app1_address} onChange={(e) => onChange('app1_address', e.target.value)} rows={2} />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-40 text-muted-foreground">Years at Address</Label>
+                <Input className="w-20" type="number" value={formData.app1_years_at_address || ''} onChange={(e) => onChange('app1_years_at_address', parseInt(e.target.value) || 0)} />
+              </div>
+            </div>
+          </div>
+
+          {/* Applicant 2 */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-4">
+              <h3 className="font-bold text-primary text-lg">Applicant 2</h3>
+              <div className="flex items-center gap-4 ml-4">
+                <div className="flex items-center gap-2">
+                  <Checkbox id="enabled" checked={formData.app2_enabled} onCheckedChange={(v) => onChange('app2_enabled', v)} />
+                  <Label htmlFor="enabled" className="text-sm">Enabled</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Checkbox id="guarantor" checked={formData.app2_is_guarantor} onCheckedChange={(v) => onChange('app2_is_guarantor', v)} />
+                  <Label htmlFor="guarantor" className="text-sm">Guarantor</Label>
+                </div>
+              </div>
+            </div>
+            <div className={cn("space-y-3", !formData.app2_enabled && "opacity-50 pointer-events-none")}>
+              <div className="flex items-center gap-4">
+                <Label className="w-40 text-muted-foreground">Title</Label>
+                <Select value={formData.app2_title} onValueChange={(v) => onChange('app2_title', v)}>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="mr">Mr</SelectItem>
+                    <SelectItem value="mrs">Mrs</SelectItem>
+                    <SelectItem value="ms">Ms</SelectItem>
+                    <SelectItem value="miss">Miss</SelectItem>
+                    <SelectItem value="dr">Dr</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-40 text-muted-foreground">Forenames<span className="text-destructive">*</span></Label>
+                <Input className="flex-1" value={formData.app2_forenames} onChange={(e) => onChange('app2_forenames', e.target.value)} />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-40 text-muted-foreground">Surname<span className="text-destructive">*</span></Label>
+                <Input className="flex-1" value={formData.app2_surname} onChange={(e) => onChange('app2_surname', e.target.value)} />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-40 text-muted-foreground">Other/Previous Names</Label>
+                <Input className="flex-1" value={formData.app2_other_names} onChange={(e) => onChange('app2_other_names', e.target.value)} />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-40 text-muted-foreground">Gender</Label>
+                <Select value={formData.app2_gender} onValueChange={(v) => onChange('app2_gender', v)}>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="male">Male</SelectItem>
+                    <SelectItem value="female">Female</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-40 text-muted-foreground">Date of Birth</Label>
+                <Input className="flex-1" type="date" value={formData.app2_date_of_birth} onChange={(e) => onChange('app2_date_of_birth', e.target.value)} />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-40 text-muted-foreground">Nationality</Label>
+                <Input className="flex-1" value={formData.app2_nationality} onChange={(e) => onChange('app2_nationality', e.target.value)} />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-40 text-muted-foreground">PPS Number</Label>
+                <Input className="flex-1" value={formData.app2_pps_number} onChange={(e) => onChange('app2_pps_number', e.target.value)} />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-40 text-muted-foreground">Marital Status</Label>
+                <Select value={formData.app2_marital_status} onValueChange={(v) => onChange('app2_marital_status', v)}>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="single">Single</SelectItem>
+                    <SelectItem value="married">Married</SelectItem>
+                    <SelectItem value="divorced">Divorced</SelectItem>
+                    <SelectItem value="widowed">Widowed</SelectItem>
+                    <SelectItem value="separated">Separated</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-40 text-muted-foreground">No. of Children</Label>
+                <Input className="w-20" type="number" value={formData.app2_no_of_children || ''} onChange={(e) => onChange('app2_no_of_children', parseInt(e.target.value) || 0)} />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-40 text-muted-foreground">Children's Ages</Label>
+                <Input className="flex-1" placeholder="e.g., 5, 8, 12" value={formData.app2_children_ages} onChange={(e) => onChange('app2_children_ages', e.target.value)} />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-40 text-muted-foreground">Phone</Label>
+                <Input className="flex-1" value={formData.app2_phone} onChange={(e) => onChange('app2_phone', e.target.value)} />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-40 text-muted-foreground">Email</Label>
+                <Input className="flex-1" type="email" value={formData.app2_email} onChange={(e) => onChange('app2_email', e.target.value)} />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-40 text-muted-foreground">Address</Label>
+                <Textarea className="flex-1" value={formData.app2_address} onChange={(e) => onChange('app2_address', e.target.value)} rows={2} />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-40 text-muted-foreground">Years at Address</Label>
+                <Input className="w-20" type="number" value={formData.app2_years_at_address || ''} onChange={(e) => onChange('app2_years_at_address', parseInt(e.target.value) || 0)} />
+              </div>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+// Income Tab
+const IncomeTab = ({ formData, onChange }: { formData: FormData; onChange: (field: keyof FormData, value: any) => void }) => {
+  const FrequencySelect = ({ value, field }: { value: string; field: keyof FormData }) => (
+    <Select value={value} onValueChange={(v) => onChange(field, v)}>
+      <SelectTrigger className="w-36">
+        <SelectValue placeholder="Frequency" />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="annual">Annual</SelectItem>
+        <SelectItem value="monthly">Monthly</SelectItem>
+        <SelectItem value="weekly">Weekly</SelectItem>
+      </SelectContent>
+    </Select>
+  );
+
+  return (
+    <Card>
+      <CardContent className="pt-6">
+        <div className="grid md:grid-cols-2 gap-8">
+          {/* Applicant 1 */}
+          <div className="space-y-4">
+            <h3 className="font-bold text-primary text-lg">Applicant 1</h3>
+            <h4 className="font-semibold bg-primary/10 px-3 py-1">⊿ Current Income</h4>
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Label className="w-56 text-sm text-muted-foreground">Gross basic wage/salary per annum</Label>
+                <span className="text-muted-foreground">€</span>
+                <Input className="w-28" type="number" value={formData.app1_gross_salary || ''} onChange={(e) => onChange('app1_gross_salary', parseFloat(e.target.value) || 0)} />
+                <FrequencySelect value={formData.app1_salary_frequency} field="app1_salary_frequency" />
+              </div>
+              <div className="flex items-center gap-2">
+                <Label className="w-56 text-sm text-muted-foreground">Overtime per annum</Label>
+                <span className="text-muted-foreground">€</span>
+                <Input className="w-28" type="number" value={formData.app1_overtime || ''} onChange={(e) => onChange('app1_overtime', parseFloat(e.target.value) || 0)} />
+                <FrequencySelect value={formData.app1_overtime_frequency} field="app1_overtime_frequency" />
+              </div>
+              <div className="flex items-center gap-2">
+                <Label className="w-56 text-sm text-muted-foreground">Bonuses per annum</Label>
+                <span className="text-muted-foreground">€</span>
+                <Input className="w-28" type="number" value={formData.app1_bonuses || ''} onChange={(e) => onChange('app1_bonuses', parseFloat(e.target.value) || 0)} />
+                <FrequencySelect value={formData.app1_bonuses_frequency} field="app1_bonuses_frequency" />
+              </div>
+              <div className="flex items-center gap-2">
+                <Label className="w-56 text-sm text-muted-foreground">Commissions per annum</Label>
+                <span className="text-muted-foreground">€</span>
+                <Input className="w-28" type="number" value={formData.app1_commissions || ''} onChange={(e) => onChange('app1_commissions', parseFloat(e.target.value) || 0)} />
+                <FrequencySelect value={formData.app1_commissions_frequency} field="app1_commissions_frequency" />
+              </div>
+              <div className="flex items-center gap-2">
+                <Label className="w-56 text-sm text-muted-foreground">Other income (non rental)</Label>
+                <span className="text-muted-foreground">€</span>
+                <Input className="w-28" type="number" value={formData.app1_other_income || ''} onChange={(e) => onChange('app1_other_income', parseFloat(e.target.value) || 0)} />
+                <FrequencySelect value={formData.app1_other_income_frequency} field="app1_other_income_frequency" />
+              </div>
+              <div className="flex items-center gap-2">
+                <Label className="w-56 text-sm text-muted-foreground">Other Income Details</Label>
+                <Input className="flex-1" value={formData.app1_other_income_details} onChange={(e) => onChange('app1_other_income_details', e.target.value)} />
+              </div>
+              <div className="flex items-center gap-2">
+                <Label className="w-56 text-sm text-muted-foreground">Lodger income per annum</Label>
+                <span className="text-muted-foreground">€</span>
+                <Input className="w-28" type="number" value={formData.app1_lodger_income || ''} onChange={(e) => onChange('app1_lodger_income', parseFloat(e.target.value) || 0)} />
+              </div>
+              <div className="flex items-center gap-2">
+                <Label className="w-56 text-sm text-muted-foreground">Residential investment income</Label>
+                <span className="text-muted-foreground">€</span>
+                <Input className="w-28" type="number" value={formData.app1_residential_investment_income || ''} onChange={(e) => onChange('app1_residential_investment_income', parseFloat(e.target.value) || 0)} />
+              </div>
+              <div className="flex items-center gap-2 pt-4">
+                <Label className="w-56 text-sm text-muted-foreground">Other Household Income</Label>
+                <span className="text-muted-foreground">€</span>
+                <Input className="w-28" type="number" value={formData.app1_other_household_income || ''} onChange={(e) => onChange('app1_other_household_income', parseFloat(e.target.value) || 0)} />
+              </div>
+            </div>
+          </div>
+
+          {/* Applicant 2 */}
+          <div className={cn("space-y-4", !formData.app2_enabled && "opacity-50 pointer-events-none")}>
+            <h3 className="font-bold text-primary text-lg">Applicant 2</h3>
+            <h4 className="font-semibold bg-primary/10 px-3 py-1">⊿ Current Income</h4>
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Label className="w-56 text-sm text-muted-foreground">Gross basic wage/salary per annum</Label>
+                <span className="text-muted-foreground">€</span>
+                <Input className="w-28" type="number" value={formData.app2_gross_salary || ''} onChange={(e) => onChange('app2_gross_salary', parseFloat(e.target.value) || 0)} />
+                <FrequencySelect value={formData.app2_salary_frequency} field="app2_salary_frequency" />
+              </div>
+              <div className="flex items-center gap-2">
+                <Label className="w-56 text-sm text-muted-foreground">Overtime per annum</Label>
+                <span className="text-muted-foreground">€</span>
+                <Input className="w-28" type="number" value={formData.app2_overtime || ''} onChange={(e) => onChange('app2_overtime', parseFloat(e.target.value) || 0)} />
+                <FrequencySelect value={formData.app2_overtime_frequency} field="app2_overtime_frequency" />
+              </div>
+              <div className="flex items-center gap-2">
+                <Label className="w-56 text-sm text-muted-foreground">Bonuses per annum</Label>
+                <span className="text-muted-foreground">€</span>
+                <Input className="w-28" type="number" value={formData.app2_bonuses || ''} onChange={(e) => onChange('app2_bonuses', parseFloat(e.target.value) || 0)} />
+                <FrequencySelect value={formData.app2_bonuses_frequency} field="app2_bonuses_frequency" />
+              </div>
+              <div className="flex items-center gap-2">
+                <Label className="w-56 text-sm text-muted-foreground">Commissions per annum</Label>
+                <span className="text-muted-foreground">€</span>
+                <Input className="w-28" type="number" value={formData.app2_commissions || ''} onChange={(e) => onChange('app2_commissions', parseFloat(e.target.value) || 0)} />
+                <FrequencySelect value={formData.app2_commissions_frequency} field="app2_commissions_frequency" />
+              </div>
+              <div className="flex items-center gap-2">
+                <Label className="w-56 text-sm text-muted-foreground">Other income (non rental)</Label>
+                <span className="text-muted-foreground">€</span>
+                <Input className="w-28" type="number" value={formData.app2_other_income || ''} onChange={(e) => onChange('app2_other_income', parseFloat(e.target.value) || 0)} />
+                <FrequencySelect value={formData.app2_other_income_frequency} field="app2_other_income_frequency" />
+              </div>
+              <div className="flex items-center gap-2">
+                <Label className="w-56 text-sm text-muted-foreground">Other Income Details</Label>
+                <Input className="flex-1" value={formData.app2_other_income_details} onChange={(e) => onChange('app2_other_income_details', e.target.value)} />
+              </div>
+              <div className="flex items-center gap-2">
+                <Label className="w-56 text-sm text-muted-foreground">Lodger income per annum</Label>
+                <span className="text-muted-foreground">€</span>
+                <Input className="w-28" type="number" value={formData.app2_lodger_income || ''} onChange={(e) => onChange('app2_lodger_income', parseFloat(e.target.value) || 0)} />
+              </div>
+              <div className="flex items-center gap-2">
+                <Label className="w-56 text-sm text-muted-foreground">Residential investment income</Label>
+                <span className="text-muted-foreground">€</span>
+                <Input className="w-28" type="number" value={formData.app2_residential_investment_income || ''} onChange={(e) => onChange('app2_residential_investment_income', parseFloat(e.target.value) || 0)} />
+              </div>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+// Financial Tab
+const FinancialTab = ({ formData, onChange }: { formData: FormData; onChange: (field: keyof FormData, value: any) => void }) => {
+  return (
+    <Card>
+      <CardContent className="pt-6 space-y-6">
+        <h3 className="font-bold text-primary text-lg">Financial & Credit History</h3>
+        
+        <div className="grid md:grid-cols-2 gap-6">
+          <div className="space-y-4">
+            <div className="flex items-center gap-4">
+              <Label className="w-48 text-muted-foreground">Monthly Commitments</Label>
+              <span className="text-muted-foreground">€</span>
+              <Input className="flex-1" type="number" value={formData.monthly_commitments || ''} onChange={(e) => onChange('monthly_commitments', parseFloat(e.target.value) || 0)} />
+            </div>
+            <div className="flex items-center gap-4">
+              <Label className="w-48 text-muted-foreground">Existing Loans</Label>
+              <span className="text-muted-foreground">€</span>
+              <Input className="flex-1" type="number" value={formData.existing_loans || ''} onChange={(e) => onChange('existing_loans', parseFloat(e.target.value) || 0)} />
+            </div>
+            <div className="flex items-center gap-4">
+              <Label className="w-48 text-muted-foreground">Credit Cards Outstanding</Label>
+              <span className="text-muted-foreground">€</span>
+              <Input className="flex-1" type="number" value={formData.credit_cards || ''} onChange={(e) => onChange('credit_cards', parseFloat(e.target.value) || 0)} />
+            </div>
+            <div className="flex items-center gap-4">
+              <Label className="w-48 text-muted-foreground">Savings</Label>
+              <span className="text-muted-foreground">€</span>
+              <Input className="flex-1" type="number" value={formData.savings || ''} onChange={(e) => onChange('savings', parseFloat(e.target.value) || 0)} />
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div className="flex items-center gap-4">
+              <Label className="w-48 text-muted-foreground">Credit History</Label>
+              <Select value={formData.credit_history} onValueChange={(v) => onChange('credit_history', v)}>
+                <SelectTrigger className="flex-1">
+                  <SelectValue placeholder="Select" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="excellent">Excellent</SelectItem>
+                  <SelectItem value="good">Good</SelectItem>
+                  <SelectItem value="fair">Fair</SelectItem>
+                  <SelectItem value="poor">Poor</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Checkbox checked={formData.has_ccj} onCheckedChange={(v) => onChange('has_ccj', v)} />
+                <Label className="text-muted-foreground">Any CCJs or defaults?</Label>
+              </div>
+              {formData.has_ccj && (
+                <Textarea placeholder="Please provide details..." value={formData.ccj_details} onChange={(e) => onChange('ccj_details', e.target.value)} />
+              )}
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Checkbox checked={formData.has_arrears} onCheckedChange={(v) => onChange('has_arrears', v)} />
+                <Label className="text-muted-foreground">Any arrears on existing loans?</Label>
+              </div>
+              {formData.has_arrears && (
+                <Textarea placeholder="Please provide details..." value={formData.arrears_details} onChange={(e) => onChange('arrears_details', e.target.value)} />
+              )}
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+// Mortgage Tab
+const MortgageTab = ({ formData, onChange }: { formData: FormData; onChange: (field: keyof FormData, value: any) => void }) => {
+  return (
+    <Card>
+      <CardContent className="pt-6 space-y-6">
+        <h3 className="font-bold text-primary text-lg">Mortgage Details</h3>
+        
+        <div className="grid md:grid-cols-2 gap-6">
+          <div className="space-y-4">
+            <div className="flex items-center gap-4">
+              <Label className="w-48 text-muted-foreground">Property Value</Label>
+              <span className="text-muted-foreground">€</span>
+              <Input className="flex-1" type="number" value={formData.property_value || ''} onChange={(e) => onChange('property_value', parseFloat(e.target.value) || 0)} />
+            </div>
+            <div className="flex items-center gap-4">
+              <Label className="w-48 text-muted-foreground">Deposit Amount</Label>
+              <span className="text-muted-foreground">€</span>
+              <Input className="flex-1" type="number" value={formData.deposit_amount || ''} onChange={(e) => onChange('deposit_amount', parseFloat(e.target.value) || 0)} />
+            </div>
+            <div className="flex items-center gap-4">
+              <Label className="w-48 text-muted-foreground">Loan Amount Required</Label>
+              <span className="text-muted-foreground">€</span>
+              <Input className="flex-1" type="number" value={formData.loan_amount || ''} onChange={(e) => onChange('loan_amount', parseFloat(e.target.value) || 0)} />
+            </div>
+            <div className="flex items-center gap-4">
+              <Label className="w-48 text-muted-foreground">Mortgage Term (Years)</Label>
+              <Input className="w-24" type="number" value={formData.mortgage_term || ''} onChange={(e) => onChange('mortgage_term', parseInt(e.target.value) || 25)} />
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div className="flex items-center gap-4">
+              <Label className="w-48 text-muted-foreground">Mortgage Type</Label>
+              <Select value={formData.mortgage_type} onValueChange={(v) => onChange('mortgage_type', v)}>
+                <SelectTrigger className="flex-1">
+                  <SelectValue placeholder="Select" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="first_time_buyer">First Time Buyer</SelectItem>
+                  <SelectItem value="mover">Mover</SelectItem>
+                  <SelectItem value="switcher">Switcher</SelectItem>
+                  <SelectItem value="remortgage">Remortgage</SelectItem>
+                  <SelectItem value="top_up">Top Up</SelectItem>
+                  <SelectItem value="buy_to_let">Buy to Let</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center gap-2">
+              <Checkbox checked={formData.first_time_buyer} onCheckedChange={(v) => onChange('first_time_buyer', v)} />
+              <Label className="text-muted-foreground">First Time Buyer</Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <Checkbox checked={formData.help_to_buy} onCheckedChange={(v) => onChange('help_to_buy', v)} />
+              <Label className="text-muted-foreground">Help to Buy Scheme</Label>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+// Property Tab
+const PropertyTab = ({ formData, onChange }: { formData: FormData; onChange: (field: keyof FormData, value: any) => void }) => {
+  return (
+    <Card>
+      <CardContent className="pt-6 space-y-6">
+        <h3 className="font-bold text-primary text-lg">Property Details</h3>
+        
+        <div className="grid md:grid-cols-2 gap-6">
+          <div className="space-y-4">
+            <div className="flex items-center gap-4">
+              <Label className="w-48 text-muted-foreground">Property Type</Label>
+              <Select value={formData.property_type} onValueChange={(v) => onChange('property_type', v)}>
+                <SelectTrigger className="flex-1">
+                  <SelectValue placeholder="Select" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="house">House</SelectItem>
+                  <SelectItem value="apartment">Apartment</SelectItem>
+                  <SelectItem value="bungalow">Bungalow</SelectItem>
+                  <SelectItem value="duplex">Duplex</SelectItem>
+                  <SelectItem value="townhouse">Townhouse</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center gap-4">
+              <Label className="w-48 text-muted-foreground">Property Address</Label>
+              <Textarea className="flex-1" value={formData.property_address} onChange={(e) => onChange('property_address', e.target.value)} rows={2} />
+            </div>
+            <div className="flex items-center gap-4">
+              <Label className="w-48 text-muted-foreground">BER Rating</Label>
+              <Select value={formData.ber_rating} onValueChange={(v) => onChange('ber_rating', v)}>
+                <SelectTrigger className="flex-1">
+                  <SelectValue placeholder="Select" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="A1">A1</SelectItem>
+                  <SelectItem value="A2">A2</SelectItem>
+                  <SelectItem value="A3">A3</SelectItem>
+                  <SelectItem value="B1">B1</SelectItem>
+                  <SelectItem value="B2">B2</SelectItem>
+                  <SelectItem value="B3">B3</SelectItem>
+                  <SelectItem value="C1">C1</SelectItem>
+                  <SelectItem value="C2">C2</SelectItem>
+                  <SelectItem value="C3">C3</SelectItem>
+                  <SelectItem value="D1">D1</SelectItem>
+                  <SelectItem value="D2">D2</SelectItem>
+                  <SelectItem value="E1">E1</SelectItem>
+                  <SelectItem value="E2">E2</SelectItem>
+                  <SelectItem value="F">F</SelectItem>
+                  <SelectItem value="G">G</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div className="flex items-center gap-4">
+              <Label className="w-48 text-muted-foreground">Year Built</Label>
+              <Input className="w-28" type="number" value={formData.year_built || ''} onChange={(e) => onChange('year_built', parseInt(e.target.value) || 0)} />
+            </div>
+            <div className="flex items-center gap-4">
+              <Label className="w-48 text-muted-foreground">New or Secondhand</Label>
+              <Select value={formData.property_new_or_secondhand} onValueChange={(v) => onChange('property_new_or_secondhand', v)}>
+                <SelectTrigger className="flex-1">
+                  <SelectValue placeholder="Select" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="new">New</SelectItem>
+                  <SelectItem value="secondhand">Secondhand</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center gap-4">
+              <Label className="w-48 text-muted-foreground">Estimated Closing Date</Label>
+              <Input className="flex-1" type="date" value={formData.estimated_closing_date} onChange={(e) => onChange('estimated_closing_date', e.target.value)} />
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+// Security Tab
+const SecurityTab = ({ formData, onChange }: { formData: FormData; onChange: (field: keyof FormData, value: any) => void }) => {
+  return (
+    <Card>
+      <CardContent className="pt-6 space-y-6">
+        <h3 className="font-bold text-primary text-lg">Additional Security</h3>
+        <p className="text-sm text-muted-foreground">Properties to use as security for this mortgage application</p>
+        
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-muted/50">
+              <TableHead>Lending Institution</TableHead>
+              <TableHead>Market Value</TableHead>
+              <TableHead>Current Loan Balance</TableHead>
+              <TableHead>Monthly Repayment</TableHead>
+              <TableHead>Address</TableHead>
+              <TableHead>Type of Security</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableRow>
+              <TableCell>
+                <Input value={formData.security_lending_institution} onChange={(e) => onChange('security_lending_institution', e.target.value)} />
+              </TableCell>
+              <TableCell>
+                <Input type="number" value={formData.security_market_value || ''} onChange={(e) => onChange('security_market_value', parseFloat(e.target.value) || 0)} />
+              </TableCell>
+              <TableCell>
+                <Input type="number" value={formData.security_current_loan_balance || ''} onChange={(e) => onChange('security_current_loan_balance', parseFloat(e.target.value) || 0)} />
+              </TableCell>
+              <TableCell>
+                <Input type="number" value={formData.security_monthly_repayment || ''} onChange={(e) => onChange('security_monthly_repayment', parseFloat(e.target.value) || 0)} />
+              </TableCell>
+              <TableCell>
+                <Input value={formData.security_address} onChange={(e) => onChange('security_address', e.target.value)} />
+              </TableCell>
+              <TableCell>
+                <Select value={formData.security_type} onValueChange={(v) => onChange('security_type', v)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="residential">Residential</SelectItem>
+                    <SelectItem value="commercial">Commercial</SelectItem>
+                    <SelectItem value="land">Land</SelectItem>
+                  </SelectContent>
+                </Select>
+              </TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  );
+};
+
+// Alternative Lending Tab
+const AlternativeTab = ({ formData, onChange }: { formData: FormData; onChange: (field: keyof FormData, value: any) => void }) => {
+  return (
+    <Card>
+      <CardContent className="pt-6 space-y-6">
+        <h3 className="font-bold text-primary text-lg">Alternative Lending</h3>
+        
+        <div className="space-y-6">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Checkbox checked={formData.has_other_mortgage} onCheckedChange={(v) => onChange('has_other_mortgage', v)} />
+              <Label>Do you have any other mortgage or secured loans?</Label>
+            </div>
+            {formData.has_other_mortgage && (
+              <Textarea placeholder="Please provide details..." value={formData.other_mortgage_details} onChange={(e) => onChange('other_mortgage_details', e.target.value)} />
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Checkbox checked={formData.has_missed_repayments} onCheckedChange={(v) => onChange('has_missed_repayments', v)} />
+              <Label>Have you ever missed any repayments on any loan, mortgage, credit card or HP agreement?</Label>
+            </div>
+            {formData.has_missed_repayments && (
+              <Textarea placeholder="Please provide details..." value={formData.missed_repayments_details} onChange={(e) => onChange('missed_repayments_details', e.target.value)} />
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Checkbox checked={formData.has_judgements} onCheckedChange={(v) => onChange('has_judgements', v)} />
+              <Label>Have you ever had any County Court Judgements, bankruptcies or IVAs?</Label>
+            </div>
+            {formData.has_judgements && (
+              <Textarea placeholder="Please provide details..." value={formData.judgements_details} onChange={(e) => onChange('judgements_details', e.target.value)} />
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+// Declarations Tab
+const DeclarationsTab = ({ formData, onChange }: { formData: FormData; onChange: (field: keyof FormData, value: any) => void }) => {
+  return (
+    <Card>
+      <CardContent className="pt-6 space-y-4">
+        <h3 className="font-bold text-primary text-lg">Declarations / Notes</h3>
+        <p className="text-sm text-muted-foreground">Additional notes or declarations for your application</p>
+        
+        <div className="space-y-2">
+          <Label>Notes (max 5000 characters)</Label>
+          <Textarea 
+            className="min-h-[200px]" 
+            maxLength={5000}
+            value={formData.broker_notes} 
+            onChange={(e) => onChange('broker_notes', e.target.value)} 
+            placeholder="Enter any additional information relevant to your application..."
+          />
+          <p className="text-xs text-muted-foreground text-right">{formData.broker_notes?.length || 0}/5000</p>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 

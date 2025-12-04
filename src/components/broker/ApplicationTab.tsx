@@ -39,6 +39,7 @@ const ApplicationTab = () => {
   const [application, setApplication] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
   const [preEligibility, setPreEligibility] = useState<PreEligibilityData | null>(null);
+  const [formData, setFormData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   const searchParams = new URLSearchParams(location.search);
@@ -66,7 +67,7 @@ const ApplicationTab = () => {
       setApplication(appData);
 
       if (appData?.user_id) {
-        const [profileResult, preEligibilityResult] = await Promise.all([
+        const [profileResult, preEligibilityResult, formDataResult] = await Promise.all([
           supabase
             .from('profiles')
             .select('*')
@@ -74,6 +75,13 @@ const ApplicationTab = () => {
             .single(),
           supabase
             .from('pre_eligibility_data')
+            .select('*')
+            .eq('user_id', appData.user_id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle(),
+          supabase
+            .from('application_form_data')
             .select('*')
             .eq('user_id', appData.user_id)
             .order('created_at', { ascending: false })
@@ -86,6 +94,10 @@ const ApplicationTab = () => {
         
         if (preEligibilityResult.data) {
           setPreEligibility(preEligibilityResult.data);
+        }
+
+        if (formDataResult.data) {
+          setFormData(formDataResult.data);
         }
       }
     } catch (error) {
@@ -195,21 +207,21 @@ const ApplicationTab = () => {
         </Card>
       ) : (
         <Routes>
-          <Route index element={<SummaryTab application={application} profile={profile} preEligibility={preEligibility} />} />
-          <Route path="summary" element={<SummaryTab application={application} profile={profile} preEligibility={preEligibility} />} />
-          <Route path="personal" element={<PersonalTab profile={profile} preEligibility={preEligibility} />} />
-          <Route path="income" element={<IncomeTab preEligibility={preEligibility} />} />
-          <Route path="financial" element={<FinancialTab preEligibility={preEligibility} />} />
-          <Route path="mortgage" element={<MortgageTab preEligibility={preEligibility} />} />
-          <Route path="property" element={<PropertyTab preEligibility={preEligibility} />} />
+          <Route index element={<SummaryTab application={application} profile={profile} preEligibility={preEligibility} formData={formData} />} />
+          <Route path="summary" element={<SummaryTab application={application} profile={profile} preEligibility={preEligibility} formData={formData} />} />
+          <Route path="personal" element={<PersonalTab profile={profile} preEligibility={preEligibility} formData={formData} />} />
+          <Route path="income" element={<IncomeTab preEligibility={preEligibility} formData={formData} />} />
+          <Route path="financial" element={<FinancialTab preEligibility={preEligibility} formData={formData} />} />
+          <Route path="mortgage" element={<MortgageTab preEligibility={preEligibility} formData={formData} />} />
+          <Route path="property" element={<PropertyTab preEligibility={preEligibility} formData={formData} />} />
           <Route path="docs" element={<DocsTab applicationId={applicationId} userId={application?.user_id} />} />
-          <Route path="declarations" element={<DeclarationsTab preEligibility={preEligibility} />} />
+          <Route path="declarations" element={<DeclarationsTab preEligibility={preEligibility} formData={formData} />} />
           <Route path="transactions" element={<TransactionsTab />} />
           <Route path="lender" element={<LenderTab />} />
           <Route path="notes" element={<NotesTab />} />
           <Route path="log" element={<ActionLogTab />} />
-          <Route path="security" element={<SecurityTab />} />
-          <Route path="alternative" element={<AlternativeTab />} />
+          <Route path="security" element={<SecurityTab formData={formData} />} />
+          <Route path="alternative" element={<AlternativeTab formData={formData} />} />
         </Routes>
       )}
     </div>
@@ -217,7 +229,7 @@ const ApplicationTab = () => {
 };
 
 // Summary Tab Component
-const SummaryTab = ({ application, profile, preEligibility }: { application: any; profile: any; preEligibility: PreEligibilityData | null }) => {
+const SummaryTab = ({ application, profile, preEligibility, formData }: { application: any; profile: any; preEligibility: PreEligibilityData | null; formData: any }) => {
   const formatDate = (date: string | null) => {
     if (!date) return '';
     return new Date(date).toLocaleDateString('en-GB');
@@ -372,8 +384,8 @@ const SummaryTab = ({ application, profile, preEligibility }: { application: any
 };
 
 // Personal Tab Component
-const PersonalTab = ({ profile, preEligibility }: { profile: any; preEligibility: PreEligibilityData | null }) => {
-  const isJoint = preEligibility?.applicant_type === 'joint';
+const PersonalTab = ({ profile, preEligibility, formData }: { profile: any; preEligibility: PreEligibilityData | null; formData: any }) => {
+  const isJoint = formData?.app2_enabled || preEligibility?.applicant_type === 'joint';
 
   return (
     <Card>
@@ -576,8 +588,8 @@ const PersonalTab = ({ profile, preEligibility }: { profile: any; preEligibility
 };
 
 // Income Tab Component
-const IncomeTab = ({ preEligibility }: { preEligibility: PreEligibilityData | null }) => {
-  const isJoint = preEligibility?.applicant_type === 'joint';
+const IncomeTab = ({ preEligibility, formData }: { preEligibility: PreEligibilityData | null; formData: any }) => {
+  const isJoint = formData?.app2_enabled || preEligibility?.applicant_type === 'joint';
 
   return (
     <Card>
@@ -805,8 +817,8 @@ const IncomeTab = ({ preEligibility }: { preEligibility: PreEligibilityData | nu
 };
 
 // Financial Tab Component
-const FinancialTab = ({ preEligibility }: { preEligibility: PreEligibilityData | null }) => {
-  const isJoint = preEligibility?.applicant_type === 'joint';
+const FinancialTab = ({ preEligibility, formData }: { preEligibility: PreEligibilityData | null; formData: any }) => {
+  const isJoint = formData?.app2_enabled || preEligibility?.applicant_type === 'joint';
 
   return (
     <Card>
@@ -976,7 +988,7 @@ const FinancialTab = ({ preEligibility }: { preEligibility: PreEligibilityData |
 };
 
 // Mortgage Tab Component
-const MortgageTab = ({ preEligibility }: { preEligibility: PreEligibilityData | null }) => {
+const MortgageTab = ({ preEligibility, formData }: { preEligibility: PreEligibilityData | null; formData: any }) => {
   return (
     <Card>
       <CardContent className="pt-6">
@@ -1134,7 +1146,7 @@ const MortgageTab = ({ preEligibility }: { preEligibility: PreEligibilityData | 
 };
 
 // Property Tab Component
-const PropertyTab = ({ preEligibility }: { preEligibility: PreEligibilityData | null }) => {
+const PropertyTab = ({ preEligibility, formData }: { preEligibility: PreEligibilityData | null; formData: any }) => {
   return (
     <Card>
       <CardContent className="pt-6">
@@ -1367,7 +1379,7 @@ const DocsTab = ({ applicationId, userId }: { applicationId: string | null; user
 };
 
 // Declarations Tab - Comments & Declarations
-const DeclarationsTab = ({ preEligibility }: { preEligibility: PreEligibilityData | null }) => (
+const DeclarationsTab = ({ preEligibility, formData }: { preEligibility: PreEligibilityData | null; formData: any }) => (
   <Card>
     <CardContent className="pt-6">
       <h4 className="font-semibold text-primary bg-primary/10 px-3 py-1 mb-4">⊿ Comments & Declarations</h4>
@@ -1537,7 +1549,7 @@ const ActionLogTab = () => (
 );
 
 // Security Tab - Additional Security (Properties as security)
-const SecurityTab = () => (
+const SecurityTab = ({ formData }: { formData: any }) => (
   <Card>
     <CardContent className="pt-6">
       <h4 className="font-semibold text-primary bg-primary/10 px-3 py-1 mb-4">⊿ Properties as security</h4>
@@ -1646,7 +1658,7 @@ const SecurityTab = () => (
 );
 
 // Alternative Tab - Alternative Lending
-const AlternativeTab = () => (
+const AlternativeTab = ({ formData }: { formData: any }) => (
   <Card>
     <CardContent className="pt-6">
       <h4 className="font-semibold text-primary bg-primary/10 px-3 py-1 mb-4">⊿ Please Complete this section if Alternative Lending is sought</h4>
