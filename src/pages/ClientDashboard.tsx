@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useNavigate } from "react-router-dom";
-import { Building2, LogOut, Upload, MessageSquare, FileText, PenTool, User, FileCheck, Download } from "lucide-react";
+import { Building2, LogOut, Upload, MessageSquare, FileText, PenTool, User, FileCheck, Download, ClipboardList } from "lucide-react";
 import ProgressTracker from "@/components/ProgressTracker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,7 +19,7 @@ import { SignatureDialog } from "@/components/SignatureDialog";
 import AIPTab from "@/components/client/AIPTab";
 import { format, addDays } from "date-fns";
 import { AIPDocumentsList } from "@/components/client/AIPDocumentsList";
-
+import ClientApplicationTab from "@/components/client/ClientApplicationTab";
 interface Application {
   id: string;
   application_number: string;
@@ -47,7 +47,7 @@ const ClientDashboard = () => {
   const [brokerProfile, setBrokerProfile] = useState<Profile | null>(null);
   const [documentProgress, setDocumentProgress] = useState(0);
   const [signatureDialog, setSignatureDialog] = useState({ open: false, documentType: '' });
-  const [activeTab, setActiveTab] = useState("documents");
+  const [activeTab, setActiveTab] = useState("application");
 
   useEffect(() => {
     fetchApplicationData();
@@ -258,12 +258,21 @@ const ClientDashboard = () => {
 
         {/* Tabs for Different Sections */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4 mb-6">
+          <TabsList className="grid w-full grid-cols-5 mb-6">
+            <TabsTrigger value="application" className="flex items-center gap-2">
+              <ClipboardList className="h-4 w-4" />
+              Application
+            </TabsTrigger>
             <TabsTrigger value="documents">Documents & Conditions</TabsTrigger>
             <TabsTrigger value="aip">AIP</TabsTrigger>
             <TabsTrigger value="aip-application">AIP Application</TabsTrigger>
             <TabsTrigger value="signatures">E-Signatures</TabsTrigger>
           </TabsList>
+
+          {/* Application Tab */}
+          <TabsContent value="application">
+            <ClientApplicationTab applicationId={application?.id || null} />
+          </TabsContent>
 
           {/* Documents Tab */}
           <TabsContent value="documents">
