@@ -4,22 +4,20 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useNavigate } from "react-router-dom";
-import { Building2, LogOut, Upload, MessageSquare, FileText, PenTool, User, FileCheck, Download, ClipboardList } from "lucide-react";
+import { Building2, LogOut, Upload, MessageSquare, FileText, User, FileCheck, Download, ClipboardList } from "lucide-react";
 import ProgressTracker from "@/components/ProgressTracker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { DocumentUpload } from "@/components/DocumentUpload";
 import { DocumentList } from "@/components/DocumentList";
 import ClientMessaging from "@/components/broker/ClientMessaging";
-import { SignatureDialog } from "@/components/SignatureDialog";
 import AIPTab from "@/components/client/AIPTab";
 import { format, addDays } from "date-fns";
 import { AIPDocumentsList } from "@/components/client/AIPDocumentsList";
 import ClientApplicationTab from "@/components/client/ClientApplicationTab";
+import { ESignaturesTab } from "@/components/client/ESignaturesTab";
 interface Application {
   id: string;
   application_number: string;
@@ -46,7 +44,6 @@ const ClientDashboard = () => {
   const [userProfile, setUserProfile] = useState<Profile | null>(null);
   const [brokerProfile, setBrokerProfile] = useState<Profile | null>(null);
   const [documentProgress, setDocumentProgress] = useState(0);
-  const [signatureDialog, setSignatureDialog] = useState({ open: false, documentType: '' });
   const [activeTab, setActiveTab] = useState("application");
 
   useEffect(() => {
@@ -489,63 +486,13 @@ const ClientDashboard = () => {
 
           {/* E-Signatures Tab */}
           <TabsContent value="signatures">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <PenTool className="h-5 w-5 text-primary" />
-                  E-Signatures
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {application?.status === 'aip' && (
-                  <>
-                    <div className="space-y-3">
-                      <Button 
-                        className="w-full" 
-                        onClick={() => {
-                          setSignatureDialog({ open: true, documentType: 'Agreement in Principle' });
-                        }}
-                      >
-                        <PenTool className="mr-2 h-4 w-4" />
-                        Sign Agreement in Principle
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        className="w-full"
-                        onClick={() => {
-                          setSignatureDialog({ open: true, documentType: 'Mortgage Application' });
-                        }}
-                      >
-                        <PenTool className="mr-2 h-4 w-4" />
-                        Sign Mortgage Application
-                      </Button>
-                    </div>
-                  </>
-                )}
-                {(!application || application.status !== 'aip') && (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <p>No documents to sign</p>
-                    <p className="text-sm mt-2">Signature requests will appear when your application reaches AIP stage</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            <ESignaturesTab 
+              application={application} 
+              onSignatureComplete={fetchApplicationData}
+            />
           </TabsContent>
         </Tabs>
       </div>
-
-      {/* Signature Dialog */}
-      {application && (
-        <SignatureDialog
-          open={signatureDialog.open}
-          onOpenChange={(open) => setSignatureDialog({ ...signatureDialog, open })}
-          documentType={signatureDialog.documentType}
-          applicationId={application.id}
-          onSignatureComplete={() => {
-            fetchApplicationData();
-          }}
-        />
-      )}
     </div>
   );
 };
