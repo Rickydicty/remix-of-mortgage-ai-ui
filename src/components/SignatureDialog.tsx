@@ -78,14 +78,15 @@ export const SignatureDialog = ({
           </DialogDescription>
         </DialogHeader>
         
-        <div className="border border-border rounded-lg bg-background">
+        <div className="border border-border rounded-lg overflow-hidden">
           <SignatureCanvas
             ref={signatureRef}
             canvasProps={{
-              className: 'w-full h-64 rounded-lg',
+              className: 'w-full h-64',
+              style: { backgroundColor: '#ffffff' }
             }}
-            backgroundColor="hsl(var(--background))"
-            penColor="hsl(var(--foreground))"
+            backgroundColor="#ffffff"
+            penColor="#000000"
           />
         </div>
 
