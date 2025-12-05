@@ -10,12 +10,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { 
   FileCheck, AlertTriangle, CheckCircle2, Clock, Download, Upload, 
   User, MessageSquare, Calendar, TrendingUp, Shield, FileText,
-  AlertCircle, XCircle, Plus, Edit, Save
+  AlertCircle, XCircle, Plus, Edit, Save, FileSignature
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { AIPDocumentUpload } from "./AIPDocumentUpload";
+import { AIPSignatureUpload } from "./AIPSignatureUpload";
+import { SignatureReview } from "./SignatureReview";
 
 interface AIPCondition {
   id: string;
@@ -251,14 +253,68 @@ const AIPManagementTab = ({ applicationId }: AIPManagementTabProps) => {
         </CardContent>
       </Card>
 
-      <Tabs defaultValue="conditions" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+      <Tabs defaultValue="signatures" className="w-full">
+        <TabsList className="grid w-full grid-cols-6">
+          <TabsTrigger value="signatures">
+            <FileSignature className="h-4 w-4 mr-1" />
+            Signatures
+          </TabsTrigger>
           <TabsTrigger value="conditions">Conditions</TabsTrigger>
           <TabsTrigger value="notes">Notes & Messages</TabsTrigger>
           <TabsTrigger value="documents">Documents</TabsTrigger>
           <TabsTrigger value="valuation">Valuation</TabsTrigger>
           <TabsTrigger value="audit">Audit Trail</TabsTrigger>
         </TabsList>
+
+        {/* Signatures Tab - Primary for AIP Phase */}
+        <TabsContent value="signatures" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span>Upload AIP Document for Client Signature</span>
+                {application?.user_id && (
+                  <AIPSignatureUpload
+                    applicationId={applicationId}
+                    clientUserId={application.user_id}
+                    onUploadComplete={fetchAIPData}
+                  />
+                )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="p-4 bg-muted/50 rounded-lg mb-4">
+                <h4 className="font-medium mb-2">Mock AIP Documents Available:</h4>
+                <div className="space-y-2">
+                  <a 
+                    href="/mock-aip/PTSB_AIP_Letter.pdf" 
+                    target="_blank"
+                    className="flex items-center gap-2 text-sm text-primary hover:underline"
+                  >
+                    <FileText className="h-4 w-4" />
+                    PTSB AIP Letter (Sample)
+                  </a>
+                  <a 
+                    href="/mock-aip/ICS_AIP_Letter.pdf" 
+                    target="_blank"
+                    className="flex items-center gap-2 text-sm text-primary hover:underline"
+                  >
+                    <FileText className="h-4 w-4" />
+                    ICS AIP Letter (Sample)
+                  </a>
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Download these samples and re-upload using the button above to send to client for signature.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Signature Review Section */}
+          <SignatureReview 
+            applicationId={applicationId} 
+            onApprovalComplete={fetchAIPData}
+          />
+        </TabsContent>
 
         {/* Conditions Tab */}
         <TabsContent value="conditions" className="space-y-4">
