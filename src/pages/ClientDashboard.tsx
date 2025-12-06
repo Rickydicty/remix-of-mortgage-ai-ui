@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useNavigate } from "react-router-dom";
-import { Building2, LogOut, Upload, MessageSquare, FileText, User, FileCheck, Download, ClipboardList } from "lucide-react";
+import { Building2, LogOut, Upload, MessageSquare, FileText, User, FileCheck, Download, ClipboardList, TrendingUp } from "lucide-react";
 import ProgressTracker from "@/components/ProgressTracker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,6 +18,7 @@ import { format, addDays } from "date-fns";
 import { AIPDocumentsList } from "@/components/client/AIPDocumentsList";
 import ClientApplicationTab from "@/components/client/ClientApplicationTab";
 import { ESignaturesTab } from "@/components/client/ESignaturesTab";
+import { LoanOffersTab } from "@/components/client/LoanOffersTab";
 interface Application {
   id: string;
   application_number: string;
@@ -255,14 +256,18 @@ const ClientDashboard = () => {
 
         {/* Tabs for Different Sections */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-5 mb-6">
+          <TabsList className="grid w-full grid-cols-6 mb-6">
             <TabsTrigger value="application" className="flex items-center gap-2">
               <ClipboardList className="h-4 w-4" />
               Application
             </TabsTrigger>
-            <TabsTrigger value="documents">Documents & Conditions</TabsTrigger>
+            <TabsTrigger value="documents">Documents</TabsTrigger>
             <TabsTrigger value="aip">AIP</TabsTrigger>
-            <TabsTrigger value="aip-application">AIP Application</TabsTrigger>
+            <TabsTrigger value="aip-application">AIP Letter</TabsTrigger>
+            <TabsTrigger value="loan-offers" className="flex items-center gap-2">
+              <TrendingUp className="h-4 w-4" />
+              Loan Offers
+            </TabsTrigger>
             <TabsTrigger value="signatures">E-Signatures</TabsTrigger>
           </TabsList>
 
@@ -482,6 +487,11 @@ const ClientDashboard = () => {
                 <AIPDocumentsList applicationId={application?.id} />
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Loan Offers Tab */}
+          <TabsContent value="loan-offers">
+            <LoanOffersTab applicationId={application?.id || null} />
           </TabsContent>
 
           {/* E-Signatures Tab */}

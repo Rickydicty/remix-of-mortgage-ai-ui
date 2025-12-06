@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { 
   FileCheck, AlertTriangle, CheckCircle2, Clock, Download, Upload, 
   User, MessageSquare, Calendar, TrendingUp, Shield, FileText,
-  AlertCircle, XCircle, Plus, Edit, Save, FileSignature
+  AlertCircle, XCircle, Plus, Edit, Save, FileSignature, Euro
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -18,6 +18,7 @@ import { format } from "date-fns";
 import { AIPDocumentUpload } from "./AIPDocumentUpload";
 import { AIPSignatureUpload } from "./AIPSignatureUpload";
 import { SignatureReview } from "./SignatureReview";
+import { LoanOfferUpload } from "./LoanOfferUpload";
 
 interface AIPCondition {
   id: string;
@@ -57,6 +58,7 @@ const AIPManagementTab = ({ applicationId }: AIPManagementTabProps) => {
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [valuation, setValuation] = useState<Valuation | null>(null);
   const [documents, setDocuments] = useState<any[]>([]);
+  const [loanOffers, setLoanOffers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingCondition, setEditingCondition] = useState<string | null>(null);
 
@@ -110,6 +112,14 @@ const AIPManagementTab = ({ applicationId }: AIPManagementTabProps) => {
         .eq('user_id', appData?.user_id)
         .order('created_at', { ascending: false });
       setDocuments(docsData || []);
+
+      // Fetch loan offers
+      const { data: offersData } = await supabase
+        .from('loan_offers')
+        .select('*')
+        .eq('application_id', applicationId)
+        .order('created_at', { ascending: false });
+      setLoanOffers((offersData as any[]) || []);
 
     } catch (error) {
       console.error('Error fetching AIP data:', error);
@@ -254,16 +264,20 @@ const AIPManagementTab = ({ applicationId }: AIPManagementTabProps) => {
       </Card>
 
       <Tabs defaultValue="signatures" className="w-full">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="signatures">
             <FileSignature className="h-4 w-4 mr-1" />
             Signatures
           </TabsTrigger>
+          <TabsTrigger value="loan-offers">
+            <Euro className="h-4 w-4 mr-1" />
+            Loan Offers
+          </TabsTrigger>
           <TabsTrigger value="conditions">Conditions</TabsTrigger>
-          <TabsTrigger value="notes">Notes & Messages</TabsTrigger>
+          <TabsTrigger value="notes">Notes</TabsTrigger>
           <TabsTrigger value="documents">Documents</TabsTrigger>
           <TabsTrigger value="valuation">Valuation</TabsTrigger>
-          <TabsTrigger value="audit">Audit Trail</TabsTrigger>
+          <TabsTrigger value="audit">Audit</TabsTrigger>
         </TabsList>
 
         {/* Signatures Tab - Primary for AIP Phase */}
@@ -314,6 +328,92 @@ const AIPManagementTab = ({ applicationId }: AIPManagementTabProps) => {
             applicationId={applicationId} 
             onApprovalComplete={fetchAIPData}
           />
+        </TabsContent>
+
+        {/* Loan Offers Tab */}
+        <TabsContent value="loan-offers" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <Euro className="h-5 w-5 text-success" />
+                  Loan Offers ({loanOffers.length})
+                </span>
+                {application?.user_id && (
+                  <LoanOfferUpload
+                    applicationId={applicationId}
+                    clientUserId={application.user_id}
+                    onUploadComplete={fetchAIPData}
+                  />
+                )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {loanOffers.length === 0 ? (
+                <div className="text-center py-8">
+                  <Euro className="h-12 w-12 mx-auto text-muted-foreground mb-3 opacity-50" />
+                  <p className="text-muted-foreground mb-2">No loan offers added yet</p>
+                  <p className="text-xs text-muted-foreground">
+                    Add mock or real loan offers for the client to review
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {loanOffers.map((offer) => (
+                    <div
+                      key={offer.id}
+                      className="p-4 border rounded-lg hover:border-primary/50 transition-colors"
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <div>
+                          <h4 className="font-semibold">{offer.lender_name}</h4>
+                          <div className="flex items-center gap-2 mt-1">
+                            {offer.is_mock && (
+                              <Badge variant="outline" className="text-xs">Mock</Badge>
+                            )}
+                            <Badge className="bg-success/10 text-success border-success/20">
+                              {offer.status}
+                            </Badge>
+                          </div>
+                        </div>
+                        {offer.document_url && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => window.open(offer.document_url, '_blank')}
+                          >
+                            <Download className="h-4 w-4 mr-1" />
+                            View
+                          </Button>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-4 gap-4 text-sm">
+                        <div>
+                          <span className="text-muted-foreground">Amount:</span>
+                          <p className="font-semibold">€{offer.offer_amount?.toLocaleString()}</p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Rate:</span>
+                          <p className="font-semibold">{offer.interest_rate}%</p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Term:</span>
+                          <p className="font-semibold">{offer.loan_term} years</p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Monthly:</span>
+                          <p className="font-semibold">€{offer.monthly_repayment?.toLocaleString() || 'TBC'}</p>
+                        </div>
+                      </div>
+                      {offer.notes && (
+                        <p className="text-sm text-muted-foreground mt-2 pt-2 border-t">{offer.notes}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* Conditions Tab */}
