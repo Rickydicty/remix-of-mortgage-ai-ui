@@ -563,6 +563,77 @@ export type Database = {
         }
         Relationships: []
       }
+      loan_offers: {
+        Row: {
+          application_id: string
+          created_at: string | null
+          created_by: string | null
+          document_url: string | null
+          fixed_period: number | null
+          id: string
+          interest_rate: number
+          is_mock: boolean | null
+          lender_name: string
+          loan_term: number
+          monthly_repayment: number | null
+          notes: string | null
+          offer_amount: number
+          offer_type: string | null
+          offer_valid_until: string | null
+          status: string | null
+          total_repayment: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          application_id: string
+          created_at?: string | null
+          created_by?: string | null
+          document_url?: string | null
+          fixed_period?: number | null
+          id?: string
+          interest_rate: number
+          is_mock?: boolean | null
+          lender_name: string
+          loan_term: number
+          monthly_repayment?: number | null
+          notes?: string | null
+          offer_amount: number
+          offer_type?: string | null
+          offer_valid_until?: string | null
+          status?: string | null
+          total_repayment?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          application_id?: string
+          created_at?: string | null
+          created_by?: string | null
+          document_url?: string | null
+          fixed_period?: number | null
+          id?: string
+          interest_rate?: number
+          is_mock?: boolean | null
+          lender_name?: string
+          loan_term?: number
+          monthly_repayment?: number | null
+          notes?: string | null
+          offer_amount?: number
+          offer_type?: string | null
+          offer_valid_until?: string | null
+          status?: string | null
+          total_repayment?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loan_offers_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           application_id: string | null
