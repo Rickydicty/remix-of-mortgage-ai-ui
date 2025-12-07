@@ -1,8 +1,11 @@
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Building2, TrendingUp, Clock, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Building2, TrendingUp, Clock, CheckCircle2, Calculator } from "lucide-react";
+import NDICalculator from "./NDICalculator";
 
 interface Lender {
   name: string;
@@ -57,6 +60,8 @@ const mockLenders: Lender[] = [
 ];
 
 const BrokerLenderComparisonTab = () => {
+  const [activeTab, setActiveTab] = useState("comparison");
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "preferred":
@@ -76,169 +81,188 @@ const BrokerLenderComparisonTab = () => {
       <div>
         <h2 className="text-2xl font-bold mb-2">Lender Comparison</h2>
         <p className="text-muted-foreground">
-          Compare mortgage lenders to find the best fit for your clients
+          Compare mortgage lenders and calculate affordability
         </p>
       </div>
 
-      {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-primary/10 rounded-lg">
-                <Building2 className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{mockLenders.length}</p>
-                <p className="text-sm text-muted-foreground">Active Lenders</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-success/10 rounded-lg">
-                <CheckCircle2 className="h-5 w-5 text-success" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">
-                  {mockLenders.filter(l => l.status === "preferred").length}
-                </p>
-                <p className="text-sm text-muted-foreground">Preferred Lenders</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-warning/10 rounded-lg">
-                <TrendingUp className="h-5 w-5 text-warning" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">3.70%</p>
-                <p className="text-sm text-muted-foreground">Best Rate Available</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList>
+          <TabsTrigger value="comparison" className="gap-2">
+            <Building2 className="h-4 w-4" />
+            Lender Comparison
+          </TabsTrigger>
+          <TabsTrigger value="calculator" className="gap-2">
+            <Calculator className="h-4 w-4" />
+            NDI Calculator
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Lender Comparison Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Lender Details</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Lender</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Max LTV</TableHead>
-                  <TableHead>Rate Range</TableHead>
-                  <TableHead>Processing Time</TableHead>
-                  <TableHead>Specialties</TableHead>
-                  <TableHead>Action</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {mockLenders.map((lender) => (
-                  <TableRow key={lender.name}>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Building2 className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-medium">{lender.name}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>{getStatusBadge(lender.status)}</TableCell>
-                    <TableCell>{lender.maxLTV}%</TableCell>
-                    <TableCell className="font-mono text-sm">{lender.typicalRate}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1">
-                        <Clock className="h-3 w-3 text-muted-foreground" />
-                        <span className="text-sm">{lender.processingTime}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-1">
-                        {lender.specialties.slice(0, 2).map((specialty) => (
-                          <Badge key={specialty} variant="outline" className="text-xs">
-                            {specialty}
-                          </Badge>
-                        ))}
-                        {lender.specialties.length > 2 && (
-                          <Badge variant="outline" className="text-xs">
-                            +{lender.specialties.length - 2}
-                          </Badge>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Button variant="outline" size="sm">
-                        View Details
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+        <TabsContent value="comparison" className="space-y-6 mt-6">
+          {/* Quick Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <Building2 className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">{mockLenders.length}</p>
+                    <p className="text-sm text-muted-foreground">Active Lenders</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-success/10 rounded-lg">
+                    <CheckCircle2 className="h-5 w-5 text-success" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">
+                      {mockLenders.filter(l => l.status === "preferred").length}
+                    </p>
+                    <p className="text-sm text-muted-foreground">Preferred Lenders</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-warning/10 rounded-lg">
+                    <TrendingUp className="h-5 w-5 text-warning" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">3.70%</p>
+                    <p className="text-sm text-muted-foreground">Best Rate Available</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Individual Lender Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {mockLenders.map((lender) => (
-          <Card key={lender.name}>
+          {/* Lender Comparison Table */}
+          <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg">{lender.name}</CardTitle>
-                {getStatusBadge(lender.status)}
-              </div>
+              <CardTitle>Lender Details</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">Max LTV</p>
-                  <p className="text-lg font-bold">{lender.maxLTV}%</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">Rate Range</p>
-                  <p className="text-sm font-semibold">{lender.typicalRate}</p>
-                </div>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Lender</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Max LTV</TableHead>
+                      <TableHead>Rate Range</TableHead>
+                      <TableHead>Processing Time</TableHead>
+                      <TableHead>Specialties</TableHead>
+                      <TableHead>Action</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {mockLenders.map((lender) => (
+                      <TableRow key={lender.name}>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Building2 className="h-4 w-4 text-muted-foreground" />
+                            <span className="font-medium">{lender.name}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>{getStatusBadge(lender.status)}</TableCell>
+                        <TableCell>{lender.maxLTV}%</TableCell>
+                        <TableCell className="font-mono text-sm">{lender.typicalRate}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            <Clock className="h-3 w-3 text-muted-foreground" />
+                            <span className="text-sm">{lender.processingTime}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-wrap gap-1">
+                            {lender.specialties.slice(0, 2).map((specialty) => (
+                              <Badge key={specialty} variant="outline" className="text-xs">
+                                {specialty}
+                              </Badge>
+                            ))}
+                            {lender.specialties.length > 2 && (
+                              <Badge variant="outline" className="text-xs">
+                                +{lender.specialties.length - 2}
+                              </Badge>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Button variant="outline" size="sm">
+                            View Details
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
-              
-              <div>
-                <p className="text-xs text-muted-foreground mb-1">Processing Time</p>
-                <div className="flex items-center gap-1">
-                  <Clock className="h-3 w-3 text-muted-foreground" />
-                  <p className="text-sm">{lender.processingTime}</p>
-                </div>
-              </div>
-              
-              <div>
-                <p className="text-xs text-muted-foreground mb-2">Specialties</p>
-                <div className="flex flex-wrap gap-1">
-                  {lender.specialties.map((specialty) => (
-                    <Badge key={specialty} variant="secondary" className="text-xs">
-                      {specialty}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-              
-              <Button className="w-full" variant="outline">
-                Use for Application
-              </Button>
             </CardContent>
           </Card>
-        ))}
-      </div>
+
+          {/* Individual Lender Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {mockLenders.map((lender) => (
+              <Card key={lender.name}>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg">{lender.name}</CardTitle>
+                    {getStatusBadge(lender.status)}
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Max LTV</p>
+                      <p className="text-lg font-bold">{lender.maxLTV}%</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Rate Range</p>
+                      <p className="text-sm font-semibold">{lender.typicalRate}</p>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">Processing Time</p>
+                    <div className="flex items-center gap-1">
+                      <Clock className="h-3 w-3 text-muted-foreground" />
+                      <p className="text-sm">{lender.processingTime}</p>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-2">Specialties</p>
+                    <div className="flex flex-wrap gap-1">
+                      {lender.specialties.map((specialty) => (
+                        <Badge key={specialty} variant="secondary" className="text-xs">
+                          {specialty}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <Button className="w-full" variant="outline">
+                    Use for Application
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="calculator" className="mt-6">
+          <NDICalculator />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
