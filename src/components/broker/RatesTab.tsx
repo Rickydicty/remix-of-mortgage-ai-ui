@@ -1,13 +1,116 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calculator, TrendingUp } from "lucide-react";
+import { Calculator, TrendingUp, Building2, Clock, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import NDICalculator from "./NDICalculator";
+
+interface Lender {
+  name: string;
+  maxLTV: number;
+  typicalRate: string;
+  processingTime: string;
+  status: "preferred" | "active" | "limited";
+  specialties: string[];
+}
+
+const mockLenders: Lender[] = [
+  {
+    name: "PTSB",
+    maxLTV: 90,
+    typicalRate: "3.75% - 4.25%",
+    processingTime: "2-3 weeks",
+    status: "preferred",
+    specialties: ["First-time buyers", "Green mortgages", "Switching"]
+  },
+  {
+    name: "Haven Mortgages",
+    maxLTV: 90,
+    typicalRate: "3.95% - 4.45%",
+    processingTime: "3-4 weeks",
+    status: "active",
+    specialties: ["Standard residential", "Investment properties", "Self-employed"]
+  },
+  {
+    name: "The Mortgage Store – by Bank of Ireland",
+    maxLTV: 90,
+    typicalRate: "3.70% - 4.30%",
+    processingTime: "2-4 weeks",
+    status: "preferred",
+    specialties: ["Competitive rates", "Fast processing", "Green mortgages"]
+  },
+  {
+    name: "ICS Mortgages",
+    maxLTV: 80,
+    typicalRate: "4.15% - 4.65%",
+    processingTime: "3-5 weeks",
+    status: "active",
+    specialties: ["Flexible terms", "Self-build", "Older properties"]
+  },
+  {
+    name: "Nua Money",
+    maxLTV: 85,
+    typicalRate: "3.85% - 4.35%",
+    processingTime: "2-3 weeks",
+    status: "limited",
+    specialties: ["Digital-first", "Quick decisions", "Straightforward cases"]
+  }
+];
+  // Mortgage Rates filters
+  const [rateType, setRateType] = useState("variable");
+  const [loanTerm, setLoanTerm] = useState("25");
+  const [interestOnly, setInterestOnly] = useState("both");
+  const [businessType, setBusinessType] = useState("both");
+  const [lender, setLender] = useState("all");
+  const [loanType, setLoanType] = useState("residential");
+  const [loanAmount, setLoanAmount] = useState("250000");
+  const [purchasePrice, setPurchasePrice] = useState("");
+  const [preparedFor, setPreparedFor] = useState("");
+
+  // Repayment Calculator
+  const [calcLoanAmount, setCalcLoanAmount] = useState("");
+  const [calcTerm, setCalcTerm] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("annuity");
+  const [annualRate, setAnnualRate] = useState("");
+  const [discountPeriod, setDiscountPeriod] = useState("");
+  const [discountRate, setDiscountRate] = useState("");
+  const [interestOnlyPeriod, setInterestOnlyPeriod] = useState("");
+  const [calculatedResult, setCalculatedResult] = useState<number | null>(null);
+
+  // Mock mortgage rates data
+  const mockRates = [
+    { lender: "Avant Money", loanType: "Variable (<=80% LTV (Flex Mortgage))", ltv: "80", apr: "3.16", rate: "3.09", cpt: "4.79", cost: "1,198", date: "10-11-25", intrOnly: "N" },
+    { lender: "Avant Money", loanType: "Variable (>80% LTV (Flex Mortgage))", ltv: "90", apr: "3.36", rate: "3.29", cpt: "4.89", cost: "1,223", date: "10-11-25", intrOnly: "N" },
+    { lender: "AIB", loanType: "Variable (LTV <=50%)", ltv: "50", apr: "3.83", rate: "3.75", cpt: "5.14", cost: "1,285", date: "24-10-25", intrOnly: "N" },
+    { lender: "EBS", loanType: "Variable (LTV <=50%)", ltv: "50", apr: "3.90", rate: "3.75", cpt: "5.14", cost: "1,285", date: "24-10-25", intrOnly: "N" },
+    { lender: "Haven", loanType: "Variable (LTV <=50%)", ltv: "50", apr: "3.90", rate: "3.75", cpt: "5.14", cost: "1,285", date: "24-10-25", intrOnly: "N" },
+    { lender: "AIB", loanType: "Variable (LTV >50% <=80%)", ltv: "80", apr: "4.04", rate: "3.95", cpt: "5.25", cost: "1,313", date: "24-10-25", intrOnly: "N" },
+    { lender: "EBS", loanType: "Variable (LTV >50% <=80%)", ltv: "80", apr: "4.10", rate: "3.95", cpt: "5.25", cost: "1,313", date: "24-10-25", intrOnly: "N" },
+    { lender: "Haven", loanType: "Variable (LTV >50% <=80%)", ltv: "80", apr: "4.10", rate: "3.95", cpt: "5.25", cost: "1,313", date: "24-10-25", intrOnly: "N" },
+  ];
+
+  const calculateRepayment = () => {
+    if (!calcLoanAmount || !calcTerm || !annualRate) return;
+    
+    const principal = parseFloat(calcLoanAmount);
+    const years = parseFloat(calcTerm);
+    const rate = parseFloat(annualRate) / 100 / 12;
+    const payments = years * 12;
+    
+    if (paymentMethod === "annuity") {
+      const monthlyPayment = principal * (rate * Math.pow(1 + rate, payments)) / (Math.pow(1 + rate, payments) - 1);
+      setCalculatedResult(monthlyPayment);
+    } else {
+      const monthlyPayment = principal * rate;
+      setCalculatedResult(monthlyPayment);
+    }
+  };
 
 const BrokerRatesTab = () => {
   // Mortgage Rates filters
@@ -60,13 +163,28 @@ const BrokerRatesTab = () => {
     }
   };
 
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "preferred":
+        return <Badge className="bg-green-500/10 text-green-600 border-green-500/20">Preferred</Badge>;
+      case "active":
+        return <Badge className="bg-primary/10 text-primary border-primary/20">Active</Badge>;
+      case "limited":
+        return <Badge className="bg-yellow-500/10 text-yellow-600 border-yellow-500/20">Limited</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
+  };
+
   return (
     <div className="space-y-6">
       <Tabs defaultValue="rates" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="rates">Mortgage Rates</TabsTrigger>
           <TabsTrigger value="calculator">Repayment Calculator</TabsTrigger>
           <TabsTrigger value="consolidated">Consolidated Loans</TabsTrigger>
+          <TabsTrigger value="lenders">Lender Comparison</TabsTrigger>
+          <TabsTrigger value="ndi">NDI Calculator</TabsTrigger>
         </TabsList>
 
         {/* Mortgage Rates Tab */}
@@ -447,6 +565,174 @@ const BrokerRatesTab = () => {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Lender Comparison Tab */}
+        <TabsContent value="lenders" className="space-y-6">
+          {/* Quick Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <Building2 className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">{mockLenders.length}</p>
+                    <p className="text-sm text-muted-foreground">Active Lenders</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-green-500/10 rounded-lg">
+                    <CheckCircle2 className="h-5 w-5 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">
+                      {mockLenders.filter(l => l.status === "preferred").length}
+                    </p>
+                    <p className="text-sm text-muted-foreground">Preferred Lenders</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-yellow-500/10 rounded-lg">
+                    <TrendingUp className="h-5 w-5 text-yellow-600" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">3.70%</p>
+                    <p className="text-sm text-muted-foreground">Best Rate Available</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Lender Comparison Table */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Lender Details</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Lender</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Max LTV</TableHead>
+                      <TableHead>Rate Range</TableHead>
+                      <TableHead>Processing Time</TableHead>
+                      <TableHead>Specialties</TableHead>
+                      <TableHead>Action</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {mockLenders.map((lenderItem) => (
+                      <TableRow key={lenderItem.name}>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Building2 className="h-4 w-4 text-muted-foreground" />
+                            <span className="font-medium">{lenderItem.name}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>{getStatusBadge(lenderItem.status)}</TableCell>
+                        <TableCell>{lenderItem.maxLTV}%</TableCell>
+                        <TableCell className="font-mono text-sm">{lenderItem.typicalRate}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            <Clock className="h-3 w-3 text-muted-foreground" />
+                            <span className="text-sm">{lenderItem.processingTime}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-wrap gap-1">
+                            {lenderItem.specialties.slice(0, 2).map((specialty) => (
+                              <Badge key={specialty} variant="outline" className="text-xs">
+                                {specialty}
+                              </Badge>
+                            ))}
+                            {lenderItem.specialties.length > 2 && (
+                              <Badge variant="outline" className="text-xs">
+                                +{lenderItem.specialties.length - 2}
+                              </Badge>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Button variant="outline" size="sm">
+                            View Details
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Individual Lender Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {mockLenders.map((lenderItem) => (
+              <Card key={lenderItem.name}>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg">{lenderItem.name}</CardTitle>
+                    {getStatusBadge(lenderItem.status)}
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Max LTV</p>
+                      <p className="text-lg font-bold">{lenderItem.maxLTV}%</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Rate Range</p>
+                      <p className="text-sm font-semibold">{lenderItem.typicalRate}</p>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">Processing Time</p>
+                    <div className="flex items-center gap-1">
+                      <Clock className="h-3 w-3 text-muted-foreground" />
+                      <p className="text-sm">{lenderItem.processingTime}</p>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-2">Specialties</p>
+                    <div className="flex flex-wrap gap-1">
+                      {lenderItem.specialties.map((specialty) => (
+                        <Badge key={specialty} variant="secondary" className="text-xs">
+                          {specialty}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <Button className="w-full" variant="outline">
+                    Use for Application
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </TabsContent>
+
+        {/* NDI Calculator Tab */}
+        <TabsContent value="ndi" className="space-y-6">
+          <NDICalculator />
         </TabsContent>
       </Tabs>
     </div>
