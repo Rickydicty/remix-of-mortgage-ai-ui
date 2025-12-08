@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useNavigate } from "react-router-dom";
-import { Building2, LogOut, Upload, MessageSquare, FileText, User, FileCheck, Download, ClipboardList, TrendingUp } from "lucide-react";
+import { Building2, LogOut, Upload, MessageSquare, FileText, User, FileCheck, Download, ClipboardList } from "lucide-react";
 import ProgressTracker from "@/components/ProgressTracker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,6 +19,7 @@ import { AIPDocumentsList } from "@/components/client/AIPDocumentsList";
 import ClientApplicationTab from "@/components/client/ClientApplicationTab";
 import { ESignaturesTab } from "@/components/client/ESignaturesTab";
 import { LoanOffersTab } from "@/components/client/LoanOffersTab";
+
 interface Application {
   id: string;
   application_number: string;
@@ -45,7 +46,7 @@ const ClientDashboard = () => {
   const [userProfile, setUserProfile] = useState<Profile | null>(null);
   const [brokerProfile, setBrokerProfile] = useState<Profile | null>(null);
   const [documentProgress, setDocumentProgress] = useState(0);
-  const [activeTab, setActiveTab] = useState("application");
+  const [activeTab, setActiveTab] = useState("details");
 
   useEffect(() => {
     fetchApplicationData();
@@ -55,7 +56,6 @@ const ClientDashboard = () => {
     if (!user) return;
 
     try {
-      // Fetch user profile
       const { data: profile } = await supabase
         .from('profiles')
         .select('full_name, email')
@@ -64,7 +64,6 @@ const ClientDashboard = () => {
       
       setUserProfile(profile);
 
-      // Fetch application
       const { data: app } = await supabase
         .from('applications')
         .select('*')
@@ -76,7 +75,6 @@ const ClientDashboard = () => {
       if (app) {
         setApplication(app);
 
-        // Fetch broker profile if assigned
         if (app.assigned_broker_id) {
           const { data: broker } = await supabase
             .from('profiles')
@@ -88,17 +86,14 @@ const ClientDashboard = () => {
         }
       }
 
-      // Fetch documents to calculate phase progress
       const { data: documents } = await supabase
         .from('documents')
         .select('*')
         .eq('user_id', user.id);
 
       if (documents) {
-        // Define required document types
         const requiredDocTypes = ['certified_id', 'proof_of_address', 'payslips', 'bank_statements', 'employment_summary'];
         
-        // Get latest document of each type
         const latestDocs = requiredDocTypes.map(type => {
           const docsOfType = documents.filter(doc => doc.document_type === type);
           return docsOfType.sort((a, b) => 
@@ -107,8 +102,6 @@ const ClientDashboard = () => {
         }).filter(Boolean);
         
         const uploadedCount = latestDocs.length;
-        
-        // Once all docs uploaded, phase is 100% complete
         const docPercentage = Math.round((uploadedCount / requiredDocTypes.length) * 100);
         
         setDocumentProgress(docPercentage);
@@ -155,11 +148,9 @@ const ClientDashboard = () => {
     { id: "6", label: "Drawdown", status: getStepStatus(6), phaseProgress: 0 },
   ];
 
-  const clarifications: Array<{ id: string; from: string; message: string; timestamp: string; replies: number }> = [];
-
   const handleUploadComplete = () => {
     setRefreshTrigger(prev => prev + 1);
-    fetchApplicationData(); // Refresh to update progress
+    fetchApplicationData();
   };
 
   const handleSubmitForReview = async () => {
@@ -254,254 +245,249 @@ const ClientDashboard = () => {
           </CardContent>
         </Card>
 
-        {/* Tabs for Different Sections */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-6 mb-6">
-            <TabsTrigger value="application" className="flex items-center gap-2">
-              <ClipboardList className="h-4 w-4" />
-              Application
-            </TabsTrigger>
-            <TabsTrigger value="documents">Documents</TabsTrigger>
-            <TabsTrigger value="aip">AIP</TabsTrigger>
-            <TabsTrigger value="aip-application">AIP Letter</TabsTrigger>
-            <TabsTrigger value="loan-offers" className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4" />
-              Loan Offers
-            </TabsTrigger>
-            <TabsTrigger value="signatures">E-Signatures</TabsTrigger>
-          </TabsList>
+        {/* Main Application Card with Sub-Tabs */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <ClipboardList className="h-5 w-5 text-primary" />
+              My Application
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="grid w-full grid-cols-6 mb-6">
+                <TabsTrigger value="details">Details</TabsTrigger>
+                <TabsTrigger value="documents">Documents</TabsTrigger>
+                <TabsTrigger value="aip">AIP</TabsTrigger>
+                <TabsTrigger value="aip-letter">AIP Letter</TabsTrigger>
+                <TabsTrigger value="loan-offers">Loan Offers</TabsTrigger>
+                <TabsTrigger value="signatures">E-Signatures</TabsTrigger>
+              </TabsList>
 
-          {/* Application Tab */}
-          <TabsContent value="application">
-            <ClientApplicationTab applicationId={application?.id || null} />
-          </TabsContent>
+              {/* Details Sub-Tab */}
+              <TabsContent value="details">
+                <ClientApplicationTab applicationId={application?.id || null} />
+              </TabsContent>
 
-          {/* Documents Tab */}
-          <TabsContent value="documents">
-            <div className="space-y-8">
-              {/* Document Upload */}
-              <DocumentUpload onUploadComplete={handleUploadComplete} />
+              {/* Documents Sub-Tab */}
+              <TabsContent value="documents">
+                <div className="space-y-8">
+                  <DocumentUpload onUploadComplete={handleUploadComplete} />
+                  <DocumentList refreshTrigger={refreshTrigger} />
 
-              {/* Document List */}
-              <DocumentList refreshTrigger={refreshTrigger} />
+                  {canSubmitForReview() && (
+                    <Card className="border-primary bg-primary/5">
+                      <CardContent className="pt-6">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h3 className="font-semibold text-lg mb-1">Ready for Review</h3>
+                            <p className="text-sm text-muted-foreground">
+                              All required documents uploaded. Submit to broker for review.
+                            </p>
+                          </div>
+                          <Button onClick={handleSubmitForReview} size="lg">
+                            Submit for Review
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
 
-              {/* Submit for Review */}
-              {canSubmitForReview() && (
-                <Card className="border-primary bg-primary/5">
-                  <CardContent className="pt-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="font-semibold text-lg mb-1">Ready for Review</h3>
-                        <p className="text-sm text-muted-foreground">
-                          All required documents uploaded. Submit to broker for review.
-                        </p>
+                  {application?.status === 'pending_review' && (
+                    <Card className="border-warning bg-warning/5">
+                      <CardContent className="pt-6">
+                        <div className="text-center py-4">
+                          <h3 className="font-semibold text-lg mb-2">Under Review</h3>
+                          <p className="text-sm text-muted-foreground">
+                            Your documents are being reviewed by your broker. You'll be notified once the review is complete.
+                          </p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {application?.status === 'needs_documents' && (
+                    <Card className="border-destructive bg-destructive/5">
+                      <CardContent className="pt-6">
+                        <div className="text-center py-4">
+                          <h3 className="font-semibold text-lg mb-2 text-destructive">Additional Documents Required</h3>
+                          <p className="text-sm text-muted-foreground">
+                            Your broker has requested additional documents. Please check your messages and upload the required documents.
+                          </p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <FileText className="h-5 w-5 text-secondary" />
+                        Valuation & Solicitor
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="space-y-2">
+                        <Label>Valuation Report</Label>
+                        <Button variant="outline" className="w-full">
+                          <Upload className="h-4 w-4 mr-2" />
+                          Upload Valuation Report
+                        </Button>
                       </div>
-                      <Button onClick={handleSubmitForReview} size="lg">
-                        Submit for Review
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
+                      <div className="space-y-2">
+                        <Label>Solicitor Contact</Label>
+                        <Input placeholder="Solicitor Name" />
+                        <Input placeholder="Email" type="email" />
+                        <Input placeholder="Phone" type="tel" />
+                      </div>
+                    </CardContent>
+                  </Card>
 
-              {/* Waiting for Broker Review */}
-              {application?.status === 'pending_review' && (
-                <Card className="border-warning bg-warning/5">
-                  <CardContent className="pt-6">
-                    <div className="text-center py-4">
-                      <h3 className="font-semibold text-lg mb-2">Under Review</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Your documents are being reviewed by your broker. You'll be notified once the review is complete.
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
+                  {application?.assigned_broker_id ? (
+                    <ClientMessaging 
+                      clientId={application.assigned_broker_id} 
+                      clientName={brokerProfile?.full_name || brokerProfile?.email || 'Broker'} 
+                      applicationId={application.id}
+                    />
+                  ) : (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <MessageSquare className="h-5 w-5 text-success" />
+                          Support Chat
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="h-64 border border-border rounded-lg p-4 overflow-y-auto bg-muted/30 flex items-center justify-center">
+                          <p className="text-muted-foreground text-sm">A broker will be assigned to your application soon</p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+              </TabsContent>
 
-              {/* Need to Upload More Documents */}
-              {application?.status === 'needs_documents' && (
-                <Card className="border-destructive bg-destructive/5">
-                  <CardContent className="pt-6">
-                    <div className="text-center py-4">
-                      <h3 className="font-semibold text-lg mb-2 text-destructive">Additional Documents Required</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Your broker has requested additional documents. Please check your messages and upload the required documents.
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Valuation & Solicitor */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <FileText className="h-5 w-5 text-secondary" />
-                    Valuation & Solicitor
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Valuation Report</Label>
-                    <Button variant="outline" className="w-full">
-                      <Upload className="h-4 w-4 mr-2" />
-                      Upload Valuation Report
-                    </Button>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Solicitor Contact</Label>
-                    <Input placeholder="Solicitor Name" />
-                    <Input placeholder="Email" type="email" />
-                    <Input placeholder="Phone" type="tel" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Broker Messaging */}
-              {application?.assigned_broker_id ? (
-                <ClientMessaging 
-                  clientId={application.assigned_broker_id} 
-                  clientName={brokerProfile?.full_name || brokerProfile?.email || 'Broker'} 
-                  applicationId={application.id}
+              {/* AIP Sub-Tab */}
+              <TabsContent value="aip">
+                <AIPTab
+                  aipData={application as any}
+                  brokerProfile={brokerProfile}
+                  onNavigateToDocuments={() => setActiveTab("documents")}
+                  onOpenMessaging={() => setActiveTab("documents")}
                 />
-              ) : (
+              </TabsContent>
+
+              {/* AIP Letter Sub-Tab */}
+              <TabsContent value="aip-letter" className="space-y-6">
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <MessageSquare className="h-5 w-5 text-success" />
-                      Support Chat
+                      <FileCheck className="h-5 w-5 text-primary" />
+                      Agreement in Principle Letter
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="h-64 border border-border rounded-lg p-4 overflow-y-auto bg-muted/30 flex items-center justify-center">
-                      <p className="text-muted-foreground text-sm">A broker will be assigned to your application soon</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          </TabsContent>
-
-          {/* AIP Tab */}
-          <TabsContent value="aip">
-            <AIPTab
-              aipData={application as any}
-              brokerProfile={brokerProfile}
-              onNavigateToDocuments={() => setActiveTab("documents")}
-              onOpenMessaging={() => setActiveTab("documents")}
-            />
-          </TabsContent>
-
-          {/* AIP Application Tab */}
-          <TabsContent value="aip-application" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileCheck className="h-5 w-5 text-primary" />
-                  Agreement in Principle Letter
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {application?.aip_letter_url ? (
-                  <>
-                    <div className="p-4 bg-success/10 border border-success/20 rounded-lg">
-                      <div className="flex items-start gap-3">
-                        <div className="p-2 bg-success/20 rounded-full">
-                          <FileCheck className="h-5 w-5 text-success" />
-                        </div>
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-success mb-1">AIP Letter Available</h3>
-                          <p className="text-sm text-muted-foreground mb-3">
-                            Your Agreement in Principle has been issued. Download your letter below.
-                          </p>
-                          <div className="flex gap-2">
-                            <Button 
-                              onClick={() => window.open(application.aip_letter_url!, '_blank')}
-                              className="gap-2"
-                            >
-                              <Download className="h-4 w-4" />
-                              Download AIP Letter
-                            </Button>
+                  <CardContent className="space-y-6">
+                    {application?.aip_letter_url ? (
+                      <>
+                        <div className="p-4 bg-success/10 border border-success/20 rounded-lg">
+                          <div className="flex items-start gap-3">
+                            <div className="p-2 bg-success/20 rounded-full">
+                              <FileCheck className="h-5 w-5 text-success" />
+                            </div>
+                            <div className="flex-1">
+                              <h3 className="font-semibold text-success mb-1">AIP Letter Available</h3>
+                              <p className="text-sm text-muted-foreground mb-3">
+                                Your Agreement in Principle has been issued. Download your letter below.
+                              </p>
+                              <div className="flex gap-2">
+                                <Button 
+                                  onClick={() => window.open(application.aip_letter_url!, '_blank')}
+                                  className="gap-2"
+                                >
+                                  <Download className="h-4 w-4" />
+                                  Download AIP Letter
+                                </Button>
+                              </div>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="p-4 border rounded-lg">
-                        <p className="text-xs text-muted-foreground mb-1">Approved Amount</p>
-                        <p className="text-2xl font-bold text-success">
-                          £{application.aip_approved_amount?.toLocaleString()}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="p-4 border rounded-lg">
+                            <p className="text-xs text-muted-foreground mb-1">Approved Amount</p>
+                            <p className="text-2xl font-bold text-success">
+                              €{application.aip_approved_amount?.toLocaleString()}
+                            </p>
+                          </div>
+                          <div className="p-4 border rounded-lg">
+                            <p className="text-xs text-muted-foreground mb-1">Lender</p>
+                            <p className="text-lg font-semibold">{application.aip_lender_name || 'N/A'}</p>
+                          </div>
+                          <div className="p-4 border rounded-lg">
+                            <p className="text-xs text-muted-foreground mb-1">Issue Date</p>
+                            <p className="text-lg font-semibold">
+                              {application.aip_issue_date 
+                                ? format(new Date(application.aip_issue_date), 'dd MMM yyyy')
+                                : 'N/A'
+                              }
+                            </p>
+                          </div>
+                          <div className="p-4 border rounded-lg">
+                            <p className="text-xs text-muted-foreground mb-1">Valid Until</p>
+                            <p className="text-lg font-semibold">
+                              {application.aip_issue_date 
+                                ? format(
+                                    addDays(new Date(application.aip_issue_date), application.aip_validity_period || 90),
+                                    'dd MMM yyyy'
+                                  )
+                                : 'N/A'
+                              }
+                            </p>
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-center py-12">
+                        <div className="inline-flex p-4 bg-muted rounded-full mb-4">
+                          <FileCheck className="h-8 w-8 text-muted-foreground" />
+                        </div>
+                        <h3 className="font-semibold text-lg mb-2">AIP Letter Not Yet Issued</h3>
+                        <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                          Your Agreement in Principle is being processed. Once approved, your AIP letter will be available here for download.
                         </p>
                       </div>
-                      <div className="p-4 border rounded-lg">
-                        <p className="text-xs text-muted-foreground mb-1">Lender</p>
-                        <p className="text-lg font-semibold">{application.aip_lender_name || 'N/A'}</p>
-                      </div>
-                      <div className="p-4 border rounded-lg">
-                        <p className="text-xs text-muted-foreground mb-1">Issue Date</p>
-                        <p className="text-lg font-semibold">
-                          {application.aip_issue_date 
-                            ? format(new Date(application.aip_issue_date), 'dd MMM yyyy')
-                            : 'N/A'
-                          }
-                        </p>
-                      </div>
-                      <div className="p-4 border rounded-lg">
-                        <p className="text-xs text-muted-foreground mb-1">Valid Until</p>
-                        <p className="text-lg font-semibold">
-                          {application.aip_issue_date 
-                            ? format(
-                                addDays(new Date(application.aip_issue_date), application.aip_validity_period || 90),
-                                'dd MMM yyyy'
-                              )
-                            : 'N/A'
-                          }
-                        </p>
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <div className="text-center py-12">
-                    <div className="inline-flex p-4 bg-muted rounded-full mb-4">
-                      <FileCheck className="h-8 w-8 text-muted-foreground" />
-                    </div>
-                    <h3 className="font-semibold text-lg mb-2">AIP Letter Not Yet Issued</h3>
-                    <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                      Your Agreement in Principle is being processed. Once approved, your AIP letter will be available here for download.
-                    </p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                    )}
+                  </CardContent>
+                </Card>
 
-            {/* AIP Documents Section */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5 text-secondary" />
-                  AIP Documents
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <AIPDocumentsList applicationId={application?.id} />
-              </CardContent>
-            </Card>
-          </TabsContent>
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <FileText className="h-5 w-5 text-secondary" />
+                      AIP Documents
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <AIPDocumentsList applicationId={application?.id} />
+                  </CardContent>
+                </Card>
+              </TabsContent>
 
-          {/* Loan Offers Tab */}
-          <TabsContent value="loan-offers">
-            <LoanOffersTab applicationId={application?.id || null} />
-          </TabsContent>
+              {/* Loan Offers Sub-Tab */}
+              <TabsContent value="loan-offers">
+                <LoanOffersTab applicationId={application?.id || null} />
+              </TabsContent>
 
-          {/* E-Signatures Tab */}
-          <TabsContent value="signatures">
-            <ESignaturesTab 
-              application={application} 
-              onSignatureComplete={fetchApplicationData}
-            />
-          </TabsContent>
-        </Tabs>
+              {/* E-Signatures Sub-Tab */}
+              <TabsContent value="signatures">
+                <ESignaturesTab 
+                  application={application} 
+                  onSignatureComplete={fetchApplicationData}
+                />
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
