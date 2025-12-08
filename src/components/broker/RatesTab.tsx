@@ -62,55 +62,6 @@ const mockLenders: Lender[] = [
     specialties: ["Digital-first", "Quick decisions", "Straightforward cases"]
   }
 ];
-  // Mortgage Rates filters
-  const [rateType, setRateType] = useState("variable");
-  const [loanTerm, setLoanTerm] = useState("25");
-  const [interestOnly, setInterestOnly] = useState("both");
-  const [businessType, setBusinessType] = useState("both");
-  const [lender, setLender] = useState("all");
-  const [loanType, setLoanType] = useState("residential");
-  const [loanAmount, setLoanAmount] = useState("250000");
-  const [purchasePrice, setPurchasePrice] = useState("");
-  const [preparedFor, setPreparedFor] = useState("");
-
-  // Repayment Calculator
-  const [calcLoanAmount, setCalcLoanAmount] = useState("");
-  const [calcTerm, setCalcTerm] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState("annuity");
-  const [annualRate, setAnnualRate] = useState("");
-  const [discountPeriod, setDiscountPeriod] = useState("");
-  const [discountRate, setDiscountRate] = useState("");
-  const [interestOnlyPeriod, setInterestOnlyPeriod] = useState("");
-  const [calculatedResult, setCalculatedResult] = useState<number | null>(null);
-
-  // Mock mortgage rates data
-  const mockRates = [
-    { lender: "Avant Money", loanType: "Variable (<=80% LTV (Flex Mortgage))", ltv: "80", apr: "3.16", rate: "3.09", cpt: "4.79", cost: "1,198", date: "10-11-25", intrOnly: "N" },
-    { lender: "Avant Money", loanType: "Variable (>80% LTV (Flex Mortgage))", ltv: "90", apr: "3.36", rate: "3.29", cpt: "4.89", cost: "1,223", date: "10-11-25", intrOnly: "N" },
-    { lender: "AIB", loanType: "Variable (LTV <=50%)", ltv: "50", apr: "3.83", rate: "3.75", cpt: "5.14", cost: "1,285", date: "24-10-25", intrOnly: "N" },
-    { lender: "EBS", loanType: "Variable (LTV <=50%)", ltv: "50", apr: "3.90", rate: "3.75", cpt: "5.14", cost: "1,285", date: "24-10-25", intrOnly: "N" },
-    { lender: "Haven", loanType: "Variable (LTV <=50%)", ltv: "50", apr: "3.90", rate: "3.75", cpt: "5.14", cost: "1,285", date: "24-10-25", intrOnly: "N" },
-    { lender: "AIB", loanType: "Variable (LTV >50% <=80%)", ltv: "80", apr: "4.04", rate: "3.95", cpt: "5.25", cost: "1,313", date: "24-10-25", intrOnly: "N" },
-    { lender: "EBS", loanType: "Variable (LTV >50% <=80%)", ltv: "80", apr: "4.10", rate: "3.95", cpt: "5.25", cost: "1,313", date: "24-10-25", intrOnly: "N" },
-    { lender: "Haven", loanType: "Variable (LTV >50% <=80%)", ltv: "80", apr: "4.10", rate: "3.95", cpt: "5.25", cost: "1,313", date: "24-10-25", intrOnly: "N" },
-  ];
-
-  const calculateRepayment = () => {
-    if (!calcLoanAmount || !calcTerm || !annualRate) return;
-    
-    const principal = parseFloat(calcLoanAmount);
-    const years = parseFloat(calcTerm);
-    const rate = parseFloat(annualRate) / 100 / 12;
-    const payments = years * 12;
-    
-    if (paymentMethod === "annuity") {
-      const monthlyPayment = principal * (rate * Math.pow(1 + rate, payments)) / (Math.pow(1 + rate, payments) - 1);
-      setCalculatedResult(monthlyPayment);
-    } else {
-      const monthlyPayment = principal * rate;
-      setCalculatedResult(monthlyPayment);
-    }
-  };
 
 const BrokerRatesTab = () => {
   // Mortgage Rates filters
