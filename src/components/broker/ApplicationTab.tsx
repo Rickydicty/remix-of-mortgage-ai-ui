@@ -109,6 +109,7 @@ const ApplicationTab = () => {
 
   // Row 1 tabs
   const row1Tabs = [
+    { id: "aip-portal", label: "AIP Portal", highlight: true },
     { id: "security", label: "Additional Security" },
     { id: "alternative", label: "Alternative Lending" },
     { id: "declarations", label: "Declarations" },
@@ -149,12 +150,20 @@ const ApplicationTab = () => {
             {row1Tabs.map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => navigate(`${basePath}/${tab.id}${applicationId ? `?id=${applicationId}` : ''}`)}
+                onClick={() => {
+                  if (tab.id === 'aip-portal' && applicationId) {
+                    navigate(`/dashboard/broker/aip/${applicationId}`);
+                  } else {
+                    navigate(`${basePath}/${tab.id}${applicationId ? `?id=${applicationId}` : ''}`);
+                  }
+                }}
                 className={cn(
                   "px-4 py-2 text-sm font-medium border-r border-b border-border transition-colors",
-                  isActive(tab.id)
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted/50 hover:bg-muted text-foreground"
+                  tab.id === 'aip-portal'
+                    ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                    : isActive(tab.id)
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted/50 hover:bg-muted text-foreground"
                 )}
               >
                 {tab.label}
