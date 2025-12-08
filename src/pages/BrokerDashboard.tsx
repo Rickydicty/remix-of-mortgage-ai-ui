@@ -1,20 +1,18 @@
 import { useState } from "react";
 import { Routes, Route, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Building2, LogOut, Globe, ListTodo, Activity, FileText, TrendingUp, BookOpen, Settings, FileCheck } from "lucide-react";
+import { LogOut, Globe, Activity, FileText, TrendingUp, BookOpen, Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
 // Tab Components
 import BrokerWebTab from "@/components/broker/WebTab";
-import BrokerTasksTab from "@/components/broker/TasksTab";
 import BrokerTrackerTab from "@/components/broker/TrackerTab";
 import BrokerApplicationTab from "@/components/broker/ApplicationTab";
 import BrokerRatesTab from "@/components/broker/RatesTab";
 import BrokerLibraryTab from "@/components/broker/LibraryTab";
 import BrokerAIPPage from "@/pages/BrokerAIPPage";
-import BrokerLenderComparisonTab from "@/components/broker/LenderComparisonTab";
 
 const BrokerDashboard = () => {
   const navigate = useNavigate();
@@ -28,11 +26,9 @@ const BrokerDashboard = () => {
 
   const tabs = [
     { id: "web", label: "Web", icon: Globe, path: "/dashboard/broker" },
-    { id: "tasks", label: "Tasks", icon: ListTodo, path: "/dashboard/broker/tasks" },
     { id: "tracker", label: "Tracker", icon: Activity, path: "/dashboard/broker/tracker" },
     { id: "application", label: "Application", icon: FileText, path: "/dashboard/broker/application" },
     { id: "rates", label: "Mortgage Rates", icon: TrendingUp, path: "/dashboard/broker/rates" },
-    { id: "lenders", label: "Lender Comparison", icon: Building2, path: "/dashboard/broker/lenders" },
     { id: "library", label: "Library", icon: BookOpen, path: "/dashboard/broker/library" },
   ];
 
@@ -95,12 +91,10 @@ const BrokerDashboard = () => {
       <div className="container mx-auto px-4 py-8">
         <Routes>
           <Route index element={<BrokerWebTab />} />
-          <Route path="tasks" element={<BrokerTasksTab />} />
           <Route path="tracker" element={<BrokerTrackerTab />} />
           <Route path="application/*" element={<BrokerApplicationTab />} />
           <Route path="aip/:applicationId" element={<BrokerAIPPage />} />
           <Route path="rates" element={<BrokerRatesTab />} />
-          <Route path="lenders" element={<BrokerLenderComparisonTab />} />
           <Route path="library" element={<BrokerLibraryTab />} />
         </Routes>
       </div>
