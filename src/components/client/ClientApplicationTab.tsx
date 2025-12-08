@@ -10,11 +10,40 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { Save } from "lucide-react";
+import { Save, Upload, FileText, MessageSquare, FileCheck, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { DocumentUpload } from "@/components/DocumentUpload";
+import { DocumentList } from "@/components/DocumentList";
+import ClientMessaging from "@/components/broker/ClientMessaging";
+import AIPTab from "@/components/client/AIPTab";
+import { AIPDocumentsList } from "@/components/client/AIPDocumentsList";
+import { ESignaturesTab } from "@/components/client/ESignaturesTab";
+import { LoanOffersTab } from "@/components/client/LoanOffersTab";
+import { format, addDays } from "date-fns";
+
+interface Application {
+  id: string;
+  application_number: string;
+  status: string;
+  current_step: number;
+  assigned_broker_id: string | null;
+  aip_letter_url: string | null;
+  aip_approved_amount: number | null;
+  aip_lender_name: string | null;
+  aip_issue_date: string | null;
+  aip_validity_period: number | null;
+}
+
+interface Profile {
+  full_name: string | null;
+  email: string | null;
+}
 
 interface ClientApplicationTabProps {
   applicationId: string | null;
+  application?: Application | null;
+  brokerProfile?: Profile | null;
+  onRefresh?: () => void;
 }
 
 interface FormData {
@@ -239,7 +268,7 @@ const defaultFormData: FormData = {
   broker_notes: '',
 };
 
-const ClientApplicationTab = ({ applicationId }: ClientApplicationTabProps) => {
+const ClientApplicationTab = ({ applicationId, application, brokerProfile, onRefresh }: ClientApplicationTabProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("personal");
@@ -247,20 +276,27 @@ const ClientApplicationTab = ({ applicationId }: ClientApplicationTabProps) => {
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState<FormData>(defaultFormData);
   const [formDataId, setFormDataId] = useState<string | null>(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-  // Tab configuration matching broker
+  // Tab configuration - Row 1: Documents, AIP, Loan Offers, E-Signatures
   const row1Tabs = [
-    { id: "security", label: "Additional Security" },
-    { id: "alternative", label: "Alternative Lending" },
-    { id: "declarations", label: "Declarations" },
+    { id: "documents", label: "Documents" },
+    { id: "aip", label: "AIP" },
+    { id: "aip-letter", label: "AIP Letter" },
+    { id: "loan-offers", label: "Loan Offers" },
+    { id: "signatures", label: "E-Signatures" },
   ];
 
+  // Tab configuration - Row 2: Application form tabs
   const row2Tabs = [
     { id: "personal", label: "Personal Details" },
     { id: "income", label: "Income & Employment" },
     { id: "financial", label: "Financial & Credit History" },
     { id: "mortgage", label: "Mortgage Details" },
     { id: "property", label: "Property Details" },
+    { id: "security", label: "Additional Security" },
+    { id: "alternative", label: "Alternative Lending" },
+    { id: "declarations", label: "Declarations" },
   ];
 
   useEffect(() => {
@@ -409,20 +445,62 @@ const ClientApplicationTab = ({ applicationId }: ClientApplicationTabProps) => {
     );
   }
 
+  const handleUploadComplete = () => {
+    setRefreshTrigger(prev => prev + 1);
+    onRefresh?.();
+  };
+
+  const handleSubmitForReview = async () => {
+    if (!application) return;
+
+    try {
+      const { error } = await supabase
+        .from('applications')
+        .update({ 
+          status: 'pending_review',
+          current_step: 3
+        })
+        .eq('id', application.id);
+
+      if (error) throw error;
+
+      onRefresh?.();
+      toast({
+        title: "Submitted for Review",
+        description: "All documents uploaded! Your application is now under broker review.",
+      });
+    } catch (error) {
+      console.error('Error submitting application:', error);
+      toast({
+        title: "Error",
+        description: "Failed to submit application",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const canSubmitForReview = () => {
+    if (!application) return false;
+    // Check if all required documents are uploaded (simplified check)
+    return application.status === 'draft' || application.status === 'pending' || application.status === 'needs_documents';
+  };
+
   return (
     <div className="space-y-4">
-      {/* Save Button */}
-      <div className="flex justify-end">
-        <Button onClick={handleSave} disabled={saving}>
-          <Save className="h-4 w-4 mr-2" />
-          {saving ? 'Saving...' : 'Save Changes'}
-        </Button>
-      </div>
+      {/* Save Button - only show for form tabs */}
+      {['personal', 'income', 'financial', 'mortgage', 'property', 'security', 'alternative', 'declarations'].includes(activeTab) && (
+        <div className="flex justify-end">
+          <Button onClick={handleSave} disabled={saving}>
+            <Save className="h-4 w-4 mr-2" />
+            {saving ? 'Saving...' : 'Save Changes'}
+          </Button>
+        </div>
+      )}
 
       {/* Tab Navigation - Two Rows */}
       <Card className="overflow-hidden">
         <div className="border-b border-border">
-          {/* Row 1 */}
+          {/* Row 1 - Documents, AIP, Offers, Signatures */}
           <div className="flex flex-wrap bg-muted/30">
             {row1Tabs.map((tab) => (
               <button
@@ -439,7 +517,7 @@ const ClientApplicationTab = ({ applicationId }: ClientApplicationTabProps) => {
               </button>
             ))}
           </div>
-          {/* Row 2 */}
+          {/* Row 2 - Application Form Tabs */}
           <div className="flex flex-wrap bg-background">
             {row2Tabs.map((tab) => (
               <button
@@ -459,7 +537,226 @@ const ClientApplicationTab = ({ applicationId }: ClientApplicationTabProps) => {
         </div>
       </Card>
 
-      {/* Tab Content */}
+      {/* Documents Tab */}
+      {activeTab === "documents" && (
+        <div className="space-y-8">
+          <DocumentUpload onUploadComplete={handleUploadComplete} />
+          <DocumentList refreshTrigger={refreshTrigger} />
+
+          {canSubmitForReview() && (
+            <Card className="border-primary bg-primary/5">
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-semibold text-lg mb-1">Ready for Review</h3>
+                    <p className="text-sm text-muted-foreground">
+                      All required documents uploaded. Submit to broker for review.
+                    </p>
+                  </div>
+                  <Button onClick={handleSubmitForReview} size="lg">
+                    Submit for Review
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {application?.status === 'pending_review' && (
+            <Card className="border-warning bg-warning/5">
+              <CardContent className="pt-6">
+                <div className="text-center py-4">
+                  <h3 className="font-semibold text-lg mb-2">Under Review</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Your documents are being reviewed by your broker.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {application?.status === 'needs_documents' && (
+            <Card className="border-destructive bg-destructive/5">
+              <CardContent className="pt-6">
+                <div className="text-center py-4">
+                  <h3 className="font-semibold text-lg mb-2 text-destructive">Additional Documents Required</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Your broker has requested additional documents.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5 text-secondary" />
+                Valuation & Solicitor
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label>Valuation Report</Label>
+                <Button variant="outline" className="w-full">
+                  <Upload className="h-4 w-4 mr-2" />
+                  Upload Valuation Report
+                </Button>
+              </div>
+              <div className="space-y-2">
+                <Label>Solicitor Contact</Label>
+                <Input placeholder="Solicitor Name" />
+                <Input placeholder="Email" type="email" />
+                <Input placeholder="Phone" type="tel" />
+              </div>
+            </CardContent>
+          </Card>
+
+          {application?.assigned_broker_id ? (
+            <ClientMessaging 
+              clientId={application.assigned_broker_id} 
+              clientName={brokerProfile?.full_name || brokerProfile?.email || 'Broker'} 
+              applicationId={application.id}
+            />
+          ) : (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MessageSquare className="h-5 w-5 text-success" />
+                  Support Chat
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-64 border border-border rounded-lg p-4 overflow-y-auto bg-muted/30 flex items-center justify-center">
+                  <p className="text-muted-foreground text-sm">A broker will be assigned to your application soon</p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
+
+      {/* AIP Tab */}
+      {activeTab === "aip" && (
+        <AIPTab
+          aipData={application as any}
+          brokerProfile={brokerProfile || null}
+          onNavigateToDocuments={() => setActiveTab("documents")}
+          onOpenMessaging={() => setActiveTab("documents")}
+        />
+      )}
+
+      {/* AIP Letter Tab */}
+      {activeTab === "aip-letter" && (
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileCheck className="h-5 w-5 text-primary" />
+                Agreement in Principle Letter
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {application?.aip_letter_url ? (
+                <>
+                  <div className="p-4 bg-success/10 border border-success/20 rounded-lg">
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 bg-success/20 rounded-full">
+                        <FileCheck className="h-5 w-5 text-success" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-success mb-1">AIP Letter Available</h3>
+                        <p className="text-sm text-muted-foreground mb-3">
+                          Your Agreement in Principle has been issued. Download your letter below.
+                        </p>
+                        <div className="flex gap-2">
+                          <Button 
+                            onClick={() => window.open(application.aip_letter_url!, '_blank')}
+                            className="gap-2"
+                          >
+                            <Download className="h-4 w-4" />
+                            Download AIP Letter
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="p-4 border rounded-lg">
+                      <p className="text-xs text-muted-foreground mb-1">Approved Amount</p>
+                      <p className="text-2xl font-bold text-success">
+                        €{application.aip_approved_amount?.toLocaleString()}
+                      </p>
+                    </div>
+                    <div className="p-4 border rounded-lg">
+                      <p className="text-xs text-muted-foreground mb-1">Lender</p>
+                      <p className="text-lg font-semibold">{application.aip_lender_name || 'N/A'}</p>
+                    </div>
+                    <div className="p-4 border rounded-lg">
+                      <p className="text-xs text-muted-foreground mb-1">Issue Date</p>
+                      <p className="text-lg font-semibold">
+                        {application.aip_issue_date 
+                          ? format(new Date(application.aip_issue_date), 'dd MMM yyyy')
+                          : 'N/A'
+                        }
+                      </p>
+                    </div>
+                    <div className="p-4 border rounded-lg">
+                      <p className="text-xs text-muted-foreground mb-1">Valid Until</p>
+                      <p className="text-lg font-semibold">
+                        {application.aip_issue_date 
+                          ? format(
+                              addDays(new Date(application.aip_issue_date), application.aip_validity_period || 90),
+                              'dd MMM yyyy'
+                            )
+                          : 'N/A'
+                        }
+                      </p>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="text-center py-12">
+                  <div className="inline-flex p-4 bg-muted rounded-full mb-4">
+                    <FileCheck className="h-8 w-8 text-muted-foreground" />
+                  </div>
+                  <h3 className="font-semibold text-lg mb-2">AIP Letter Not Yet Issued</h3>
+                  <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                    Your Agreement in Principle is being processed. Once approved, your AIP letter will be available here for download.
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5 text-secondary" />
+                AIP Documents
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <AIPDocumentsList applicationId={application?.id} />
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Loan Offers Tab */}
+      {activeTab === "loan-offers" && (
+        <LoanOffersTab applicationId={application?.id || null} />
+      )}
+
+      {/* E-Signatures Tab */}
+      {activeTab === "signatures" && (
+        <ESignaturesTab 
+          application={application || null} 
+          onSignatureComplete={onRefresh || (() => {})}
+        />
+      )}
+
+      {/* Form Tabs Content */}
       {activeTab === "personal" && <PersonalTab formData={formData} onChange={handleInputChange} />}
       {activeTab === "income" && <IncomeTab formData={formData} onChange={handleInputChange} />}
       {activeTab === "financial" && <FinancialTab formData={formData} onChange={handleInputChange} />}
