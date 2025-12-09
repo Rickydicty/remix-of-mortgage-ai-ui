@@ -751,10 +751,9 @@ const PersonalTab = ({ formData, onChange }: { formData: FormData; onChange: (fi
   return (
     <Card>
       <CardContent className="pt-6">
-        <div className="grid md:grid-cols-2 gap-8">
-          {/* Applicant 1 */}
-          <div className="space-y-4">
-            <h3 className="font-bold text-primary text-lg">Applicant 1</h3>
+        <div className="space-y-4">
+          <h3 className="font-bold text-primary text-lg">Applicant</h3>
+          <div className="grid md:grid-cols-2 gap-6">
             <div className="space-y-3">
               <div className="flex items-center gap-4">
                 <Label className="w-40 text-muted-foreground">Title</Label>
@@ -808,6 +807,8 @@ const PersonalTab = ({ formData, onChange }: { formData: FormData; onChange: (fi
                 <Label className="w-40 text-muted-foreground">PPS Number</Label>
                 <Input className="flex-1" value={formData.app1_pps_number} onChange={(e) => onChange('app1_pps_number', e.target.value)} />
               </div>
+            </div>
+            <div className="space-y-3">
               <div className="flex items-center gap-4">
                 <Label className="w-40 text-muted-foreground">Marital Status</Label>
                 <Select value={formData.app1_marital_status} onValueChange={(v) => onChange('app1_marital_status', v)}>
@@ -849,116 +850,6 @@ const PersonalTab = ({ formData, onChange }: { formData: FormData; onChange: (fi
               </div>
             </div>
           </div>
-
-          {/* Applicant 2 */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-4">
-              <h3 className="font-bold text-primary text-lg">Applicant 2</h3>
-              <div className="flex items-center gap-4 ml-4">
-                <div className="flex items-center gap-2">
-                  <Checkbox id="enabled" checked={formData.app2_enabled} onCheckedChange={(v) => onChange('app2_enabled', v)} />
-                  <Label htmlFor="enabled" className="text-sm">Enabled</Label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Checkbox id="guarantor" checked={formData.app2_is_guarantor} onCheckedChange={(v) => onChange('app2_is_guarantor', v)} />
-                  <Label htmlFor="guarantor" className="text-sm">Guarantor</Label>
-                </div>
-              </div>
-            </div>
-            <div className={cn("space-y-3", !formData.app2_enabled && "opacity-50 pointer-events-none")}>
-              <div className="flex items-center gap-4">
-                <Label className="w-40 text-muted-foreground">Title</Label>
-                <Select value={formData.app2_title} onValueChange={(v) => onChange('app2_title', v)}>
-                  <SelectTrigger className="flex-1">
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="mr">Mr</SelectItem>
-                    <SelectItem value="mrs">Mrs</SelectItem>
-                    <SelectItem value="ms">Ms</SelectItem>
-                    <SelectItem value="miss">Miss</SelectItem>
-                    <SelectItem value="dr">Dr</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex items-center gap-4">
-                <Label className="w-40 text-muted-foreground">Forenames<span className="text-destructive">*</span></Label>
-                <Input className="flex-1" value={formData.app2_forenames} onChange={(e) => onChange('app2_forenames', e.target.value)} />
-              </div>
-              <div className="flex items-center gap-4">
-                <Label className="w-40 text-muted-foreground">Surname<span className="text-destructive">*</span></Label>
-                <Input className="flex-1" value={formData.app2_surname} onChange={(e) => onChange('app2_surname', e.target.value)} />
-              </div>
-              <div className="flex items-center gap-4">
-                <Label className="w-40 text-muted-foreground">Other/Previous Names</Label>
-                <Input className="flex-1" value={formData.app2_other_names} onChange={(e) => onChange('app2_other_names', e.target.value)} />
-              </div>
-              <div className="flex items-center gap-4">
-                <Label className="w-40 text-muted-foreground">Gender</Label>
-                <Select value={formData.app2_gender} onValueChange={(v) => onChange('app2_gender', v)}>
-                  <SelectTrigger className="flex-1">
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="male">Male</SelectItem>
-                    <SelectItem value="female">Female</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex items-center gap-4">
-                <Label className="w-40 text-muted-foreground">Date of Birth</Label>
-                <Input className="flex-1" type="date" value={formData.app2_date_of_birth} onChange={(e) => onChange('app2_date_of_birth', e.target.value)} />
-              </div>
-              <div className="flex items-center gap-4">
-                <Label className="w-40 text-muted-foreground">Nationality</Label>
-                <Input className="flex-1" value={formData.app2_nationality} onChange={(e) => onChange('app2_nationality', e.target.value)} />
-              </div>
-              <div className="flex items-center gap-4">
-                <Label className="w-40 text-muted-foreground">PPS Number</Label>
-                <Input className="flex-1" value={formData.app2_pps_number} onChange={(e) => onChange('app2_pps_number', e.target.value)} />
-              </div>
-              <div className="flex items-center gap-4">
-                <Label className="w-40 text-muted-foreground">Marital Status</Label>
-                <Select value={formData.app2_marital_status} onValueChange={(v) => onChange('app2_marital_status', v)}>
-                  <SelectTrigger className="flex-1">
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="single">Single</SelectItem>
-                    <SelectItem value="married">Married</SelectItem>
-                    <SelectItem value="divorced">Divorced</SelectItem>
-                    <SelectItem value="widowed">Widowed</SelectItem>
-                    <SelectItem value="separated">Separated</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex items-center gap-4">
-                <Label className="w-40 text-muted-foreground">No. of Children</Label>
-                <Input className="w-20" type="number" value={formData.app2_no_of_children || ''} onChange={(e) => onChange('app2_no_of_children', parseInt(e.target.value) || 0)} />
-              </div>
-              <div className="flex items-center gap-4">
-                <Label className="w-40 text-muted-foreground">Children's Ages</Label>
-                <Input className="flex-1" placeholder="e.g., 5, 8, 12" value={formData.app2_children_ages} onChange={(e) => onChange('app2_children_ages', e.target.value)} />
-              </div>
-              <div className="flex items-center gap-4">
-                <Label className="w-40 text-muted-foreground">Phone</Label>
-                <Input className="flex-1" value={formData.app2_phone} onChange={(e) => onChange('app2_phone', e.target.value)} />
-              </div>
-              <div className="flex items-center gap-4">
-                <Label className="w-40 text-muted-foreground">Email</Label>
-                <Input className="flex-1" type="email" value={formData.app2_email} onChange={(e) => onChange('app2_email', e.target.value)} />
-              </div>
-              <div className="flex items-center gap-4">
-                <Label className="w-40 text-muted-foreground">Address</Label>
-                <Textarea className="flex-1" value={formData.app2_address} onChange={(e) => onChange('app2_address', e.target.value)} rows={2} />
-              </div>
-              <div className="flex items-center gap-4">
-                <Label className="w-40 text-muted-foreground">Years at Address</Label>
-                <Input className="w-20" type="number" value={formData.app2_years_at_address || ''} onChange={(e) => onChange('app2_years_at_address', parseInt(e.target.value) || 0)} />
-              </div>
-            </div>
-          </div>
         </div>
       </CardContent>
     </Card>
@@ -983,11 +874,10 @@ const IncomeTab = ({ formData, onChange }: { formData: FormData; onChange: (fiel
   return (
     <Card>
       <CardContent className="pt-6">
-        <div className="grid md:grid-cols-2 gap-8">
-          {/* Applicant 1 */}
-          <div className="space-y-4">
-            <h3 className="font-bold text-primary text-lg">Applicant 1</h3>
-            <h4 className="font-semibold bg-primary/10 px-3 py-1">⊿ Current Income</h4>
+        <div className="space-y-4">
+          <h3 className="font-bold text-primary text-lg">Applicant Income</h3>
+          <h4 className="font-semibold bg-primary/10 px-3 py-1">⊿ Current Income</h4>
+          <div className="grid md:grid-cols-2 gap-6">
             <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <Label className="w-56 text-sm text-muted-foreground">Gross basic wage/salary per annum</Label>
@@ -1019,6 +909,8 @@ const IncomeTab = ({ formData, onChange }: { formData: FormData; onChange: (fiel
                 <Input className="w-28" type="number" value={formData.app1_other_income || ''} onChange={(e) => onChange('app1_other_income', parseFloat(e.target.value) || 0)} />
                 <FrequencySelect value={formData.app1_other_income_frequency} field="app1_other_income_frequency" />
               </div>
+            </div>
+            <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <Label className="w-56 text-sm text-muted-foreground">Other Income Details</Label>
                 <Input className="flex-1" value={formData.app1_other_income_details} onChange={(e) => onChange('app1_other_income_details', e.target.value)} />
@@ -1033,62 +925,10 @@ const IncomeTab = ({ formData, onChange }: { formData: FormData; onChange: (fiel
                 <span className="text-muted-foreground">€</span>
                 <Input className="w-28" type="number" value={formData.app1_residential_investment_income || ''} onChange={(e) => onChange('app1_residential_investment_income', parseFloat(e.target.value) || 0)} />
               </div>
-              <div className="flex items-center gap-2 pt-4">
+              <div className="flex items-center gap-2">
                 <Label className="w-56 text-sm text-muted-foreground">Other Household Income</Label>
                 <span className="text-muted-foreground">€</span>
                 <Input className="w-28" type="number" value={formData.app1_other_household_income || ''} onChange={(e) => onChange('app1_other_household_income', parseFloat(e.target.value) || 0)} />
-              </div>
-            </div>
-          </div>
-
-          {/* Applicant 2 */}
-          <div className={cn("space-y-4", !formData.app2_enabled && "opacity-50 pointer-events-none")}>
-            <h3 className="font-bold text-primary text-lg">Applicant 2</h3>
-            <h4 className="font-semibold bg-primary/10 px-3 py-1">⊿ Current Income</h4>
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <Label className="w-56 text-sm text-muted-foreground">Gross basic wage/salary per annum</Label>
-                <span className="text-muted-foreground">€</span>
-                <Input className="w-28" type="number" value={formData.app2_gross_salary || ''} onChange={(e) => onChange('app2_gross_salary', parseFloat(e.target.value) || 0)} />
-                <FrequencySelect value={formData.app2_salary_frequency} field="app2_salary_frequency" />
-              </div>
-              <div className="flex items-center gap-2">
-                <Label className="w-56 text-sm text-muted-foreground">Overtime per annum</Label>
-                <span className="text-muted-foreground">€</span>
-                <Input className="w-28" type="number" value={formData.app2_overtime || ''} onChange={(e) => onChange('app2_overtime', parseFloat(e.target.value) || 0)} />
-                <FrequencySelect value={formData.app2_overtime_frequency} field="app2_overtime_frequency" />
-              </div>
-              <div className="flex items-center gap-2">
-                <Label className="w-56 text-sm text-muted-foreground">Bonuses per annum</Label>
-                <span className="text-muted-foreground">€</span>
-                <Input className="w-28" type="number" value={formData.app2_bonuses || ''} onChange={(e) => onChange('app2_bonuses', parseFloat(e.target.value) || 0)} />
-                <FrequencySelect value={formData.app2_bonuses_frequency} field="app2_bonuses_frequency" />
-              </div>
-              <div className="flex items-center gap-2">
-                <Label className="w-56 text-sm text-muted-foreground">Commissions per annum</Label>
-                <span className="text-muted-foreground">€</span>
-                <Input className="w-28" type="number" value={formData.app2_commissions || ''} onChange={(e) => onChange('app2_commissions', parseFloat(e.target.value) || 0)} />
-                <FrequencySelect value={formData.app2_commissions_frequency} field="app2_commissions_frequency" />
-              </div>
-              <div className="flex items-center gap-2">
-                <Label className="w-56 text-sm text-muted-foreground">Other income (non rental)</Label>
-                <span className="text-muted-foreground">€</span>
-                <Input className="w-28" type="number" value={formData.app2_other_income || ''} onChange={(e) => onChange('app2_other_income', parseFloat(e.target.value) || 0)} />
-                <FrequencySelect value={formData.app2_other_income_frequency} field="app2_other_income_frequency" />
-              </div>
-              <div className="flex items-center gap-2">
-                <Label className="w-56 text-sm text-muted-foreground">Other Income Details</Label>
-                <Input className="flex-1" value={formData.app2_other_income_details} onChange={(e) => onChange('app2_other_income_details', e.target.value)} />
-              </div>
-              <div className="flex items-center gap-2">
-                <Label className="w-56 text-sm text-muted-foreground">Lodger income per annum</Label>
-                <span className="text-muted-foreground">€</span>
-                <Input className="w-28" type="number" value={formData.app2_lodger_income || ''} onChange={(e) => onChange('app2_lodger_income', parseFloat(e.target.value) || 0)} />
-              </div>
-              <div className="flex items-center gap-2">
-                <Label className="w-56 text-sm text-muted-foreground">Residential investment income</Label>
-                <span className="text-muted-foreground">€</span>
-                <Input className="w-28" type="number" value={formData.app2_residential_investment_income || ''} onChange={(e) => onChange('app2_residential_investment_income', parseFloat(e.target.value) || 0)} />
               </div>
             </div>
           </div>
