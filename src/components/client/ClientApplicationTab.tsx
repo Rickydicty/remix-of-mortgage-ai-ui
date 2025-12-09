@@ -278,23 +278,19 @@ const ClientApplicationTab = ({ applicationId, application, brokerProfile, onRef
   const [formDataId, setFormDataId] = useState<string | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-  // Tab configuration - Row 1: Documents and E-Signatures only
-  const row1Tabs = [
+  // All tabs now in a single row - stacked evenly
+  const allTabs = [
     { id: "documents", label: "Documents" },
-    { id: "signatures", label: "E-Signatures" },
-  ];
-
-  // Tab configuration - Row 2: Application form tabs
-  const row2Tabs = [
     { id: "personal", label: "Personal Details" },
     { id: "income", label: "Income & Employment" },
-    { id: "financial", label: "Financial & Credit History" },
+    { id: "financial", label: "Financial & Credit" },
     { id: "mortgage", label: "Mortgage Details" },
     { id: "property", label: "Property Details" },
     { id: "security", label: "Additional Security" },
     { id: "alternative", label: "Alternative Lending" },
     { id: "declarations", label: "Declarations" },
   ];
+
 
   useEffect(() => {
     fetchData();
@@ -494,43 +490,23 @@ const ClientApplicationTab = ({ applicationId, application, brokerProfile, onRef
         </div>
       )}
 
-      {/* Tab Navigation - Two Rows */}
+      {/* Tab Navigation - Single Row with Even Spacing */}
       <Card className="overflow-hidden">
-        <div className="border-b border-border">
-          {/* Row 1 - Documents, AIP, Offers, Signatures */}
-          <div className="flex flex-wrap bg-muted/30">
-            {row1Tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={cn(
-                  "px-4 py-2 text-sm font-medium border-r border-b border-border transition-colors",
-                  activeTab === tab.id
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted/50 hover:bg-muted text-foreground"
-                )}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-          {/* Row 2 - Application Form Tabs */}
-          <div className="flex flex-wrap bg-background">
-            {row2Tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={cn(
-                  "px-4 py-2 text-sm font-medium border-r border-border transition-colors",
-                  activeTab === tab.id
-                    ? "bg-primary text-primary-foreground"
-                    : "hover:bg-muted/50 text-foreground"
-                )}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
+        <div className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-9">
+          {allTabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={cn(
+                "px-3 py-3 text-xs md:text-sm font-medium border-r border-b border-border transition-colors text-center",
+                activeTab === tab.id
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted/30 hover:bg-muted text-foreground"
+              )}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
       </Card>
 
@@ -648,6 +624,22 @@ const ClientApplicationTab = ({ applicationId, application, brokerProfile, onRef
             </CardContent>
           </Card>
 
+          {/* E-Signatures Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileCheck className="h-5 w-5 text-primary" />
+                E-Signatures
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ESignaturesTab 
+                application={application || null} 
+                onSignatureComplete={onRefresh || (() => {})}
+              />
+            </CardContent>
+          </Card>
+
           {canSubmitForReview() && (
             <Card className="border-primary bg-primary/5">
               <CardContent className="pt-6">
@@ -740,13 +732,6 @@ const ClientApplicationTab = ({ applicationId, application, brokerProfile, onRef
         </div>
       )}
 
-      {/* E-Signatures Tab */}
-      {activeTab === "signatures" && (
-        <ESignaturesTab 
-          application={application || null} 
-          onSignatureComplete={onRefresh || (() => {})}
-        />
-      )}
 
       {/* Form Tabs Content */}
       {activeTab === "personal" && <PersonalTab formData={formData} onChange={handleInputChange} />}
