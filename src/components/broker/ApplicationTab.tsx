@@ -399,10 +399,9 @@ const PersonalTab = ({ profile, preEligibility, formData }: { profile: any; preE
   return (
     <Card>
       <CardContent className="pt-6">
-        <div className="grid md:grid-cols-2 gap-8">
-          {/* Applicant 1 */}
-          <div className="space-y-4">
-            <h3 className="font-bold text-primary text-lg">Applicant 1</h3>
+        <div className="space-y-4">
+          <h3 className="font-bold text-primary text-lg">Applicant</h3>
+          <div className="grid md:grid-cols-2 gap-6">
             <div className="space-y-3">
               <div className="flex items-center gap-4">
                 <Label className="w-40 text-muted-foreground">Forenames<span className="text-destructive">*</span></Label>
@@ -448,104 +447,8 @@ const PersonalTab = ({ profile, preEligibility, formData }: { profile: any; preE
                 <Label className="w-40 text-muted-foreground">Date of Birth (dd/mm/yyyy)</Label>
                 <Input className="flex-1" type="date" />
               </div>
-              <div className="flex items-center gap-4">
-                <Label className="w-40 text-muted-foreground">Nationality</Label>
-                <Input className="flex-1" defaultValue="Irish" />
-              </div>
-              <div className="flex items-center gap-4">
-                <Label className="w-40 text-muted-foreground">PPS Number</Label>
-                <Input className="flex-1" />
-              </div>
-              <div className="flex items-center gap-4">
-                <Label className="w-40 text-muted-foreground">Marital Status</Label>
-                <Select>
-                  <SelectTrigger className="flex-1">
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="single">Single</SelectItem>
-                    <SelectItem value="married">Married</SelectItem>
-                    <SelectItem value="divorced">Divorced</SelectItem>
-                    <SelectItem value="widowed">Widowed</SelectItem>
-                    <SelectItem value="separated">Separated</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex items-center gap-4">
-                <Label className="w-40 text-muted-foreground">No. of Children</Label>
-                <Input className="w-20" type="number" />
-              </div>
-              <div className="flex items-center gap-4">
-                <Label className="w-40 text-muted-foreground">Children's Ages</Label>
-                <Input className="flex-1" placeholder="e.g., 5, 8, 12" />
-              </div>
             </div>
-          </div>
-
-          {/* Applicant 2 */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-4">
-              <h3 className="font-bold text-primary text-lg">Applicant 2</h3>
-              <div className="flex items-center gap-4 ml-4">
-                <div className="flex items-center gap-2">
-                  <Checkbox id="enabled" checked={isJoint} />
-                  <Label htmlFor="enabled" className="text-sm">Enabled</Label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Checkbox id="guarantor" />
-                  <Label htmlFor="guarantor" className="text-sm">Guarantor</Label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Checkbox id="copyAddress" />
-                  <Label htmlFor="copyAddress" className="text-sm">Copy Address</Label>
-                </div>
-              </div>
-            </div>
-            <div className={cn("space-y-3", !isJoint && "opacity-50 pointer-events-none")}>
-              <div className="flex items-center gap-4">
-                <Label className="w-40 text-muted-foreground">Forenames<span className="text-destructive">*</span></Label>
-                <Input className="flex-1" />
-              </div>
-              <div className="flex items-center gap-4">
-                <Label className="w-40 text-muted-foreground">Surname<span className="text-destructive">*</span></Label>
-                <Input className="flex-1" />
-              </div>
-              <div className="flex items-center gap-4">
-                <Label className="w-40 text-muted-foreground">Other/Previous Names</Label>
-                <Input className="flex-1" />
-              </div>
-              <div className="flex items-center gap-4">
-                <Label className="w-40 text-muted-foreground">Gender</Label>
-                <Select>
-                  <SelectTrigger className="flex-1">
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="male">Male</SelectItem>
-                    <SelectItem value="female">Female</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex items-center gap-4">
-                <Label className="w-40 text-muted-foreground">Title</Label>
-                <Select>
-                  <SelectTrigger className="flex-1">
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="mr">Mr</SelectItem>
-                    <SelectItem value="mrs">Mrs</SelectItem>
-                    <SelectItem value="ms">Ms</SelectItem>
-                    <SelectItem value="miss">Miss</SelectItem>
-                    <SelectItem value="dr">Dr</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex items-center gap-4">
-                <Label className="w-40 text-muted-foreground">Date of Birth (dd/mm/yyyy)</Label>
-                <Input className="flex-1" type="date" />
-              </div>
+            <div className="space-y-3">
               <div className="flex items-center gap-4">
                 <Label className="w-40 text-muted-foreground">Nationality</Label>
                 <Input className="flex-1" defaultValue="Irish" />
@@ -583,8 +486,6 @@ const PersonalTab = ({ profile, preEligibility, formData }: { profile: any; preE
 
         {/* Action Buttons */}
         <div className="flex justify-center gap-4 pt-6 border-t mt-6">
-          <Button variant="outline">Applicant One & Two</Button>
-          <Button variant="outline">Applicant Three & Four</Button>
           <Button variant="outline">Save</Button>
         </div>
         <div className="flex justify-end gap-2 mt-4">
@@ -598,17 +499,13 @@ const PersonalTab = ({ profile, preEligibility, formData }: { profile: any; preE
 
 // Income Tab Component
 const IncomeTab = ({ preEligibility, formData }: { preEligibility: PreEligibilityData | null; formData: any }) => {
-  const isJoint = formData?.app2_enabled || preEligibility?.applicant_type === 'joint';
-
   return (
     <Card>
       <CardContent className="pt-6">
-        <p className="text-destructive text-center mb-4">Fill in personal details first</p>
-        <div className="grid md:grid-cols-2 gap-8">
-          {/* Applicant 1 */}
-          <div className="space-y-4">
-            <h3 className="font-bold text-primary text-lg">Applicant 1</h3>
-            <h4 className="font-semibold bg-primary/10 px-3 py-1">⊿ Current Income</h4>
+        <div className="space-y-4">
+          <h3 className="font-bold text-primary text-lg">Applicant Income</h3>
+          <h4 className="font-semibold bg-primary/10 px-3 py-1">⊿ Current Income</h4>
+          <div className="grid md:grid-cols-2 gap-6">
             <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <Label className="w-56 text-sm text-muted-foreground">Gross basic wage/salary per annum</Label>
@@ -616,7 +513,7 @@ const IncomeTab = ({ preEligibility, formData }: { preEligibility: PreEligibilit
                 <Input className="w-28" type="number" defaultValue={preEligibility?.income_1 || ''} />
                 <Select>
                   <SelectTrigger className="w-36">
-                    <SelectValue placeholder="Income frequency" />
+                    <SelectValue placeholder="Frequency" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="annual">Annual</SelectItem>
@@ -631,7 +528,7 @@ const IncomeTab = ({ preEligibility, formData }: { preEligibility: PreEligibilit
                 <Input className="w-28" type="number" />
                 <Select>
                   <SelectTrigger className="w-36">
-                    <SelectValue placeholder="Income frequency" />
+                    <SelectValue placeholder="Frequency" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="annual">Annual</SelectItem>
@@ -646,7 +543,7 @@ const IncomeTab = ({ preEligibility, formData }: { preEligibility: PreEligibilit
                 <Input className="w-28" type="number" />
                 <Select>
                   <SelectTrigger className="w-36">
-                    <SelectValue placeholder="Income frequency" />
+                    <SelectValue placeholder="Frequency" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="annual">Annual</SelectItem>
@@ -661,7 +558,7 @@ const IncomeTab = ({ preEligibility, formData }: { preEligibility: PreEligibilit
                 <Input className="w-28" type="number" />
                 <Select>
                   <SelectTrigger className="w-36">
-                    <SelectValue placeholder="Income frequency" />
+                    <SelectValue placeholder="Frequency" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="annual">Annual</SelectItem>
@@ -671,12 +568,12 @@ const IncomeTab = ({ preEligibility, formData }: { preEligibility: PreEligibilit
                 </Select>
               </div>
               <div className="flex items-center gap-2">
-                <Label className="w-56 text-sm text-muted-foreground">Other income (non rental) per annum</Label>
+                <Label className="w-56 text-sm text-muted-foreground">Other income (non rental)</Label>
                 <span className="text-muted-foreground">€</span>
                 <Input className="w-28" type="number" />
                 <Select>
                   <SelectTrigger className="w-36">
-                    <SelectValue placeholder="Income frequency" />
+                    <SelectValue placeholder="Frequency" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="annual">Annual</SelectItem>
@@ -684,109 +581,9 @@ const IncomeTab = ({ preEligibility, formData }: { preEligibility: PreEligibilit
                     <SelectItem value="weekly">Weekly</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
-              <div className="flex items-center gap-2">
-                <Label className="w-56 text-sm text-muted-foreground">Other Income Details</Label>
-                <Input className="flex-1" />
-              </div>
-              <div className="flex items-center gap-2">
-                <Label className="w-56 text-sm text-muted-foreground">Lodger income per annum</Label>
-                <span className="text-muted-foreground">€</span>
-                <Input className="w-28" type="number" />
-              </div>
-              <div className="flex items-center gap-2">
-                <Label className="w-56 text-sm text-muted-foreground">Residential investment income per annum</Label>
-                <span className="text-muted-foreground">€</span>
-                <Input className="w-28" type="number" />
-              </div>
-              <div className="flex items-center gap-2 pt-4">
-                <Label className="w-56 text-sm text-muted-foreground">Other Household Income (spouse income if not applicant)</Label>
-                <span className="text-muted-foreground">€</span>
-                <Input className="w-28" type="number" />
               </div>
             </div>
-          </div>
-
-          {/* Applicant 2 */}
-          <div className={cn("space-y-4", !isJoint && "opacity-50 pointer-events-none")}>
-            <h3 className="font-bold text-primary text-lg">Applicant 2</h3>
-            <h4 className="font-semibold bg-primary/10 px-3 py-1">⊿ Current Income</h4>
             <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <Label className="w-56 text-sm text-muted-foreground">Gross basic wage/salary per annum</Label>
-                <span className="text-muted-foreground">€</span>
-                <Input className="w-28" type="number" defaultValue={preEligibility?.income_2 || ''} />
-                <Select>
-                  <SelectTrigger className="w-36">
-                    <SelectValue placeholder="Income frequency" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="annual">Annual</SelectItem>
-                    <SelectItem value="monthly">Monthly</SelectItem>
-                    <SelectItem value="weekly">Weekly</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex items-center gap-2">
-                <Label className="w-56 text-sm text-muted-foreground">Overtime per annum</Label>
-                <span className="text-muted-foreground">€</span>
-                <Input className="w-28" type="number" />
-                <Select>
-                  <SelectTrigger className="w-36">
-                    <SelectValue placeholder="Income frequency" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="annual">Annual</SelectItem>
-                    <SelectItem value="monthly">Monthly</SelectItem>
-                    <SelectItem value="weekly">Weekly</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex items-center gap-2">
-                <Label className="w-56 text-sm text-muted-foreground">Bonuses per annum</Label>
-                <span className="text-muted-foreground">€</span>
-                <Input className="w-28" type="number" />
-                <Select>
-                  <SelectTrigger className="w-36">
-                    <SelectValue placeholder="Income frequency" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="annual">Annual</SelectItem>
-                    <SelectItem value="monthly">Monthly</SelectItem>
-                    <SelectItem value="weekly">Weekly</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex items-center gap-2">
-                <Label className="w-56 text-sm text-muted-foreground">Commissions per annum</Label>
-                <span className="text-muted-foreground">€</span>
-                <Input className="w-28" type="number" />
-                <Select>
-                  <SelectTrigger className="w-36">
-                    <SelectValue placeholder="Income frequency" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="annual">Annual</SelectItem>
-                    <SelectItem value="monthly">Monthly</SelectItem>
-                    <SelectItem value="weekly">Weekly</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex items-center gap-2">
-                <Label className="w-56 text-sm text-muted-foreground">Other income (non rental) per annum</Label>
-                <span className="text-muted-foreground">€</span>
-                <Input className="w-28" type="number" />
-                <Select>
-                  <SelectTrigger className="w-36">
-                    <SelectValue placeholder="Income frequency" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="annual">Annual</SelectItem>
-                    <SelectItem value="monthly">Monthly</SelectItem>
-                    <SelectItem value="weekly">Weekly</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
               <div className="flex items-center gap-2">
                 <Label className="w-56 text-sm text-muted-foreground">Other Income Details</Label>
                 <Input className="flex-1" />
@@ -797,12 +594,12 @@ const IncomeTab = ({ preEligibility, formData }: { preEligibility: PreEligibilit
                 <Input className="w-28" type="number" />
               </div>
               <div className="flex items-center gap-2">
-                <Label className="w-56 text-sm text-muted-foreground">Residential investment income per annum</Label>
+                <Label className="w-56 text-sm text-muted-foreground">Residential investment income</Label>
                 <span className="text-muted-foreground">€</span>
                 <Input className="w-28" type="number" />
               </div>
-              <div className="flex items-center gap-2 pt-4">
-                <Label className="w-56 text-sm text-muted-foreground">Other Household Income (spouse income if not applicant)</Label>
+              <div className="flex items-center gap-2">
+                <Label className="w-56 text-sm text-muted-foreground">Other Household Income</Label>
                 <span className="text-muted-foreground">€</span>
                 <Input className="w-28" type="number" />
               </div>
@@ -812,8 +609,6 @@ const IncomeTab = ({ preEligibility, formData }: { preEligibility: PreEligibilit
 
         {/* Action Buttons */}
         <div className="flex justify-center gap-4 pt-6 border-t mt-6">
-          <Button variant="outline">Applicant One & Two</Button>
-          <Button variant="outline">Applicant Three & Four</Button>
           <Button variant="outline">Save</Button>
         </div>
         <div className="flex justify-end gap-2 mt-4">
@@ -827,34 +622,27 @@ const IncomeTab = ({ preEligibility, formData }: { preEligibility: PreEligibilit
 
 // Financial Tab Component
 const FinancialTab = ({ preEligibility, formData }: { preEligibility: PreEligibilityData | null; formData: any }) => {
-  const isJoint = formData?.app2_enabled || preEligibility?.applicant_type === 'joint';
-
   return (
     <Card>
       <CardContent className="pt-6">
-        <div className="grid md:grid-cols-2 gap-8">
-          {/* Applicant 1 */}
-          <div className="space-y-4">
-            <h3 className="font-bold text-primary text-lg">Applicant 1</h3>
+        <div className="space-y-4">
+          <h3 className="font-bold text-primary text-lg">Applicant Financial Details</h3>
+          <div className="grid md:grid-cols-2 gap-6">
             <div className="space-y-3">
               <div className="flex items-center gap-4">
                 <Label className="w-48 text-muted-foreground">Current Bank/Building Society</Label>
                 <Input className="flex-1" />
               </div>
               <div className="flex items-center gap-4">
-                <Label className="w-48 text-muted-foreground text-right">Address Line 1</Label>
+                <Label className="w-48 text-muted-foreground">Address Line 1</Label>
                 <Input className="flex-1" />
               </div>
               <div className="flex items-center gap-4">
-                <Label className="w-48 text-muted-foreground text-right">Address Line 2</Label>
+                <Label className="w-48 text-muted-foreground">Address Line 2</Label>
                 <Input className="flex-1" />
               </div>
               <div className="flex items-center gap-4">
-                <Label className="w-48 text-muted-foreground text-right">Address Line 3</Label>
-                <Input className="flex-1" />
-              </div>
-              <div className="flex items-center gap-4">
-                <Label className="w-48 text-muted-foreground text-right">County</Label>
+                <Label className="w-48 text-muted-foreground">County</Label>
                 <Select>
                   <SelectTrigger className="flex-1">
                     <SelectValue placeholder="Select" />
@@ -868,69 +656,11 @@ const FinancialTab = ({ preEligibility, formData }: { preEligibility: PreEligibi
                 </Select>
               </div>
               <div className="flex items-center gap-4">
-                <Label className="w-48 text-muted-foreground text-right">Country</Label>
+                <Label className="w-48 text-muted-foreground">Country</Label>
                 <Input className="flex-1" defaultValue="Ireland" />
-              </div>
-              <div className="flex items-center gap-4">
-                <Label className="w-48 text-muted-foreground">Account Type</Label>
-                <Input className="flex-1" />
-              </div>
-              <div className="flex items-center gap-4">
-                <Label className="w-48 text-muted-foreground">Account Number</Label>
-                <Input className="flex-1" />
-              </div>
-              <div className="flex items-center gap-4">
-                <Label className="w-48 text-muted-foreground">Sort Code</Label>
-                <Input className="flex-1" />
-              </div>
-              <div className="flex items-center gap-4">
-                <Label className="w-48 text-muted-foreground">How long have you held this account</Label>
-                <Input className="w-16" type="number" placeholder="" />
-                <span className="text-sm text-muted-foreground">years,</span>
-                <Input className="w-16" type="number" placeholder="" />
-                <span className="text-sm text-muted-foreground">months</span>
               </div>
             </div>
-          </div>
-
-          {/* Applicant 2 */}
-          <div className={cn("space-y-4", !isJoint && "opacity-50 pointer-events-none")}>
-            <h3 className="font-bold text-primary text-lg">Applicant 2</h3>
             <div className="space-y-3">
-              <div className="flex items-center gap-4">
-                <Label className="w-48 text-muted-foreground">Current Bank/Building Society</Label>
-                <Input className="flex-1" />
-              </div>
-              <div className="flex items-center gap-4">
-                <Label className="w-48 text-muted-foreground text-right">Address Line 1</Label>
-                <Input className="flex-1" />
-              </div>
-              <div className="flex items-center gap-4">
-                <Label className="w-48 text-muted-foreground text-right">Address Line 2</Label>
-                <Input className="flex-1" />
-              </div>
-              <div className="flex items-center gap-4">
-                <Label className="w-48 text-muted-foreground text-right">Address Line 3</Label>
-                <Input className="flex-1" />
-              </div>
-              <div className="flex items-center gap-4">
-                <Label className="w-48 text-muted-foreground text-right">County</Label>
-                <Select>
-                  <SelectTrigger className="flex-1">
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="dublin">Dublin</SelectItem>
-                    <SelectItem value="cork">Cork</SelectItem>
-                    <SelectItem value="galway">Galway</SelectItem>
-                    <SelectItem value="limerick">Limerick</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex items-center gap-4">
-                <Label className="w-48 text-muted-foreground text-right">Country</Label>
-                <Input className="flex-1" defaultValue="Ireland" />
-              </div>
               <div className="flex items-center gap-4">
                 <Label className="w-48 text-muted-foreground">Account Type</Label>
                 <Input className="flex-1" />
@@ -944,7 +674,7 @@ const FinancialTab = ({ preEligibility, formData }: { preEligibility: PreEligibi
                 <Input className="flex-1" />
               </div>
               <div className="flex items-center gap-4">
-                <Label className="w-48 text-muted-foreground">How long have you held this account</Label>
+                <Label className="w-48 text-muted-foreground">Account Duration</Label>
                 <Input className="w-16" type="number" placeholder="" />
                 <span className="text-sm text-muted-foreground">years,</span>
                 <Input className="w-16" type="number" placeholder="" />
@@ -960,7 +690,6 @@ const FinancialTab = ({ preEligibility, formData }: { preEligibility: PreEligibi
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/50">
-                <TableHead>Applicant</TableHead>
                 <TableHead>Financial Institution</TableHead>
                 <TableHead>A/C Number</TableHead>
                 <TableHead>Date Opened</TableHead>
@@ -975,7 +704,6 @@ const FinancialTab = ({ preEligibility, formData }: { preEligibility: PreEligibi
                 <TableCell></TableCell>
                 <TableCell></TableCell>
                 <TableCell></TableCell>
-                <TableCell></TableCell>
               </TableRow>
             </TableBody>
           </Table>
@@ -983,8 +711,6 @@ const FinancialTab = ({ preEligibility, formData }: { preEligibility: PreEligibi
 
         {/* Action Buttons */}
         <div className="flex justify-center gap-4 pt-6 border-t mt-6">
-          <Button variant="outline">Applicant One & Two</Button>
-          <Button variant="outline">Applicant Three & Four</Button>
           <Button variant="outline">Save</Button>
         </div>
         <div className="flex justify-end gap-2 mt-4">
@@ -1027,67 +753,18 @@ const MortgageTab = ({ preEligibility, formData }: { preEligibility: PreEligibil
           <div className="space-y-2">
             <div className="flex items-center gap-4">
               <Label className="w-48 text-muted-foreground">First Time Buyer</Label>
-              <div className="flex-1">
-                <div className="flex items-center gap-8">
-                  <span className="w-32">First Applicant</span>
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-1">
-                      <input type="radio" name="ftb1" id="ftb1yes" defaultChecked={preEligibility?.first_time_buyer} />
-                      <Label htmlFor="ftb1yes">Yes</Label>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <input type="radio" name="ftb1" id="ftb1no" defaultChecked={!preEligibility?.first_time_buyer} />
-                      <Label htmlFor="ftb1no">No</Label>
-                    </div>
-                  </div>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-1">
+                  <input type="radio" name="ftb1" id="ftb1yes" defaultChecked={preEligibility?.first_time_buyer} />
+                  <Label htmlFor="ftb1yes">Yes</Label>
                 </div>
-                <div className="flex items-center gap-8">
-                  <span className="w-32">Second Applicant</span>
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-1">
-                      <input type="radio" name="ftb2" id="ftb2yes" />
-                      <Label htmlFor="ftb2yes">Yes</Label>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <input type="radio" name="ftb2" id="ftb2no" />
-                      <Label htmlFor="ftb2no">No</Label>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-8">
-                  <span className="w-32">Third Applicant</span>
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-1">
-                      <input type="radio" name="ftb3" id="ftb3yes" />
-                      <Label htmlFor="ftb3yes">Yes</Label>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <input type="radio" name="ftb3" id="ftb3no" />
-                      <Label htmlFor="ftb3no">No</Label>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-8">
-                  <span className="w-32">Fourth Applicant</span>
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-1">
-                      <input type="radio" name="ftb4" id="ftb4yes" />
-                      <Label htmlFor="ftb4yes">Yes</Label>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <input type="radio" name="ftb4" id="ftb4no" />
-                      <Label htmlFor="ftb4no">No</Label>
-                    </div>
-                  </div>
+                <div className="flex items-center gap-1">
+                  <input type="radio" name="ftb1" id="ftb1no" defaultChecked={!preEligibility?.first_time_buyer} />
+                  <Label htmlFor="ftb1no">No</Label>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-
-        <div className="flex items-center gap-4 mt-4">
-          <Label className="text-muted-foreground">If joint application, is title of property to be in joint names</Label>
-          <Checkbox />
         </div>
 
         <div className="flex items-center gap-4 mt-4">
