@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { DocumentUpload } from "@/components/DocumentUpload";
 import { DocumentList } from "@/components/DocumentList";
 import ClientMessaging from "@/components/broker/ClientMessaging";
+import AIAssistantChat from "@/components/client/AIAssistantChat";
 
 import { AIPDocumentsList } from "@/components/client/AIPDocumentsList";
 import { ESignaturesTab } from "@/components/client/ESignaturesTab";
@@ -708,14 +709,26 @@ const ClientApplicationTab = ({ applicationId, application, brokerProfile, onRef
             </CardContent>
           </Card>
 
+          {/* AI Assistant Chat */}
+          <AIAssistantChat 
+            onEscalate={() => {
+              // Scroll to broker messaging if available
+              const messagingSection = document.querySelector('[data-broker-messaging]');
+              messagingSection?.scrollIntoView({ behavior: 'smooth' });
+            }}
+          />
+
+          {/* Messages with Broker */}
           {application?.assigned_broker_id ? (
-            <ClientMessaging 
-              clientId={application.assigned_broker_id} 
-              clientName={brokerProfile?.full_name || brokerProfile?.email || 'Broker'} 
-              applicationId={application.id}
-            />
+            <div data-broker-messaging>
+              <ClientMessaging 
+                clientId={application.assigned_broker_id} 
+                clientName={brokerProfile?.full_name || brokerProfile?.email || 'Broker'} 
+                applicationId={application.id}
+              />
+            </div>
           ) : (
-            <Card>
+            <Card data-broker-messaging>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <MessageSquare className="h-5 w-5 text-success" />
