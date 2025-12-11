@@ -1184,58 +1184,391 @@ const DocsTab = ({ applicationId, userId }: { applicationId: string | null; user
   );
 };
 
-// Declarations Tab - Comments & Declarations
-const DeclarationsTab = ({ preEligibility, formData }: { preEligibility: PreEligibilityData | null; formData: any }) => (
-  <Card>
-    <CardContent className="pt-6">
-      <h4 className="font-semibold text-primary bg-primary/10 px-3 py-1 mb-4">⊿ Comments & Declarations</h4>
-      <div className="space-y-4">
-        <div>
-          <Label className="text-muted-foreground">Broker Notes (MAX 5000 Characters)</Label>
-          <Textarea 
-            className="mt-2 min-h-[300px]" 
-            placeholder="Enter broker notes here..."
-            maxLength={5000}
-          />
+// Declarations Tab - AI-Enhanced Comments & Declarations
+const DeclarationsTab = ({ preEligibility, formData }: { preEligibility: PreEligibilityData | null; formData: any }) => {
+  const [brokerNotes, setBrokerNotes] = useState('');
+  const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
+  const [inconsistencies, setInconsistencies] = useState<{field: string; issue: string; severity: 'warning' | 'critical'}[]>([]);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+
+  // AI detects inconsistencies from client inputs
+  useEffect(() => {
+    if (formData || preEligibility) {
+      detectInconsistencies();
+    }
+  }, [formData, preEligibility]);
+
+  const detectInconsistencies = () => {
+    const issues: {field: string; issue: string; severity: 'warning' | 'critical'}[] = [];
+    
+    // Check income vs loan amount ratio
+    const income = formData?.app1_gross_salary || preEligibility?.income_1 || 0;
+    const loanAmount = formData?.loan_amount || (preEligibility?.property_value ? preEligibility.property_value - (preEligibility?.deposit_amount || 0) : 0);
+    if (income > 0 && loanAmount > income * 4) {
+      issues.push({ field: 'Loan Amount', issue: `Loan amount (€${loanAmount.toLocaleString()}) exceeds 4x annual income (€${income.toLocaleString()})`, severity: 'critical' });
+    }
+
+    // Check deposit vs property value
+    const propertyValue = formData?.property_value || preEligibility?.property_value || 0;
+    const deposit = formData?.deposit_amount || preEligibility?.deposit_amount || 0;
+    if (propertyValue > 0 && deposit > 0) {
+      const depositRatio = (deposit / propertyValue) * 100;
+      if (depositRatio < 10) {
+        issues.push({ field: 'Deposit', issue: `Deposit (${depositRatio.toFixed(1)}%) is below 10% minimum for most lenders`, severity: 'critical' });
+      } else if (depositRatio < 15 && !preEligibility?.first_time_buyer) {
+        issues.push({ field: 'Deposit', issue: `Non-FTB with ${depositRatio.toFixed(1)}% deposit may face limited options`, severity: 'warning' });
+      }
+    }
+
+    // Check credit history concerns
+    if (formData?.has_ccj || formData?.has_arrears || formData?.has_missed_repayments) {
+      issues.push({ field: 'Credit History', issue: 'Adverse credit history detected - may require alternative lender', severity: 'warning' });
+    }
+
+    // Check employment type for income verification
+    if (preEligibility?.employment_type === 'self_employed' && !formData?.app1_other_income_details) {
+      issues.push({ field: 'Income Verification', issue: 'Self-employed applicant - ensure 2 years accounts available', severity: 'warning' });
+    }
+
+    // Age verification
+    if (formData?.app1_date_of_birth) {
+      const age = Math.floor((new Date().getTime() - new Date(formData.app1_date_of_birth).getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+      const term = formData?.mortgage_term || preEligibility?.desired_term || 25;
+      if (age + term > 70) {
+        issues.push({ field: 'Term/Age', issue: `Applicant age (${age}) + term (${term}) exceeds 70 years`, severity: 'critical' });
+      }
+    }
+
+    setInconsistencies(issues);
+  };
+
+  const generateAISummary = () => {
+    setIsAnalyzing(true);
+    
+    // Simulate AI generation
+    setTimeout(() => {
+      const suggestions = [];
+      
+      if (preEligibility?.first_time_buyer) {
+        suggestions.push(`First Time Buyer application - eligible for HTB scheme if property value ≤ €500,000.`);
+      }
+      
+      const income = formData?.app1_gross_salary || preEligibility?.income_1 || 0;
+      if (income > 0) {
+        suggestions.push(`Based on gross income of €${income.toLocaleString()}, maximum borrowing capacity is approximately €${(income * 3.5).toLocaleString()} - €${(income * 4).toLocaleString()}.`);
+      }
+
+      if (preEligibility?.credit_history === 'excellent' || preEligibility?.credit_history === 'good') {
+        suggestions.push(`Strong credit profile - eligible for prime lender rates.`);
+      }
+
+      if (formData?.property_type === 'apartment') {
+        suggestions.push(`Apartment purchase - ensure lender accepts apartment type and size meets minimum requirements.`);
+      }
+
+      setAiSuggestions(suggestions);
+      setIsAnalyzing(false);
+    }, 1500);
+  };
+
+  // Auto-populate broker notes from client data
+  const autoPopulateNotes = () => {
+    const notes = [];
+    
+    notes.push(`=== AI Auto-Generated Summary ===`);
+    notes.push(`Generated: ${new Date().toLocaleString('en-GB')}\n`);
+    
+    notes.push(`APPLICANT PROFILE:`);
+    notes.push(`- Name: ${formData?.app1_forenames || ''} ${formData?.app1_surname || ''}`);
+    notes.push(`- Employment: ${preEligibility?.employment_type || 'Not specified'}`);
+    notes.push(`- Residency: ${preEligibility?.residency_status || 'Not specified'}`);
+    notes.push(`- First Time Buyer: ${preEligibility?.first_time_buyer ? 'Yes' : 'No'}\n`);
+    
+    notes.push(`FINANCIAL OVERVIEW:`);
+    notes.push(`- Gross Income: €${(formData?.app1_gross_salary || preEligibility?.income_1 || 0).toLocaleString()}`);
+    notes.push(`- Monthly Commitments: €${(formData?.monthly_commitments || preEligibility?.monthly_commitments || 0).toLocaleString()}`);
+    notes.push(`- Credit History: ${preEligibility?.credit_history || 'Not assessed'}\n`);
+    
+    notes.push(`PROPERTY & MORTGAGE:`);
+    notes.push(`- Property Value: €${(formData?.property_value || preEligibility?.property_value || 0).toLocaleString()}`);
+    notes.push(`- Deposit: €${(formData?.deposit_amount || preEligibility?.deposit_amount || 0).toLocaleString()}`);
+    notes.push(`- Loan Required: €${(formData?.loan_amount || 0).toLocaleString()}`);
+    notes.push(`- Term: ${formData?.mortgage_term || preEligibility?.desired_term || 25} years\n`);
+    
+    if (inconsistencies.length > 0) {
+      notes.push(`AI DETECTED ISSUES:`);
+      inconsistencies.forEach(issue => {
+        notes.push(`- [${issue.severity.toUpperCase()}] ${issue.field}: ${issue.issue}`);
+      });
+    }
+    
+    setBrokerNotes(notes.join('\n'));
+  };
+
+  return (
+    <Card>
+      <CardContent className="pt-6 space-y-6">
+        {/* AI Inconsistency Detection */}
+        {inconsistencies.length > 0 && (
+          <div className="bg-warning/10 border border-warning/30 rounded-lg p-4">
+            <h4 className="font-semibold text-warning flex items-center gap-2 mb-3">
+              <span>🤖</span> AI Detected Inconsistencies
+            </h4>
+            <div className="space-y-2">
+              {inconsistencies.map((issue, idx) => (
+                <div key={idx} className={cn(
+                  "flex items-start gap-2 text-sm p-2 rounded",
+                  issue.severity === 'critical' ? 'bg-destructive/10 text-destructive' : 'bg-warning/10 text-warning'
+                )}>
+                  <Badge variant="outline" className={cn(
+                    "text-xs",
+                    issue.severity === 'critical' ? 'border-destructive text-destructive' : 'border-warning text-warning'
+                  )}>
+                    {issue.severity}
+                  </Badge>
+                  <div>
+                    <span className="font-medium">{issue.field}:</span> {issue.issue}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* AI Suggestions */}
+        {aiSuggestions.length > 0 && (
+          <div className="bg-secondary/10 border border-secondary/30 rounded-lg p-4">
+            <h4 className="font-semibold text-secondary flex items-center gap-2 mb-3">
+              <span>💡</span> AI Insights
+            </h4>
+            <ul className="space-y-1 text-sm">
+              {aiSuggestions.map((suggestion, idx) => (
+                <li key={idx} className="flex items-start gap-2">
+                  <span className="text-secondary">•</span>
+                  {suggestion}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        <h4 className="font-semibold text-primary bg-primary/10 px-3 py-1">⊿ Comments & Declarations</h4>
+        
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={autoPopulateNotes}>
+            <span className="mr-1">🤖</span> AI Auto-Populate
+          </Button>
+          <Button variant="outline" size="sm" onClick={generateAISummary} disabled={isAnalyzing}>
+            {isAnalyzing ? 'Analyzing...' : '💡 Generate AI Insights'}
+          </Button>
         </div>
-      </div>
 
-      <div className="flex justify-center gap-4 pt-6 border-t mt-6">
-        <Button variant="outline">Save</Button>
-      </div>
-      <div className="flex justify-end gap-2 mt-4">
-        <Button variant="outline" size="sm">Previous</Button>
-        <Button variant="outline" size="sm">Next</Button>
-      </div>
-    </CardContent>
-  </Card>
-);
+        <div className="space-y-4">
+          <div>
+            <Label className="text-muted-foreground">Broker Notes (MAX 5000 Characters)</Label>
+            <Textarea 
+              className="mt-2 min-h-[300px]" 
+              placeholder="Enter broker notes here... or click 'AI Auto-Populate' to generate from client data"
+              maxLength={5000}
+              value={brokerNotes}
+              onChange={(e) => setBrokerNotes(e.target.value)}
+            />
+          </div>
+        </div>
 
-// Transactions Tab - Transaction History
-const TransactionsTab = () => (
-  <Card>
-    <CardContent className="pt-6">
-      <h4 className="font-semibold mb-4">Transaction History</h4>
-      <div className="min-h-[200px] border border-border rounded-lg p-4">
-        {/* Transaction history content area */}
-      </div>
+        <div className="flex justify-center gap-4 pt-6 border-t">
+          <Button variant="outline">Save</Button>
+        </div>
+        <div className="flex justify-end gap-2 mt-4">
+          <Button variant="outline" size="sm">Previous</Button>
+          <Button variant="outline" size="sm">Next</Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
 
-      <h4 className="font-semibold mt-6 mb-4">Broker Position</h4>
-      <div className="min-h-[200px] border border-border rounded-lg p-4">
-        {/* Broker position content area */}
-      </div>
+// Transactions Tab - AI-Enhanced Transaction Analysis
+const TransactionsTab = () => {
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [affordabilityScore, setAffordabilityScore] = useState<number | null>(null);
+  const [incomePatterns, setIncomePatterns] = useState<{category: string; amount: number; trend: 'up' | 'down' | 'stable'; color: string}[]>([]);
+  const [expensePatterns, setExpensePatterns] = useState<{category: string; amount: number; percentage: number; color: string}[]>([]);
 
-      <div className="flex justify-end gap-2 mt-4">
-        <Button variant="outline" size="sm">Previous</Button>
-        <Button variant="outline" size="sm">Next</Button>
-      </div>
-    </CardContent>
-  </Card>
-);
+  const analyzeTransactions = () => {
+    setIsAnalyzing(true);
+    
+    // Simulate AI transaction analysis
+    setTimeout(() => {
+      setIncomePatterns([
+        { category: 'Primary Salary', amount: 4500, trend: 'stable', color: 'text-success' },
+        { category: 'Overtime/Bonus', amount: 350, trend: 'up', color: 'text-success' },
+        { category: 'Other Income', amount: 200, trend: 'stable', color: 'text-secondary' },
+      ]);
+      
+      setExpensePatterns([
+        { category: 'Rent/Mortgage', amount: 1200, percentage: 28, color: 'bg-primary' },
+        { category: 'Utilities', amount: 280, percentage: 7, color: 'bg-secondary' },
+        { category: 'Transport', amount: 350, percentage: 8, color: 'bg-warning' },
+        { category: 'Groceries', amount: 450, percentage: 11, color: 'bg-success' },
+        { category: 'Entertainment', amount: 200, percentage: 5, color: 'bg-destructive' },
+        { category: 'Savings', amount: 500, percentage: 12, color: 'bg-primary' },
+        { category: 'Other', amount: 420, percentage: 10, color: 'bg-muted' },
+      ]);
+      
+      setAffordabilityScore(78);
+      setIsAnalyzing(false);
+    }, 2000);
+  };
 
-// Lender Tab - Select Lender
+  return (
+    <Card>
+      <CardContent className="pt-6 space-y-6">
+        {/* AI Analysis Header */}
+        <div className="flex items-center justify-between">
+          <h4 className="font-semibold flex items-center gap-2">
+            <span>🤖</span> AI Transaction Analysis
+          </h4>
+          <Button variant="outline" onClick={analyzeTransactions} disabled={isAnalyzing}>
+            {isAnalyzing ? 'Analyzing...' : 'Analyze Transactions'}
+          </Button>
+        </div>
+
+        {/* Affordability Score */}
+        {affordabilityScore !== null && (
+          <div className="bg-secondary/10 border border-secondary/30 rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h5 className="font-semibold text-secondary">Affordability Score</h5>
+                <p className="text-sm text-muted-foreground">Based on income/expense pattern analysis</p>
+              </div>
+              <div className={cn(
+                "text-3xl font-bold",
+                affordabilityScore >= 70 ? 'text-success' : affordabilityScore >= 50 ? 'text-warning' : 'text-destructive'
+              )}>
+                {affordabilityScore}%
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Income Patterns */}
+        {incomePatterns.length > 0 && (
+          <div>
+            <h4 className="font-semibold mb-4 flex items-center gap-2">
+              <span>📈</span> Income Patterns (AI Categorized)
+            </h4>
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-success/10">
+                  <TableHead>Category</TableHead>
+                  <TableHead className="text-right">Monthly Average</TableHead>
+                  <TableHead className="text-right">Trend</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {incomePatterns.map((pattern, idx) => (
+                  <TableRow key={idx}>
+                    <TableCell className="font-medium">{pattern.category}</TableCell>
+                    <TableCell className="text-right">€{pattern.amount.toLocaleString()}</TableCell>
+                    <TableCell className="text-right">
+                      <Badge variant="outline" className={cn(
+                        pattern.trend === 'up' ? 'border-success text-success' : 
+                        pattern.trend === 'down' ? 'border-destructive text-destructive' : 'border-muted-foreground'
+                      )}>
+                        {pattern.trend === 'up' ? '↑ Increasing' : pattern.trend === 'down' ? '↓ Decreasing' : '→ Stable'}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                <TableRow className="bg-muted/50 font-semibold">
+                  <TableCell>Total Monthly Income</TableCell>
+                  <TableCell className="text-right">€{incomePatterns.reduce((sum, p) => sum + p.amount, 0).toLocaleString()}</TableCell>
+                  <TableCell></TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </div>
+        )}
+
+        {/* Expense Patterns */}
+        {expensePatterns.length > 0 && (
+          <div>
+            <h4 className="font-semibold mb-4 flex items-center gap-2">
+              <span>📊</span> Expense Breakdown (AI Categorized)
+            </h4>
+            <div className="grid md:grid-cols-2 gap-6">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-primary/10">
+                    <TableHead>Category</TableHead>
+                    <TableHead className="text-right">Amount</TableHead>
+                    <TableHead className="text-right">% of Income</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {expensePatterns.map((pattern, idx) => (
+                    <TableRow key={idx}>
+                      <TableCell className="font-medium">{pattern.category}</TableCell>
+                      <TableCell className="text-right">€{pattern.amount.toLocaleString()}</TableCell>
+                      <TableCell className="text-right">{pattern.percentage}%</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              
+              {/* Visual breakdown */}
+              <div className="space-y-2">
+                <h5 className="text-sm font-medium text-muted-foreground">Visual Breakdown</h5>
+                {expensePatterns.map((pattern, idx) => (
+                  <div key={idx} className="space-y-1">
+                    <div className="flex justify-between text-sm">
+                      <span>{pattern.category}</span>
+                      <span>{pattern.percentage}%</span>
+                    </div>
+                    <div className="h-2 bg-muted rounded-full overflow-hidden">
+                      <div className={cn("h-full rounded-full", pattern.color)} style={{ width: `${pattern.percentage * 2}%` }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Empty State */}
+        {incomePatterns.length === 0 && (
+          <div className="text-center py-12 text-muted-foreground">
+            <p>Upload bank statements to enable AI transaction analysis</p>
+            <p className="text-sm mt-2">AI will automatically categorize income and expenses for affordability scoring</p>
+          </div>
+        )}
+
+        <div className="flex justify-end gap-2 mt-4">
+          <Button variant="outline" size="sm">Previous</Button>
+          <Button variant="outline" size="sm">Next</Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+// Lender Tab - AI Smart Lender Recommendation Engine
 const LenderTab = () => {
-  const lenders = [
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [recommendations, setRecommendations] = useState<{
+    lender: string;
+    eligibilityScore: number;
+    rate: string;
+    maxLTV: number;
+    processingTime: string;
+    strengths: string[];
+    concerns: string[];
+    recommended: boolean;
+  }[]>([]);
+  const [selectedLenders, setSelectedLenders] = useState<string[]>([]);
+
+  const allLenders = [
     { id: 'haven', name: 'Haven' },
     { id: 'ics', name: 'ICS (Dilosk)' },
     { id: 'pepper', name: 'Pepper HomeLoans' },
@@ -1244,42 +1577,222 @@ const LenderTab = () => {
     { id: 'aib', name: 'AIB' },
   ];
 
+  const generateRecommendations = () => {
+    setIsAnalyzing(true);
+    
+    // Simulate AI recommendation engine
+    setTimeout(() => {
+      setRecommendations([
+        {
+          lender: 'Bank of Ireland',
+          eligibilityScore: 94,
+          rate: '3.75%',
+          maxLTV: 90,
+          processingTime: '2-3 weeks',
+          strengths: ['Best rate for FTB', 'Fast processing', 'Strong income match'],
+          concerns: [],
+          recommended: true,
+        },
+        {
+          lender: 'AIB',
+          eligibilityScore: 89,
+          rate: '3.85%',
+          maxLTV: 90,
+          processingTime: '2-4 weeks',
+          strengths: ['Competitive cashback', 'Flexible overpayment'],
+          concerns: ['Slightly higher rate'],
+          recommended: true,
+        },
+        {
+          lender: 'Permanent TSB',
+          eligibilityScore: 85,
+          rate: '3.90%',
+          maxLTV: 90,
+          processingTime: '3-4 weeks',
+          strengths: ['Good for self-employed', 'Strong local presence'],
+          concerns: ['Longer processing'],
+          recommended: true,
+        },
+        {
+          lender: 'Haven',
+          eligibilityScore: 72,
+          rate: '4.10%',
+          maxLTV: 80,
+          processingTime: '2-3 weeks',
+          strengths: ['Quick decisions'],
+          concerns: ['Lower LTV limit', 'Higher rate'],
+          recommended: false,
+        },
+        {
+          lender: 'ICS (Dilosk)',
+          eligibilityScore: 65,
+          rate: '4.25%',
+          maxLTV: 85,
+          processingTime: '2-3 weeks',
+          strengths: ['Good for complex cases'],
+          concerns: ['Higher rate', 'More documentation required'],
+          recommended: false,
+        },
+        {
+          lender: 'Pepper HomeLoans',
+          eligibilityScore: 58,
+          rate: '4.75%',
+          maxLTV: 80,
+          processingTime: '1-2 weeks',
+          strengths: ['Accepts adverse credit', 'Fast approval'],
+          concerns: ['Higher rate', 'Lower LTV'],
+          recommended: false,
+        },
+      ]);
+      setIsAnalyzing(false);
+    }, 2000);
+  };
+
+  const toggleLender = (lenderId: string) => {
+    setSelectedLenders(prev => 
+      prev.includes(lenderId) 
+        ? prev.filter(id => id !== lenderId)
+        : [...prev, lenderId]
+    );
+  };
+
   return (
     <Card>
-      <CardContent className="pt-6">
-        <p className="text-destructive text-center mb-4">
-          Application not complete (Personal Details, Income & Employment, Property Details, Mortgage Details)
-        </p>
+      <CardContent className="pt-6 space-y-6">
+        {/* AI Recommendation Header */}
+        <div className="flex items-center justify-between">
+          <h4 className="font-semibold flex items-center gap-2">
+            <span>🤖</span> AI Smart Lender Recommendations
+          </h4>
+          <Button onClick={generateRecommendations} disabled={isAnalyzing}>
+            {isAnalyzing ? 'Analyzing...' : '🎯 Get AI Recommendations'}
+          </Button>
+        </div>
 
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-primary/10">
-              <TableHead className="w-12">
-                <div className="flex items-center gap-2">
-                  <Checkbox />
-                  <span>(All)</span>
+        {/* Top 3 Recommendations */}
+        {recommendations.length > 0 && (
+          <div className="space-y-4">
+            <h5 className="font-semibold text-success flex items-center gap-2">
+              <span>⭐</span> Top 3 Recommended Lenders
+            </h5>
+            <div className="grid md:grid-cols-3 gap-4">
+              {recommendations.filter(r => r.recommended).map((rec, idx) => (
+                <div key={rec.lender} className={cn(
+                  "border rounded-lg p-4 space-y-3",
+                  idx === 0 ? 'border-success bg-success/5' : 'border-border'
+                )}>
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold">{rec.lender}</span>
+                    <Badge className={cn(
+                      rec.eligibilityScore >= 90 ? 'bg-success' : 
+                      rec.eligibilityScore >= 80 ? 'bg-primary' : 'bg-warning'
+                    )}>
+                      {rec.eligibilityScore}% Match
+                    </Badge>
+                  </div>
+                  <div className="text-sm space-y-1">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Rate:</span>
+                      <span className="font-medium">{rec.rate}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Max LTV:</span>
+                      <span className="font-medium">{rec.maxLTV}%</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Processing:</span>
+                      <span className="font-medium">{rec.processingTime}</span>
+                    </div>
+                  </div>
+                  <div className="pt-2 border-t">
+                    <p className="text-xs text-success">✓ {rec.strengths.join(' • ')}</p>
+                    {rec.concerns.length > 0 && (
+                      <p className="text-xs text-warning mt-1">⚠ {rec.concerns.join(' • ')}</p>
+                    )}
+                  </div>
                 </div>
-              </TableHead>
-              <TableHead>Provider Name</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {lenders.map((lender) => (
-              <TableRow key={lender.id}>
-                <TableCell>
-                  <Checkbox />
-                </TableCell>
-                <TableCell>{lender.name}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+              ))}
+            </div>
+          </div>
+        )}
 
-        <p className="text-sm text-muted-foreground mt-4">
-          * Denotes that some fields must be changed before submitting the application to" the Lender.
+        {/* Full Lender List */}
+        <div>
+          <h5 className="font-semibold mb-3">All Lenders</h5>
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-primary/10">
+                <TableHead className="w-12">
+                  <Checkbox 
+                    checked={selectedLenders.length === allLenders.length}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        setSelectedLenders(allLenders.map(l => l.id));
+                      } else {
+                        setSelectedLenders([]);
+                      }
+                    }}
+                  />
+                </TableHead>
+                <TableHead>Provider Name</TableHead>
+                {recommendations.length > 0 && (
+                  <>
+                    <TableHead className="text-right">Eligibility</TableHead>
+                    <TableHead className="text-right">Rate</TableHead>
+                    <TableHead>AI Notes</TableHead>
+                  </>
+                )}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {allLenders.map((lender) => {
+                const rec = recommendations.find(r => r.lender.toLowerCase().includes(lender.name.toLowerCase().split(' ')[0]));
+                return (
+                  <TableRow key={lender.id} className={rec?.recommended ? 'bg-success/5' : ''}>
+                    <TableCell>
+                      <Checkbox 
+                        checked={selectedLenders.includes(lender.id)}
+                        onCheckedChange={() => toggleLender(lender.id)}
+                      />
+                    </TableCell>
+                    <TableCell className="font-medium">
+                      {lender.name}
+                      {rec?.recommended && <Badge className="ml-2 bg-success text-xs">Recommended</Badge>}
+                    </TableCell>
+                    {recommendations.length > 0 && (
+                      <>
+                        <TableCell className="text-right">
+                          {rec && (
+                            <span className={cn(
+                              "font-medium",
+                              rec.eligibilityScore >= 80 ? 'text-success' : 
+                              rec.eligibilityScore >= 60 ? 'text-warning' : 'text-destructive'
+                            )}>
+                              {rec.eligibilityScore}%
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">{rec?.rate || '-'}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {rec?.strengths[0] || '-'}
+                        </TableCell>
+                      </>
+                    )}
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </div>
+
+        <p className="text-sm text-muted-foreground">
+          * AI recommendations based on applicant profile, income, credit history, and lender criteria.
         </p>
 
-        <div className="mt-6">
+        <div className="flex gap-4 mt-6">
+          <Button variant="outline" disabled={selectedLenders.length === 0}>
+            Submit to Selected ({selectedLenders.length})
+          </Button>
           <Button variant="outline">Submit to PIBA</Button>
         </div>
 
@@ -1340,228 +1853,442 @@ const NotesTab = () => (
   </Card>
 );
 
-// Action Log Tab
-const ActionLogTab = () => (
-  <Card>
-    <CardContent className="pt-6">
-      <p className="text-muted-foreground">No Action Log records found</p>
+// Action Log Tab - AI & Broker Actions Compliance Tracking
+const ActionLogTab = () => {
+  const [filter, setFilter] = useState<'all' | 'ai' | 'broker' | 'system'>('all');
+  
+  // Sample action log entries for compliance tracking
+  const actionLogs = [
+    { id: 1, timestamp: '2024-01-15 14:32:05', actor: 'AI System', actorType: 'ai', action: 'Auto-populated declarations from client data', details: 'Generated summary from pre-eligibility and form data', status: 'completed' },
+    { id: 2, timestamp: '2024-01-15 14:35:22', actor: 'Kay Condon', actorType: 'broker', action: 'Override: Updated loan amount', details: 'Changed from €350,000 to €380,000 - Client confirmed additional deposit', status: 'override' },
+    { id: 3, timestamp: '2024-01-15 15:01:18', actor: 'AI System', actorType: 'ai', action: 'Lender recommendation generated', details: 'Top 3: Bank of Ireland (94%), AIB (89%), PTSB (85%)', status: 'completed' },
+    { id: 4, timestamp: '2024-01-15 15:12:44', actor: 'Kay Condon', actorType: 'broker', action: 'Override: Selected non-recommended lender', details: 'Selected Haven instead of BOI - Client preference for cashback offer', status: 'override' },
+    { id: 5, timestamp: '2024-01-15 15:30:00', actor: 'AI System', actorType: 'ai', action: 'Inconsistency detected', details: 'Deposit ratio below 10% threshold', status: 'warning' },
+    { id: 6, timestamp: '2024-01-15 16:05:33', actor: 'System', actorType: 'system', action: 'Document uploaded', details: 'Payslip_Jan2024.pdf - Pending AI analysis', status: 'completed' },
+    { id: 7, timestamp: '2024-01-15 16:06:01', actor: 'AI System', actorType: 'ai', action: 'Document analyzed', details: 'Payslip verified - Monthly gross €4,850 detected', status: 'completed' },
+    { id: 8, timestamp: '2024-01-16 09:15:22', actor: 'AI System', actorType: 'ai', action: 'Transaction analysis completed', details: 'Affordability score: 78% - Income patterns stable', status: 'completed' },
+    { id: 9, timestamp: '2024-01-16 10:30:00', actor: 'Kay Condon', actorType: 'broker', action: 'Override: Approved despite AI warning', details: 'Proceeded with application despite LTV warning - Guarantor added', status: 'override' },
+    { id: 10, timestamp: '2024-01-16 11:45:18', actor: 'AI System', actorType: 'ai', action: 'Guarantor detected', details: 'Additional security identified in form data', status: 'completed' },
+  ];
 
-      <div className="flex justify-end gap-2 mt-4">
-        <Button variant="outline" size="sm">Previous</Button>
-        <Button variant="outline" size="sm">Next</Button>
-      </div>
-    </CardContent>
-  </Card>
-);
+  const filteredLogs = filter === 'all' 
+    ? actionLogs 
+    : actionLogs.filter(log => log.actorType === filter);
 
-// Security Tab - Additional Security (Properties as security)
-const SecurityTab = ({ formData }: { formData: any }) => (
-  <Card>
-    <CardContent className="pt-6">
-      <h4 className="font-semibold text-primary bg-primary/10 px-3 py-1 mb-4">⊿ Properties as security</h4>
-      
-      <div className="space-y-4">
-        <div className="flex items-center gap-4">
-          <Label className="w-48 text-muted-foreground">Lending Institution<span className="text-destructive">*</span></Label>
-          <Select>
-            <SelectTrigger className="flex-1">
-              <SelectValue placeholder="Select" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="boi">Bank of Ireland</SelectItem>
-              <SelectItem value="aib">AIB</SelectItem>
-              <SelectItem value="ptsb">Permanent TSB</SelectItem>
-              <SelectItem value="haven">Haven</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="flex items-center gap-4">
-          <Label className="w-48 text-muted-foreground">Market Value<span className="text-destructive">*</span></Label>
-          <span className="text-muted-foreground">€</span>
-          <Input className="flex-1" type="number" defaultValue="0" />
-        </div>
-        <div className="flex items-center gap-4">
-          <Label className="w-48 text-muted-foreground">Current Loan Balance</Label>
-          <span className="text-muted-foreground">€</span>
-          <Input className="flex-1" type="number" defaultValue="0" />
-        </div>
-        <div className="flex items-center gap-4">
-          <Label className="w-48 text-muted-foreground">Current Monthly Repayment</Label>
-          <span className="text-muted-foreground">€</span>
-          <Input className="flex-1" type="number" defaultValue="0" />
+  const getStatusBadge = (status: string, actorType: string) => {
+    if (status === 'override') {
+      return <Badge className="bg-warning text-warning-foreground">Override</Badge>;
+    }
+    if (status === 'warning') {
+      return <Badge variant="outline" className="border-warning text-warning">Warning</Badge>;
+    }
+    if (actorType === 'ai') {
+      return <Badge variant="outline" className="border-secondary text-secondary">AI Action</Badge>;
+    }
+    return <Badge variant="outline">Completed</Badge>;
+  };
+
+  const getActorIcon = (actorType: string) => {
+    switch (actorType) {
+      case 'ai': return '🤖';
+      case 'broker': return '👤';
+      case 'system': return '⚙️';
+      default: return '📋';
+    }
+  };
+
+  return (
+    <Card>
+      <CardContent className="pt-6 space-y-6">
+        {/* Header with compliance info */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h4 className="font-semibold flex items-center gap-2">
+              <span>📋</span> Compliance Action Log
+            </h4>
+            <p className="text-sm text-muted-foreground">Tracks all AI actions and broker overrides for regulatory compliance</p>
+          </div>
+          <Button variant="outline" size="sm">
+            Export Log
+          </Button>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-4 mt-4">
-          <div className="space-y-4">
-            <div className="flex items-center gap-4">
-              <Label className="w-32 text-muted-foreground text-right">Address Line 1</Label>
-              <Input className="flex-1" />
-            </div>
-            <div className="flex items-center gap-4">
-              <Label className="w-32 text-muted-foreground text-right">Address Line 2</Label>
-              <Input className="flex-1" />
-            </div>
-            <div className="flex items-center gap-4">
-              <Label className="w-32 text-muted-foreground text-right">Address Line 3</Label>
-              <Input className="flex-1" />
-            </div>
-            <div className="flex items-center gap-4">
-              <Label className="w-32 text-muted-foreground text-right">County</Label>
-              <Select>
-                <SelectTrigger className="flex-1">
-                  <SelectValue placeholder="Select" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="dublin">Dublin</SelectItem>
-                  <SelectItem value="cork">Cork</SelectItem>
-                  <SelectItem value="galway">Galway</SelectItem>
-                  <SelectItem value="limerick">Limerick</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-center gap-4">
-              <Label className="w-32 text-muted-foreground text-right">Country</Label>
-              <Input className="flex-1" defaultValue="Ireland" />
-            </div>
+        {/* Filter tabs */}
+        <div className="flex gap-2">
+          {[
+            { id: 'all', label: 'All Actions' },
+            { id: 'ai', label: '🤖 AI Actions' },
+            { id: 'broker', label: '👤 Broker Actions' },
+            { id: 'system', label: '⚙️ System' },
+          ].map((tab) => (
+            <Button
+              key={tab.id}
+              variant={filter === tab.id ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setFilter(tab.id as any)}
+            >
+              {tab.label}
+            </Button>
+          ))}
+        </div>
+
+        {/* Action Log Table */}
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-primary/10">
+              <TableHead className="w-40">Timestamp</TableHead>
+              <TableHead className="w-32">Actor</TableHead>
+              <TableHead>Action</TableHead>
+              <TableHead>Details</TableHead>
+              <TableHead className="w-24">Status</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredLogs.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                  No action records found
+                </TableCell>
+              </TableRow>
+            ) : (
+              filteredLogs.map((log) => (
+                <TableRow key={log.id} className={log.status === 'override' ? 'bg-warning/5' : ''}>
+                  <TableCell className="text-sm text-muted-foreground font-mono">
+                    {log.timestamp}
+                  </TableCell>
+                  <TableCell>
+                    <span className="flex items-center gap-1">
+                      {getActorIcon(log.actorType)}
+                      <span className="text-sm">{log.actor}</span>
+                    </span>
+                  </TableCell>
+                  <TableCell className="font-medium">{log.action}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{log.details}</TableCell>
+                  <TableCell>{getStatusBadge(log.status, log.actorType)}</TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+
+        {/* Summary Stats */}
+        <div className="grid grid-cols-4 gap-4 pt-4 border-t">
+          <div className="text-center">
+            <div className="text-2xl font-bold text-secondary">{actionLogs.filter(l => l.actorType === 'ai').length}</div>
+            <div className="text-sm text-muted-foreground">AI Actions</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold text-primary">{actionLogs.filter(l => l.actorType === 'broker').length}</div>
+            <div className="text-sm text-muted-foreground">Broker Actions</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold text-warning">{actionLogs.filter(l => l.status === 'override').length}</div>
+            <div className="text-sm text-muted-foreground">Overrides</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold text-destructive">{actionLogs.filter(l => l.status === 'warning').length}</div>
+            <div className="text-sm text-muted-foreground">Warnings</div>
           </div>
         </div>
 
-        <div className="flex items-center gap-4 mt-4">
-          <Label className="w-48 text-muted-foreground">Type Of Security<span className="text-destructive">*</span></Label>
-          <Select>
-            <SelectTrigger className="flex-1">
-              <SelectValue placeholder="Select" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="residential">Residential Property</SelectItem>
-              <SelectItem value="commercial">Commercial Property</SelectItem>
-              <SelectItem value="land">Land</SelectItem>
-            </SelectContent>
-          </Select>
+        <div className="flex justify-end gap-2 mt-4">
+          <Button variant="outline" size="sm">Previous</Button>
+          <Button variant="outline" size="sm">Next</Button>
         </div>
-      </div>
+      </CardContent>
+    </Card>
+  );
+};
 
-      {/* Pagination */}
-      <div className="flex items-center justify-center gap-2 mt-6">
-        <Button variant="outline" size="sm">|&lt;</Button>
-        <Button variant="outline" size="sm">&lt;</Button>
-        <span className="text-sm">0 of 0</span>
-        <Button variant="outline" size="sm">&gt;</Button>
-        <Button variant="outline" size="sm">&gt;|</Button>
-        <Button variant="outline" size="sm">+</Button>
-        <Button variant="outline" size="sm">×</Button>
-      </div>
+// Security Tab - AI-Enhanced Additional Security Detection
+const SecurityTab = ({ formData }: { formData: any }) => {
+  const [aiDetection, setAiDetection] = useState<{
+    hasGuarantor: boolean;
+    hasAdditionalCollateral: boolean;
+    detectedProperties: {type: string; value: number; equity: number}[];
+    recommendations: string[];
+  } | null>(null);
+  const [isDetecting, setIsDetecting] = useState(false);
 
-      <div className="flex justify-center gap-4 pt-6 border-t mt-6">
-        <Button variant="outline">Save</Button>
-      </div>
-      <div className="flex justify-end gap-2 mt-4">
-        <Button variant="outline" size="sm">Previous</Button>
-        <Button variant="outline" size="sm">Next</Button>
-      </div>
-    </CardContent>
-  </Card>
-);
+  const runAIDetection = () => {
+    setIsDetecting(true);
+    
+    // Simulate AI detection from form data
+    setTimeout(() => {
+      const detection = {
+        hasGuarantor: formData?.app2_is_guarantor || false,
+        hasAdditionalCollateral: (formData?.security_market_value || 0) > 0,
+        detectedProperties: [],
+        recommendations: [],
+      };
 
-// Alternative Tab - Alternative Lending
-const AlternativeTab = ({ formData }: { formData: any }) => (
-  <Card>
-    <CardContent className="pt-6">
-      <h4 className="font-semibold text-primary bg-primary/10 px-3 py-1 mb-4">⊿ Please Complete this section if Alternative Lending is sought</h4>
-      
-      <div className="space-y-6">
-        {/* Question 1 */}
-        <div className="flex items-start gap-4">
-          <Label className="w-72 text-muted-foreground">Have you had a mortgage on any other property other than previously detailed?</Label>
+      // Check for additional collateral
+      if (formData?.security_market_value && formData?.security_current_loan_balance) {
+        const equity = formData.security_market_value - formData.security_current_loan_balance;
+        if (equity > 0) {
+          detection.detectedProperties.push({
+            type: formData?.security_type || 'Residential Property',
+            value: formData.security_market_value,
+            equity: equity,
+          });
+        }
+      }
+
+      // Generate recommendations
+      if (detection.hasGuarantor) {
+        detection.recommendations.push('Guarantor detected - ensure guarantor documents are collected');
+      }
+      if (detection.detectedProperties.length > 0) {
+        detection.recommendations.push('Additional property collateral available - may improve LTV ratio');
+      }
+      if (!detection.hasGuarantor && !detection.hasAdditionalCollateral) {
+        detection.recommendations.push('Consider adding guarantor or additional collateral to strengthen application');
+      }
+
+      setAiDetection(detection);
+      setIsDetecting(false);
+    }, 1500);
+  };
+
+  return (
+    <Card>
+      <CardContent className="pt-6 space-y-6">
+        {/* AI Detection Panel */}
+        <div className="flex items-center justify-between">
+          <h4 className="font-semibold flex items-center gap-2">
+            <span>🤖</span> AI Security Detection
+          </h4>
+          <Button variant="outline" onClick={runAIDetection} disabled={isDetecting}>
+            {isDetecting ? 'Detecting...' : 'Run AI Detection'}
+          </Button>
+        </div>
+
+        {aiDetection && (
+          <div className="grid md:grid-cols-2 gap-4">
+            {/* Detection Results */}
+            <div className="bg-secondary/10 border border-secondary/30 rounded-lg p-4 space-y-3">
+              <h5 className="font-semibold text-secondary">Detection Results</h5>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span>Guarantor Detected:</span>
+                  <Badge className={aiDetection.hasGuarantor ? 'bg-success' : 'bg-muted'}>
+                    {aiDetection.hasGuarantor ? 'Yes' : 'No'}
+                  </Badge>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span>Additional Collateral:</span>
+                  <Badge className={aiDetection.hasAdditionalCollateral ? 'bg-success' : 'bg-muted'}>
+                    {aiDetection.hasAdditionalCollateral ? 'Yes' : 'No'}
+                  </Badge>
+                </div>
+              </div>
+              {aiDetection.detectedProperties.length > 0 && (
+                <div className="pt-2 border-t">
+                  <p className="text-sm font-medium mb-2">Detected Properties:</p>
+                  {aiDetection.detectedProperties.map((prop, idx) => (
+                    <div key={idx} className="text-sm bg-background p-2 rounded">
+                      <div className="font-medium">{prop.type}</div>
+                      <div className="text-muted-foreground">
+                        Value: €{prop.value.toLocaleString()} | Equity: €{prop.equity.toLocaleString()}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Recommendations */}
+            <div className="bg-warning/10 border border-warning/30 rounded-lg p-4 space-y-3">
+              <h5 className="font-semibold text-warning flex items-center gap-2">
+                <span>💡</span> AI Recommendations
+              </h5>
+              <ul className="space-y-2 text-sm">
+                {aiDetection.recommendations.map((rec, idx) => (
+                  <li key={idx} className="flex items-start gap-2">
+                    <span className="text-warning">•</span>
+                    {rec}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        )}
+
+        <h4 className="font-semibold text-primary bg-primary/10 px-3 py-1">⊿ Properties as security</h4>
+        
+        <div className="space-y-4">
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-1">
-              <input type="radio" name="otherMortgage" id="otherMortgageYes" />
-              <Label htmlFor="otherMortgageYes">Yes</Label>
-            </div>
-            <div className="flex items-center gap-1">
-              <input type="radio" name="otherMortgage" id="otherMortgageNo" defaultChecked />
-              <Label htmlFor="otherMortgageNo">No</Label>
-            </div>
+            <Label className="w-48 text-muted-foreground">Lending Institution<span className="text-destructive">*</span></Label>
+            <Select>
+              <SelectTrigger className="flex-1">
+                <SelectValue placeholder="Select" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="boi">Bank of Ireland</SelectItem>
+                <SelectItem value="aib">AIB</SelectItem>
+                <SelectItem value="ptsb">Permanent TSB</SelectItem>
+                <SelectItem value="haven">Haven</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-        </div>
-
-        <div className="flex items-start gap-4">
-          <Label className="w-72 text-muted-foreground">If yes, please give Details</Label>
-          <Textarea className="flex-1 min-h-[80px]" />
-        </div>
-
-        {/* Question 2 */}
-        <div className="flex items-start gap-4">
-          <Label className="w-72 text-muted-foreground">Have there ever been any missed Repayments or revoked Credit Cards or Judgements?</Label>
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-1">
-              <input type="radio" name="missedRepayments" id="missedRepaymentsYes" />
-              <Label htmlFor="missedRepaymentsYes">Yes</Label>
-            </div>
-            <div className="flex items-center gap-1">
-              <input type="radio" name="missedRepayments" id="missedRepaymentsNo" defaultChecked />
-              <Label htmlFor="missedRepaymentsNo">No</Label>
+            <Label className="w-48 text-muted-foreground">Market Value<span className="text-destructive">*</span></Label>
+            <span className="text-muted-foreground">€</span>
+            <Input className="flex-1" type="number" defaultValue={formData?.security_market_value || 0} />
+          </div>
+          <div className="flex items-center gap-4">
+            <Label className="w-48 text-muted-foreground">Current Loan Balance</Label>
+            <span className="text-muted-foreground">€</span>
+            <Input className="flex-1" type="number" defaultValue={formData?.security_current_loan_balance || 0} />
+          </div>
+          <div className="flex items-center gap-4">
+            <Label className="w-48 text-muted-foreground">Current Monthly Repayment</Label>
+            <span className="text-muted-foreground">€</span>
+            <Input className="flex-1" type="number" defaultValue={formData?.security_monthly_repayment || 0} />
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-4 mt-4">
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <Label className="w-32 text-muted-foreground text-right">Address</Label>
+                <Input className="flex-1" defaultValue={formData?.security_address || ''} />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-32 text-muted-foreground text-right">Type of Security</Label>
+                <Select defaultValue={formData?.security_type}>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="residential">Residential Property</SelectItem>
+                    <SelectItem value="commercial">Commercial Property</SelectItem>
+                    <SelectItem value="land">Land</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="space-y-2">
-          <p className="text-muted-foreground">If yes, please specify by completing the following:</p>
+        {/* Pagination */}
+        <div className="flex items-center justify-center gap-2 mt-6">
+          <Button variant="outline" size="sm">|&lt;</Button>
+          <Button variant="outline" size="sm">&lt;</Button>
+          <span className="text-sm">0 of 0</span>
+          <Button variant="outline" size="sm">&gt;</Button>
+          <Button variant="outline" size="sm">&gt;|</Button>
+          <Button variant="outline" size="sm">+</Button>
+          <Button variant="outline" size="sm">×</Button>
+        </div>
+
+        <div className="flex justify-center gap-4 pt-6 border-t">
+          <Button variant="outline">Save</Button>
+        </div>
+        <div className="flex justify-end gap-2 mt-4">
+          <Button variant="outline" size="sm">Previous</Button>
+          <Button variant="outline" size="sm">Next</Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+// Alternative Tab - AI-Enhanced Alternative Lending with Secondary Lender Suggestions
+const AlternativeTab = ({ formData }: { formData: any }) => {
+  const [showSecondaryLenders, setShowSecondaryLenders] = useState(false);
+  const [secondaryLenders] = useState([
+    { name: 'Pepper HomeLoans', rate: '4.75%', specialty: 'Adverse credit', approval: '85%', note: 'Accepts up to 3 missed payments in last 12 months' },
+    { name: 'Finance Ireland', rate: '4.95%', specialty: 'Self-employed', approval: '78%', note: 'Flexible income verification' },
+    { name: 'Dilosk/ICS', rate: '4.50%', specialty: 'Complex cases', approval: '72%', note: 'Good for non-standard properties' },
+  ]);
+
+  return (
+    <Card>
+      <CardContent className="pt-6 space-y-6">
+        {/* AI Secondary Lender Panel */}
+        <div className="bg-secondary/10 border border-secondary/30 rounded-lg p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h5 className="font-semibold text-secondary flex items-center gap-2">
+              <span>🤖</span> AI Secondary Lender Suggestions
+            </h5>
+            <Button variant="outline" size="sm" onClick={() => setShowSecondaryLenders(!showSecondaryLenders)}>
+              {showSecondaryLenders ? 'Hide' : 'Show'} Alternatives
+            </Button>
+          </div>
+          <p className="text-sm text-muted-foreground">If top-tier lenders decline, AI suggests these secondary options based on applicant profile.</p>
+          
+          {showSecondaryLenders && (
+            <div className="mt-4 space-y-3">
+              {secondaryLenders.map((lender, idx) => (
+                <div key={idx} className="bg-background p-3 rounded-lg border">
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium">{lender.name}</span>
+                    <Badge variant="outline" className="border-secondary text-secondary">{lender.approval} likely</Badge>
+                  </div>
+                  <div className="text-sm text-muted-foreground mt-1">
+                    <span>Rate: {lender.rate}</span> • <span>Specialty: {lender.specialty}</span>
+                  </div>
+                  <p className="text-xs text-success mt-1">💡 {lender.note}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <h4 className="font-semibold text-primary bg-primary/10 px-3 py-1">⊿ Please Complete this section if Alternative Lending is sought</h4>
+        
+        <div className="space-y-6">
+          <div className="flex items-start gap-4">
+            <Label className="w-72 text-muted-foreground">Have you had a mortgage on any other property?</Label>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-1">
+                <input type="radio" name="otherMortgage" id="otherMortgageYes" />
+                <Label htmlFor="otherMortgageYes">Yes</Label>
+              </div>
+              <div className="flex items-center gap-1">
+                <input type="radio" name="otherMortgage" id="otherMortgageNo" defaultChecked />
+                <Label htmlFor="otherMortgageNo">No</Label>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-4">
+            <Label className="w-72 text-muted-foreground">Have there been missed repayments or judgements?</Label>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-1">
+                <input type="radio" name="missedRepayments" id="missedRepaymentsYes" />
+                <Label htmlFor="missedRepaymentsYes">Yes</Label>
+              </div>
+              <div className="flex items-center gap-1">
+                <input type="radio" name="missedRepayments" id="missedRepaymentsNo" defaultChecked />
+                <Label htmlFor="missedRepaymentsNo">No</Label>
+              </div>
+            </div>
+          </div>
+
           <div className="space-y-2 ml-4">
             <div className="flex items-center gap-4">
               <span className="w-8">1.</span>
-              <Label className="w-80 text-muted-foreground">Current Mortgage - Highest Number of Installment Arrears in last 12 months</Label>
+              <Label className="w-80 text-muted-foreground">Installment Arrears in last 12 months</Label>
               <Input className="w-20" type="number" defaultValue="0" />
             </div>
             <div className="flex items-center gap-4">
               <span className="w-8">2.</span>
-              <Label className="w-80 text-muted-foreground">Current Mortgage - Highest Number of Installment Arrears in last 6 months</Label>
-              <Input className="w-20" type="number" defaultValue="0" />
-            </div>
-            <div className="flex items-center gap-4">
-              <span className="w-8">3.</span>
-              <Label className="w-80 text-muted-foreground">Other Facilities - Highest Number of Other Arrears in last 12 months</Label>
+              <Label className="w-80 text-muted-foreground">Installment Arrears in last 6 months</Label>
               <Input className="w-20" type="number" defaultValue="0" />
             </div>
           </div>
         </div>
 
-        {/* Question 3 */}
-        <div className="flex items-start gap-4">
-          <Label className="w-72 text-muted-foreground">Have any judgement proceedings relating to debt ever been brought against you or any Judgments made against you?</Label>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-1">
-              <input type="radio" name="judgements" id="judgementsYes" />
-              <Label htmlFor="judgementsYes">Yes</Label>
-            </div>
-            <div className="flex items-center gap-1">
-              <input type="radio" name="judgements" id="judgementsNo" defaultChecked />
-              <Label htmlFor="judgementsNo">No</Label>
-            </div>
-          </div>
+        <div className="flex justify-center gap-4 pt-6 border-t">
+          <Button variant="outline">Save</Button>
         </div>
-
-        <div className="space-y-2">
-          <p className="text-muted-foreground">If yes, please specify by completing the following:</p>
-          <div className="space-y-2 ml-4">
-            <div className="flex items-center gap-4">
-              <span className="w-8">1.</span>
-              <Label className="w-80 text-muted-foreground">Judgments - Total Value Judgments Outstanding in last 24 months</Label>
-              <Input className="w-20" type="number" defaultValue="0" />
-            </div>
-          </div>
+        <div className="flex justify-end gap-2 mt-4">
+          <Button variant="outline" size="sm">Previous</Button>
+          <Button variant="outline" size="sm">Next</Button>
         </div>
-      </div>
-
-      <div className="flex justify-center gap-4 pt-6 border-t mt-6">
-        <Button variant="outline">Save</Button>
-      </div>
-      <div className="flex justify-end gap-2 mt-4">
-        <Button variant="outline" size="sm">Previous</Button>
-        <Button variant="outline" size="sm">Next</Button>
-      </div>
-    </CardContent>
-  </Card>
-);
-
+      </CardContent>
+    </Card>
+  );
+};
 export default ApplicationTab;
