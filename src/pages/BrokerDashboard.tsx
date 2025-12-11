@@ -20,8 +20,8 @@ const BrokerDashboard = () => {
   const { user } = useAuth();
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate("/login");
+    await supabase.auth.signOut({ scope: 'global' });
+    navigate("/login", { replace: true });
   };
 
   const tabs = [
