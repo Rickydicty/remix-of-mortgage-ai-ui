@@ -97,6 +97,24 @@ const DOCUMENT_SECTIONS = [
     required: false,
   },
   {
+    type: "gift_letter",
+    title: "Gift Letter",
+    description: "Required if receiving a gift for the BOF (lender-specific gift letters)",
+    required: false,
+  },
+  {
+    type: "loan_account_statements",
+    title: "6 Months Loan Account Statements",
+    description: "Complete statements for the last 6 months from any loan accounts",
+    required: false,
+  },
+  {
+    type: "mortgage_statements",
+    title: "12 Months Mortgage Statements",
+    description: "Complete mortgage statements for the last 12 months (if applicable)",
+    required: false,
+  },
+  {
     type: "other",
     title: "Other Documents",
     description: "Any additional supporting documents",
