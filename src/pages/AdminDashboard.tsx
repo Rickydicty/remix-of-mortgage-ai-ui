@@ -4,13 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import { Shield, Users, BarChart3, Settings, LogOut } from "lucide-react";
+import { Shield, Users, BarChart3, Settings, LogOut, Bell } from "lucide-react";
 import { UserManagement } from "@/components/admin/UserManagement";
+import { NotificationSettings } from "@/components/admin/NotificationSettings";
 
 const AdminDashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'analytics' | 'settings'>('users');
+  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'notifications' | 'analytics' | 'settings'>('users');
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -47,6 +48,14 @@ const AdminDashboard = () => {
               Users
             </Button>
             <Button
+              variant={activeTab === 'notifications' ? 'default' : 'ghost'}
+              onClick={() => setActiveTab('notifications')}
+              className="rounded-b-none"
+            >
+              <Bell className="h-4 w-4 mr-2" />
+              Notifications
+            </Button>
+            <Button
               variant={activeTab === 'analytics' ? 'default' : 'ghost'}
               onClick={() => setActiveTab('analytics')}
               className="rounded-b-none"
@@ -68,6 +77,8 @@ const AdminDashboard = () => {
 
       <main className="container mx-auto px-4 py-8">
         {activeTab === 'users' && <UserManagement />}
+        
+        {activeTab === 'notifications' && <NotificationSettings />}
         
         {activeTab === 'analytics' && (
           <Card>

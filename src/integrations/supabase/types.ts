@@ -675,6 +675,36 @@ export type Database = {
           },
         ]
       }
+      notification_settings: {
+        Row: {
+          created_at: string
+          description: string | null
+          enabled: boolean
+          id: string
+          notification_type: string
+          recipient_email: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          enabled?: boolean
+          id?: string
+          notification_type: string
+          recipient_email: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          enabled?: boolean
+          id?: string
+          notification_type?: string
+          recipient_email?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       pre_eligibility_data: {
         Row: {
           applicant_type: string
