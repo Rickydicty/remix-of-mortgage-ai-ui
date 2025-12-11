@@ -31,15 +31,33 @@ const DOCUMENT_SECTIONS = [
     required: true,
   },
   {
+    type: "cover_letter",
+    title: "Cover Letter",
+    description: "Cover letter detailing the case, client's situation, mortgage required, PRA, BOF, etc.",
+    required: true,
+  },
+  {
+    type: "application_form",
+    title: "BI Application Form",
+    description: "BI Application Form or lender-specific application form",
+    required: true,
+  },
+  {
     type: "payslips",
     title: "3 Months Payslips",
     description: "Your last 3 months of payslips showing income details",
     required: true,
   },
   {
-    type: "bank_statements",
-    title: "6 Months Bank Statements",
+    type: "current_account_statements",
+    title: "6 Months Current Account Statements",
     description: "Complete bank statements for the last 6 months from your current account",
+    required: true,
+  },
+  {
+    type: "savings_account_statements",
+    title: "6 Months Savings Account Statements",
+    description: "Complete statements for the last 6 months from your savings accounts",
     required: true,
   },
   {
@@ -52,6 +70,30 @@ const DOCUMENT_SECTIONS = [
     type: "salary_cert",
     title: "Salary Certificate",
     description: "BPFI salary certificate or employer confirmation letter",
+    required: false,
+  },
+  {
+    type: "marriage_certificate",
+    title: "Marriage Certificate",
+    description: "Required if applicants are married",
+    required: false,
+  },
+  {
+    type: "self_employed_docs",
+    title: "Self-Employed Documents",
+    description: "For farming/self-employed: 12 months statements, 2 years Form 11s & Chapter 4s, 2 years business accounts signed by client and accountant",
+    required: false,
+  },
+  {
+    type: "ros_payment_charges",
+    title: "ROS Payment & Charges Form",
+    description: "Payment and charges form from Revenue Online Service (ROS)",
+    required: false,
+  },
+  {
+    type: "tax_clearance",
+    title: "Tax Clearance Certificate",
+    description: "Current tax clearance certificate from Revenue",
     required: false,
   },
   {
