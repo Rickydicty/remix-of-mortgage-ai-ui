@@ -14,8 +14,14 @@ const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'notifications' | 'analytics' | 'settings'>('users');
 
   const handleLogout = async () => {
-    await supabase.auth.signOut({ scope: 'global' });
-    navigate("/login", { replace: true });
+    try {
+      await supabase.auth.signOut({ scope: 'local' });
+      // Force clear any cached state and redirect
+      window.location.href = '/login';
+    } catch (error) {
+      console.error('Logout error:', error);
+      window.location.href = '/login';
+    }
   };
 
   return (
