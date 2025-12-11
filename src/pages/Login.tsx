@@ -18,21 +18,22 @@ const loginSchema = z.object({
 
 const Login = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const { role } = useUserRole();
+  const { user, loading: authLoading } = useAuth();
+  const { role, loading: roleLoading } = useUserRole();
   const { toast } = useToast();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (user && role) {
+    // Only redirect if auth is not loading, user exists, role is loaded and exists
+    if (!authLoading && !roleLoading && user && role) {
       // Redirect based on role
-      if (role === 'admin') navigate("/dashboard/admin");
-      else if (role === 'broker') navigate("/dashboard/broker");
-      else navigate("/dashboard/client");
+      if (role === 'admin') navigate("/dashboard/admin", { replace: true });
+      else if (role === 'broker') navigate("/dashboard/broker", { replace: true });
+      else navigate("/dashboard/client", { replace: true });
     }
-  }, [user, role, navigate]);
+  }, [user, role, authLoading, roleLoading, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();

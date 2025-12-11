@@ -14,8 +14,8 @@ const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'notifications' | 'analytics' | 'settings'>('users');
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate("/login");
+    await supabase.auth.signOut({ scope: 'global' });
+    navigate("/login", { replace: true });
   };
 
   return (
