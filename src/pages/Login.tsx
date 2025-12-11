@@ -26,14 +26,24 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Only redirect if auth is not loading, user exists, role is loaded and exists
-    if (!authLoading && !roleLoading && user && role) {
+    // Only redirect if we have a user AND a valid role
+    // Don't redirect if user is null (logged out) or role is null
+    if (!authLoading && user && !roleLoading && role) {
       // Redirect based on role
       if (role === 'admin') navigate("/dashboard/admin", { replace: true });
       else if (role === 'broker') navigate("/dashboard/broker", { replace: true });
       else navigate("/dashboard/client", { replace: true });
     }
   }, [user, role, authLoading, roleLoading, navigate]);
+  
+  // Show loading while checking auth state
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
