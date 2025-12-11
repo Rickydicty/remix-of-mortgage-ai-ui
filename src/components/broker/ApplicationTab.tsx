@@ -237,6 +237,123 @@ const ApplicationTab = () => {
   );
 };
 
+// AI Pre-Screen Summary Component
+const AIPreScreenSummary = ({ preEligibility, formData }: { preEligibility: PreEligibilityData | null; formData: any }) => {
+  // Calculate missing information
+  const getMissingInfo = () => {
+    const missing: string[] = [];
+    
+    // Check personal details
+    if (!formData?.app1_forenames) missing.push('Applicant Name');
+    if (!formData?.app1_date_of_birth) missing.push('Date of Birth');
+    if (!formData?.app1_pps_number) missing.push('PPS Number');
+    if (!formData?.app1_address) missing.push('Current Address');
+    if (!formData?.app1_phone && !preEligibility?.phone) missing.push('Phone Number');
+    if (!formData?.app1_email && !preEligibility?.email) missing.push('Email');
+    
+    // Check income details
+    if (!formData?.app1_gross_salary && !preEligibility?.income_1) missing.push('Gross Salary');
+    
+    // Check property details
+    if (!formData?.property_address) missing.push('Property Address');
+    if (!formData?.property_type) missing.push('Property Type');
+    
+    // Check mortgage details
+    if (!formData?.loan_amount && !preEligibility?.property_value) missing.push('Loan Amount');
+    if (!formData?.mortgage_term && !preEligibility?.desired_term) missing.push('Mortgage Term');
+    
+    return missing;
+  };
+
+  const missingInfo = getMissingInfo();
+  const eligibilityScore = preEligibility?.eligibility_score || 0;
+  const borrowingLow = preEligibility?.borrowing_capacity_low || 0;
+  const borrowingHigh = preEligibility?.borrowing_capacity_high || 0;
+
+  const getScoreColor = (score: number) => {
+    if (score >= 80) return 'text-success';
+    if (score >= 60) return 'text-warning';
+    return 'text-destructive';
+  };
+
+  const getScoreBgColor = (score: number) => {
+    if (score >= 80) return 'bg-success/10';
+    if (score >= 60) return 'bg-warning/10';
+    return 'bg-destructive/10';
+  };
+
+  return (
+    <div>
+      <h3 className="font-semibold text-secondary bg-secondary/10 px-3 py-1 mb-2 flex items-center gap-2">
+        <span>🤖</span> AI Pre-Screen Summary
+      </h3>
+      <div className="grid md:grid-cols-3 gap-4 p-4 bg-muted/30 rounded-lg">
+        {/* Borrowing Potential */}
+        <div className="space-y-2">
+          <Label className="text-muted-foreground text-sm font-medium">Borrowing Potential</Label>
+          {borrowingLow > 0 || borrowingHigh > 0 ? (
+            <div className="text-xl font-bold text-primary">
+              €{borrowingLow.toLocaleString()} - €{borrowingHigh.toLocaleString()}
+            </div>
+          ) : (
+            <div className="text-muted-foreground italic">Not yet calculated</div>
+          )}
+          {preEligibility?.estimated_monthly_payment && (
+            <div className="text-sm text-muted-foreground">
+              Est. Monthly: €{preEligibility.estimated_monthly_payment.toLocaleString()}
+            </div>
+          )}
+        </div>
+
+        {/* Eligibility Score */}
+        <div className="space-y-2">
+          <Label className="text-muted-foreground text-sm font-medium">Eligibility Score</Label>
+          {eligibilityScore > 0 ? (
+            <div className={cn(
+              "inline-flex items-center gap-2 px-3 py-1 rounded-full text-xl font-bold",
+              getScoreBgColor(eligibilityScore),
+              getScoreColor(eligibilityScore)
+            )}>
+              {eligibilityScore}%
+            </div>
+          ) : (
+            <div className="text-muted-foreground italic">Not yet calculated</div>
+          )}
+          {eligibilityScore >= 80 && <div className="text-sm text-success">High approval likelihood</div>}
+          {eligibilityScore >= 60 && eligibilityScore < 80 && <div className="text-sm text-warning">Moderate approval likelihood</div>}
+          {eligibilityScore > 0 && eligibilityScore < 60 && <div className="text-sm text-destructive">Review recommended</div>}
+        </div>
+
+        {/* Missing Info */}
+        <div className="space-y-2">
+          <Label className="text-muted-foreground text-sm font-medium">Missing Information</Label>
+          {missingInfo.length === 0 ? (
+            <div className="text-success font-medium flex items-center gap-1">
+              <span>✓</span> All required info provided
+            </div>
+          ) : (
+            <div className="space-y-1">
+              <Badge variant="outline" className="bg-warning/10 text-warning border-warning/30">
+                {missingInfo.length} item{missingInfo.length > 1 ? 's' : ''} missing
+              </Badge>
+              <ul className="text-sm text-muted-foreground max-h-20 overflow-y-auto">
+                {missingInfo.slice(0, 4).map((item, idx) => (
+                  <li key={idx} className="flex items-center gap-1">
+                    <span className="text-warning">•</span> {item}
+                  </li>
+                ))}
+                {missingInfo.length > 4 && (
+                  <li className="text-warning text-xs">+{missingInfo.length - 4} more...</li>
+                )}
+              </ul>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Summary Tab Component
 const SummaryTab = ({ application, profile, preEligibility, formData }: { application: any; profile: any; preEligibility: PreEligibilityData | null; formData: any }) => {
   const formatDate = (date: string | null) => {
@@ -365,14 +482,17 @@ const SummaryTab = ({ application, profile, preEligibility, formData }: { applic
             </TableHeader>
             <TableBody>
               <TableRow>
-                <TableCell></TableCell>
-                <TableCell></TableCell>
-                <TableCell></TableCell>
-                <TableCell></TableCell>
+                <TableCell>{formData?.property_address || ''}</TableCell>
+                <TableCell>{formData?.property_type || ''}</TableCell>
+                <TableCell>{formData?.property_new_or_secondhand || ''}</TableCell>
+                <TableCell>{formData?.estimated_closing_date ? new Date(formData.estimated_closing_date).toLocaleDateString('en-GB') : ''}</TableCell>
               </TableRow>
             </TableBody>
           </Table>
         </div>
+
+        {/* AI Pre-Screen Summary */}
+        <AIPreScreenSummary preEligibility={preEligibility} formData={formData} />
 
         {/* Action Buttons */}
         <div className="flex justify-center gap-4 pt-4">
