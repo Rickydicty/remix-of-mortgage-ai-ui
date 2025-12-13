@@ -5,3 +5,6 @@ verify_jwt = true
 
 [functions.check-valuation-ai]
 verify_jwt = false
+
+[functions.library-ai-search]
+verify_jwt = false

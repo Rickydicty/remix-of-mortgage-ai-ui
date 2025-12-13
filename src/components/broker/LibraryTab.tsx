@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search as SearchIcon, Download } from "lucide-react";
+import { Search as SearchIcon, Download, Sparkles, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -28,6 +28,9 @@ const BrokerLibraryTab = () => {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [filteredDocuments, setFilteredDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
+  const [aiQuery, setAiQuery] = useState("");
+  const [aiSearching, setAiSearching] = useState(false);
+  const [aiSuggestion, setAiSuggestion] = useState("");
 
   useEffect(() => {
     fetchDocuments();
@@ -89,7 +92,41 @@ const BrokerLibraryTab = () => {
     setCategory("all");
     setUploadDateFrom("");
     setUploadDateTo("");
+    setAiQuery("");
+    setAiSuggestion("");
     setFilteredDocuments(documents);
+  };
+
+  const handleAiSearch = async () => {
+    if (!aiQuery.trim()) return;
+
+    setAiSearching(true);
+    setAiSuggestion("");
+
+    try {
+      const { data, error } = await supabase.functions.invoke('library-ai-search', {
+        body: { query: aiQuery, documents }
+      });
+
+      if (error) throw error;
+
+      if (data.results) {
+        setFilteredDocuments(data.results);
+      }
+      
+      if (data.suggestion) {
+        setAiSuggestion(data.suggestion);
+      }
+
+      if (data.intent === 'upload') {
+        toast.info("Upload action detected - use the Documents tab to upload files");
+      }
+    } catch (error) {
+      console.error('AI search error:', error);
+      toast.error("AI search failed");
+    } finally {
+      setAiSearching(false);
+    }
   };
 
   const handleDownload = async (filePath: string, filename: string) => {
@@ -132,12 +169,43 @@ const BrokerLibraryTab = () => {
 
   return (
     <div className="space-y-6">
-      {/* Search Section */}
+      {/* AI Search Section */}
+      <Card className="border-primary/20 bg-primary/5">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Sparkles className="h-5 w-5 text-primary" />
+            AI Search
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex gap-2">
+            <Input
+              value={aiQuery}
+              onChange={(e) => setAiQuery(e.target.value)}
+              placeholder='Try: "Show me Haven AIP checklist" or "BOI valuation form"'
+              className="flex-1"
+              onKeyDown={(e) => e.key === 'Enter' && handleAiSearch()}
+            />
+            <Button onClick={handleAiSearch} disabled={aiSearching || !aiQuery.trim()}>
+              {aiSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+              <span className="ml-2">Ask AI</span>
+            </Button>
+          </div>
+          {aiSuggestion && (
+            <p className="mt-2 text-sm text-muted-foreground flex items-center gap-1">
+              <Sparkles className="h-3 w-3" />
+              {aiSuggestion}
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Manual Search Section */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <SearchIcon className="h-5 w-5" />
-            Search
+            Manual Search
           </CardTitle>
         </CardHeader>
         <CardContent>
