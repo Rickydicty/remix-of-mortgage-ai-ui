@@ -4,14 +4,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import { Shield, Users, BarChart3, Settings, LogOut, Bell } from "lucide-react";
+import { Shield, Users, BarChart3, Settings, LogOut, Bell, CreditCard } from "lucide-react";
 import { UserManagement } from "@/components/admin/UserManagement";
 import { NotificationSettings } from "@/components/admin/NotificationSettings";
+import PricingManagement from "@/components/admin/PricingManagement";
 
 const AdminDashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'notifications' | 'analytics' | 'settings'>('users');
+  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'notifications' | 'pricing' | 'analytics' | 'settings'>('users');
 
   const handleLogout = async () => {
     try {
@@ -62,6 +63,14 @@ const AdminDashboard = () => {
               Notifications
             </Button>
             <Button
+              variant={activeTab === 'pricing' ? 'default' : 'ghost'}
+              onClick={() => setActiveTab('pricing')}
+              className="rounded-b-none"
+            >
+              <CreditCard className="h-4 w-4 mr-2" />
+              Pricing & Revenue
+            </Button>
+            <Button
               variant={activeTab === 'analytics' ? 'default' : 'ghost'}
               onClick={() => setActiveTab('analytics')}
               className="rounded-b-none"
@@ -85,6 +94,8 @@ const AdminDashboard = () => {
         {activeTab === 'users' && <UserManagement />}
         
         {activeTab === 'notifications' && <NotificationSettings />}
+
+        {activeTab === 'pricing' && <PricingManagement />}
         
         {activeTab === 'analytics' && (
           <Card>
