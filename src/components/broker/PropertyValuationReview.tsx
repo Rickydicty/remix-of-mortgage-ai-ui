@@ -451,14 +451,12 @@ export const PropertyValuationReview = ({ applicationId, propertyAddress }: Prop
           {/* AI Full Analysis */}
           {aiAnalysis && (
             <div className="p-4 bg-muted/50 border rounded-lg">
-              <div className="flex items-start gap-2 mb-3">
-                <Sparkles className="h-5 w-5 text-primary mt-0.5" />
-                <p className="font-medium">AI Valuation Analysis</p>
+              <div className="flex items-start gap-2 mb-2">
+                <Sparkles className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                <p className="font-medium">AI Assessment</p>
               </div>
-              <div className="prose prose-sm max-w-none">
-                <pre className="whitespace-pre-wrap text-sm font-sans bg-background p-4 rounded-lg border">
-                  {aiAnalysis}
-                </pre>
+              <div className="text-sm leading-relaxed whitespace-pre-wrap pl-7">
+                {aiAnalysis}
               </div>
             </div>
           )}
