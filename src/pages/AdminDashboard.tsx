@@ -8,6 +8,7 @@ import { Shield, Users, BarChart3, Settings, LogOut, Bell, CreditCard } from "lu
 import { UserManagement } from "@/components/admin/UserManagement";
 import { NotificationSettings } from "@/components/admin/NotificationSettings";
 import PricingManagement from "@/components/admin/PricingManagement";
+import AnalyticsDashboard from "@/components/admin/AnalyticsDashboard";
 
 const AdminDashboard = () => {
   const { user } = useAuth();
@@ -97,16 +98,7 @@ const AdminDashboard = () => {
 
         {activeTab === 'pricing' && <PricingManagement />}
         
-        {activeTab === 'analytics' && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Analytics Dashboard</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">Analytics coming soon...</p>
-            </CardContent>
-          </Card>
-        )}
+        {activeTab === 'analytics' && <AnalyticsDashboard />}
 
         {activeTab === 'settings' && (
           <Card>
