@@ -29,30 +29,19 @@ serve(async (req) => {
     console.log('Found comparables:', mockComparables.length);
 
     // Use AI to analyze the valuation
-    const analysisPrompt = `You are an expert Irish property valuation analyst. Analyze the following property valuation submission and provide a detailed assessment.
+    const analysisPrompt = `Analyze this Irish property valuation:
 
-**Property Details:**
-- Address: ${propertyAddress}
-- Client's Estimated Value: €${clientEstimate?.toLocaleString() || 'Not provided'}
-- Property Type: ${propertyType || 'Not specified'}
-- Year Built: ${yearBuilt || 'Not specified'}
-- Size: ${size || 'Not specified'} sqm
-- Bedrooms: ${bedrooms || 'Not specified'}
-- Additional Notes: ${notes || 'None'}
+**Property:** ${propertyAddress}
+**Client Estimate:** €${clientEstimate?.toLocaleString() || 'N/A'}
+**Type:** ${propertyType || 'N/A'} | **Year:** ${yearBuilt || 'N/A'} | **Size:** ${size || 'N/A'}sqm | **Beds:** ${bedrooms || 'N/A'}
 
-**Comparable Properties from Tailte Éireann Registry:**
-${mockComparables.map((c, i) => `${i + 1}. ${c.address} - €${c.ratableValue.toLocaleString()} (${c.valuationDate})`).join('\n')}
+**Registry Comparables (avg €${Math.round(mockComparables.reduce((s, c) => s + c.ratableValue, 0) / mockComparables.length).toLocaleString()}):**
+${mockComparables.map((c, i) => `• ${c.address}: €${c.ratableValue.toLocaleString()}`).join('\n')}
 
-**Average Registry Value:** €${Math.round(mockComparables.reduce((sum, c) => sum + c.ratableValue, 0) / mockComparables.length).toLocaleString()}
-
-Please provide:
-1. **Valuation Assessment**: Is the client's estimate reasonable compared to registry data?
-2. **Variance Analysis**: Calculate and explain the percentage variance from comparable properties
-3. **Risk Flags**: Any concerns a lender should be aware of
-4. **Recommendation**: Should this proceed as-is, require independent valuation, or needs further review?
-5. **Confidence Score**: Rate your confidence in this assessment (1-100)
-
-Be concise but thorough. Format your response clearly.`;
+Provide a brief assessment with:
+1. ✓ or ⚠ Verdict (aligned/overvalued/undervalued)
+2. Risk flags (if any)
+3. Recommendation (proceed/independent valuation needed/review required)`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -65,7 +54,7 @@ Be concise but thorough. Format your response clearly.`;
         messages: [
           { 
             role: "system", 
-            content: "You are an expert Irish property valuation analyst with deep knowledge of the Irish property market, Tailte Éireann registry data, and mortgage lending requirements. Provide professional, actionable assessments." 
+            content: "You are a property valuation analyst. Be concise. Use bullet points. Max 150 words." 
           },
           { role: "user", content: analysisPrompt }
         ],
