@@ -10,7 +10,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { Save, Upload, FileText, MessageSquare, FileCheck, Download } from "lucide-react";
+import { Save, Upload, FileText, MessageSquare, FileCheck, Download, Home } from "lucide-react";
+import { PropertyValuationSubmit } from "@/components/client/PropertyValuationSubmit";
 import { cn } from "@/lib/utils";
 import { DocumentUpload } from "@/components/DocumentUpload";
 import { DocumentList } from "@/components/DocumentList";
@@ -287,6 +288,7 @@ const ClientApplicationTab = ({ applicationId, application, brokerProfile, onRef
     { id: "financial", label: "Financial & Credit" },
     { id: "mortgage", label: "Mortgage Details" },
     { id: "property", label: "Property Details" },
+    { id: "valuation", label: "Property Valuation" },
     { id: "security", label: "Additional Security" },
     { id: "alternative", label: "Alternative Lending" },
     { id: "declarations", label: "Declarations" },
@@ -752,6 +754,19 @@ const ClientApplicationTab = ({ applicationId, application, brokerProfile, onRef
       {activeTab === "financial" && <FinancialTab formData={formData} onChange={handleInputChange} />}
       {activeTab === "mortgage" && <MortgageTab formData={formData} onChange={handleInputChange} />}
       {activeTab === "property" && <PropertyTab formData={formData} onChange={handleInputChange} />}
+      {activeTab === "valuation" && applicationId && (
+        <PropertyValuationSubmit applicationId={applicationId} onSubmit={onRefresh} />
+      )}
+      {activeTab === "valuation" && !applicationId && (
+        <Card>
+          <CardContent className="py-8">
+            <div className="text-center text-muted-foreground">
+              <Home className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>No application found. Please complete the eligibility check first.</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
       {activeTab === "security" && <SecurityTab formData={formData} onChange={handleInputChange} />}
       {activeTab === "alternative" && <AlternativeTab formData={formData} onChange={handleInputChange} />}
       {activeTab === "declarations" && <DeclarationsTab formData={formData} onChange={handleInputChange} />}

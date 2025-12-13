@@ -12,6 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import DocumentReview from "./DocumentReview";
+import { PropertyValuationReview } from "./PropertyValuationReview";
 
 interface PreEligibilityData {
   applicant_type: string;
@@ -110,6 +111,7 @@ const ApplicationTab = () => {
   // Row 1 tabs
   const row1Tabs = [
     { id: "aip-portal", label: "AIP Portal", highlight: true },
+    { id: "valuation", label: "Property Valuation" },
     { id: "security", label: "Additional Security" },
     { id: "alternative", label: "Alternative Lending" },
     { id: "declarations", label: "Declarations" },
@@ -223,6 +225,7 @@ const ApplicationTab = () => {
           <Route path="financial" element={<FinancialTab preEligibility={preEligibility} formData={formData} />} />
           <Route path="mortgage" element={<MortgageTab preEligibility={preEligibility} formData={formData} />} />
           <Route path="property" element={<PropertyTab preEligibility={preEligibility} formData={formData} />} />
+          <Route path="valuation" element={<PropertyValuationReview applicationId={applicationId || ''} propertyAddress={formData?.property_address} />} />
           <Route path="docs" element={<DocsTab applicationId={applicationId} userId={application?.user_id} />} />
           <Route path="declarations" element={<DeclarationsTab preEligibility={preEligibility} formData={formData} />} />
           <Route path="transactions" element={<TransactionsTab />} />
