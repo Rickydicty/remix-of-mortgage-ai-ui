@@ -17,3 +17,6 @@ verify_jwt = true
 
 [functions.customer-portal]
 verify_jwt = true
+
+[functions.admin-stripe-data]
+verify_jwt = true
