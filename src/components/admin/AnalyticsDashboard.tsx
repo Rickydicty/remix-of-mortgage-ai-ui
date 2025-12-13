@@ -15,41 +15,30 @@ const COLORS = ['hsl(var(--primary))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3
 
 const AnalyticsDashboard = () => {
   // Fetch all analytics data
-  const { data: stats, isLoading } = useQuery({
+  const { data: stats, isLoading, error } = useQuery({
     queryKey: ['admin-analytics'],
     queryFn: async () => {
-      const [
-        { count: totalUsers },
-        { count: totalApplications },
-        { data: applications },
-        { data: documents },
-        { data: signatures },
-        { data: valuations },
-        { data: loanOffers },
-        { data: userRoles },
-        { data: preEligibility }
-      ] = await Promise.all([
-        supabase.from('profiles').select('*', { count: 'exact', head: true }),
-        supabase.from('applications').select('*', { count: 'exact', head: true }),
-        supabase.from('applications').select('id, status, aip_status, created_at, aip_approved_amount'),
-        supabase.from('documents').select('id, status, document_type, created_at'),
-        supabase.from('signatures').select('id, document_type, signed_at'),
-        supabase.from('valuations').select('id, status, valuation_amount, created_at'),
-        supabase.from('loan_offers').select('id, status, offer_amount, lender_name, created_at'),
-        supabase.from('user_roles').select('id, role, created_at'),
-        supabase.from('pre_eligibility_data').select('id, eligibility_score, borrowing_capacity_high, created_at')
-      ]);
+      // Fetch each table separately to handle errors gracefully
+      const profilesRes = await supabase.from('profiles').select('*', { count: 'exact', head: true });
+      const applicationsCountRes = await supabase.from('applications').select('*', { count: 'exact', head: true });
+      const applicationsRes = await supabase.from('applications').select('id, status, aip_status, created_at, aip_approved_amount');
+      const documentsRes = await supabase.from('documents').select('id, status, document_type, created_at');
+      const signaturesRes = await supabase.from('signatures').select('id, document_type, signed_at');
+      const valuationsRes = await supabase.from('valuations').select('id, status, valuation_amount, created_at');
+      const loanOffersRes = await supabase.from('loan_offers').select('id, status, offer_amount, lender_name, created_at');
+      const userRolesRes = await supabase.from('user_roles').select('id, role, created_at');
+      const preEligibilityRes = await supabase.from('pre_eligibility_data').select('id, eligibility_score, borrowing_capacity_high, created_at');
 
       return {
-        totalUsers: totalUsers || 0,
-        totalApplications: totalApplications || 0,
-        applications: applications || [],
-        documents: documents || [],
-        signatures: signatures || [],
-        valuations: valuations || [],
-        loanOffers: loanOffers || [],
-        userRoles: userRoles || [],
-        preEligibility: preEligibility || []
+        totalUsers: profilesRes.count || 0,
+        totalApplications: applicationsCountRes.count || 0,
+        applications: applicationsRes.data || [],
+        documents: documentsRes.data || [],
+        signatures: signaturesRes.data || [],
+        valuations: valuationsRes.data || [],
+        loanOffers: loanOffersRes.data || [],
+        userRoles: userRolesRes.data || [],
+        preEligibility: preEligibilityRes.data || []
       };
     }
   });
@@ -67,6 +56,26 @@ const AnalyticsDashboard = () => {
           ))}
         </div>
       </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card>
+        <CardContent className="pt-6">
+          <p className="text-destructive">Error loading analytics: {error.message}</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!stats) {
+    return (
+      <Card>
+        <CardContent className="pt-6">
+          <p className="text-muted-foreground">No analytics data available</p>
+        </CardContent>
+      </Card>
     );
   }
 
