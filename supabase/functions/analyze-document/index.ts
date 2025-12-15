@@ -12,9 +12,53 @@ interface AnalysisResponse {
   status: 'approved' | 'disapproved' | 'waiting';
 }
 
-async function analyzeDocumentWithAI(imageBase64: string, mimeType: string): Promise<AnalysisResponse> {
+const DOCUMENT_TYPE_DESCRIPTIONS: Record<string, string> = {
+  certified_id: "Government-issued photo ID such as passport, driver's license, or national ID card. Must show full name, photo, and be clearly readable.",
+  proof_of_address: "Utility bill, bank statement, or official letter showing current residential address dated within last 3 months.",
+  cover_letter: "A formal cover letter explaining the mortgage application case and client situation.",
+  application_form: "Completed mortgage application form or BI Application Form.",
+  payslips: "Official payslips from employer showing salary details, deductions, and dates. Must be from recent 3 months.",
+  current_account_statements: "Bank statements from a current/checking account showing transactions, account holder name, and bank details.",
+  savings_account_statements: "Bank statements from a savings account showing balance, transactions, and account holder information.",
+  employment_summary: "Employment Detail Summary (EDS) from Revenue showing employment history and income details.",
+  salary_cert: "Salary certificate from employer confirming employment status and salary.",
+  marriage_certificate: "Official marriage certificate showing names of both spouses and marriage date.",
+  self_employed_docs: "Business accounts, Form 11s, Chapter 4s, or other self-employment documentation.",
+  ros_payment_charges: "ROS (Revenue Online Service) payment and charges form.",
+  tax_clearance: "Tax clearance certificate from Revenue.",
+  gift_letter: "Letter confirming a gift of funds for deposit, signed by the giftor.",
+  loan_account_statements: "Statements from loan accounts showing repayment history.",
+  mortgage_statements: "Mortgage statements showing current mortgage details and payment history.",
+  other: "Any other supporting document relevant to the mortgage application."
+};
+
+async function analyzeDocumentWithAI(imageBase64: string, mimeType: string, documentType: string): Promise<AnalysisResponse> {
   const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
   
+  const expectedDocDescription = DOCUMENT_TYPE_DESCRIPTIONS[documentType] || "Unknown document type";
+  
+  const systemPrompt = `You are a STRICT document verification expert for mortgage applications. Your job is to verify that uploaded documents match the expected document type EXACTLY.
+
+CRITICAL RULES:
+1. You must REJECT documents that do not match the expected document type
+2. Random images, selfies, memes, screenshots, or unrelated content should get a score of 0-10
+3. Documents that are a different type than expected should get a score of 10-30 (e.g., marriage certificate uploaded as ID)
+4. Only documents that ACTUALLY match the expected type should score above 50
+5. High scores (70+) require the document to be the CORRECT TYPE, clearly readable, and authentic-looking
+
+EXPECTED DOCUMENT TYPE: "${documentType}"
+EXPECTED DOCUMENT DESCRIPTION: "${expectedDocDescription}"
+
+Scoring guide:
+- 0-10: Random image, meme, selfie, screenshot, or completely unrelated content
+- 10-30: A real document but WRONG TYPE (e.g., uploading a utility bill when ID is expected)
+- 30-50: Correct document type but poor quality, expired, or has issues
+- 50-70: Correct document type, readable, but minor issues
+- 70-90: Correct document type, good quality, no major issues
+- 90-100: Perfect document - correct type, high quality, all details visible
+
+Always respond with valid JSON: {"score": number, "analysis": "your analysis explaining why this score was given"}`;
+
   const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -22,18 +66,27 @@ async function analyzeDocumentWithAI(imageBase64: string, mimeType: string): Pro
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'google/gemini-2.5-flash',
+      model: 'google/gemini-2.5-pro',
       messages: [
         { 
           role: 'system', 
-          content: 'You are a document verification expert. Analyze documents and provide a score from 0-100 based on quality, completeness, and validity. Always respond with valid JSON containing "score" (number) and "analysis" (string) fields.' 
+          content: systemPrompt
         },
         { 
           role: 'user', 
           content: [
             {
               type: 'text',
-              text: 'Analyze this document and provide a score (0-100) and brief analysis. Consider factors like: document authenticity, completeness, readability, validity of information, and any red flags. Respond ONLY with JSON: {"score": number, "analysis": "your analysis"}'
+              text: `Analyze this document. The user claims this is a "${documentType}" document. 
+              
+VERIFY: Does this document actually match what a "${documentType}" should look like?
+
+Expected: ${expectedDocDescription}
+
+If this is NOT the correct document type, or if this is a random image/meme/selfie, give a LOW score (0-30).
+Only give scores above 50 if this IS actually a ${documentType} document.
+
+Respond ONLY with JSON: {"score": number, "analysis": "your analysis"}`
             },
             {
               type: 'image_url',
@@ -145,8 +198,8 @@ Deno.serve(async (req) => {
       new Uint8Array(fileBuffer).reduce((data, byte) => data + String.fromCharCode(byte), '')
     );
 
-    // Analyze with AI
-    const analysis = await analyzeDocumentWithAI(base64Image, file.type);
+    // Analyze with AI - pass document type for strict validation
+    const analysis = await analyzeDocumentWithAI(base64Image, file.type, documentType);
 
     // Save to database
     const { data: document, error: dbError } = await supabaseClient
