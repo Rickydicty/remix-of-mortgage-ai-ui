@@ -11,11 +11,21 @@ import { supabase } from "@/integrations/supabase/client";
 const DOCUMENT_TYPES = [
   { value: "certified_id", label: "Certified ID", required: true },
   { value: "proof_of_address", label: "Certified Proof of Address", required: true },
+  { value: "cover_letter", label: "Cover Letter", required: true },
+  { value: "application_form", label: "BI Application Form", required: true },
   { value: "payslips", label: "3 Months Payslips", required: true },
-  { value: "bank_statements", label: "6 Months Bank Statements", required: true },
+  { value: "current_account_statements", label: "6 Months Current Account Statements", required: true },
+  { value: "savings_account_statements", label: "6 Months Savings Account Statements", required: true },
   { value: "employment_summary", label: "Employment Detail Summary", required: true },
-  { value: "salary_cert", label: "Salary Certificate (BPFI)", required: false },
-  { value: "other", label: "Other Document", required: false },
+  { value: "salary_cert", label: "Salary Certificate (BPFI)", required: true },
+  { value: "marriage_certificate", label: "Marriage Certificate", required: true },
+  { value: "self_employed_docs", label: "Self-Employed Documents", required: true },
+  { value: "ros_payment_charges", label: "ROS Payment & Charges Form", required: true },
+  { value: "tax_clearance", label: "Tax Clearance Certificate", required: true },
+  { value: "gift_letter", label: "Gift Letter", required: true },
+  { value: "loan_account_statements", label: "6 Months Loan Account Statements", required: true },
+  { value: "mortgage_statements", label: "12 Months Mortgage Statements", required: true },
+  { value: "other", label: "Other Documents", required: true },
 ];
 
 interface DocumentUploadProps {
