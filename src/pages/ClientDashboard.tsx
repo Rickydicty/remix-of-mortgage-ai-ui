@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
-import { Building2, LogOut, User, ClipboardList, CreditCard } from "lucide-react";
+import { Building2, LogOut, User, ClipboardList, CreditCard, CheckCircle } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import ProgressTracker from "@/components/ProgressTracker";
 import { supabase } from "@/integrations/supabase/client";
@@ -157,6 +157,10 @@ const ClientDashboard = () => {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={() => navigate('/pre-eligibility')}>
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Check Eligibility
+              </Button>
               <Dialog open={plansOpen} onOpenChange={setPlansOpen}>
                 <DialogTrigger asChild>
                   <Button variant="outline" size="sm">
