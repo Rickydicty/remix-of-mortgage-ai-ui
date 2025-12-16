@@ -180,6 +180,16 @@ export type Database = {
           ber_rating: string | null
           broker_notes: string | null
           ccj_details: string | null
+          cover_letter_additional_info: string | null
+          cover_letter_bof_details: string | null
+          cover_letter_client_background: string | null
+          cover_letter_completed: boolean | null
+          cover_letter_completed_at: string | null
+          cover_letter_employment_summary: string | null
+          cover_letter_mortgage_amount: number | null
+          cover_letter_mortgage_purpose: string | null
+          cover_letter_pra_details: string | null
+          cover_letter_property_details: string | null
           created_at: string
           credit_cards: number | null
           credit_history: string | null
@@ -281,6 +291,16 @@ export type Database = {
           ber_rating?: string | null
           broker_notes?: string | null
           ccj_details?: string | null
+          cover_letter_additional_info?: string | null
+          cover_letter_bof_details?: string | null
+          cover_letter_client_background?: string | null
+          cover_letter_completed?: boolean | null
+          cover_letter_completed_at?: string | null
+          cover_letter_employment_summary?: string | null
+          cover_letter_mortgage_amount?: number | null
+          cover_letter_mortgage_purpose?: string | null
+          cover_letter_pra_details?: string | null
+          cover_letter_property_details?: string | null
           created_at?: string
           credit_cards?: number | null
           credit_history?: string | null
@@ -382,6 +402,16 @@ export type Database = {
           ber_rating?: string | null
           broker_notes?: string | null
           ccj_details?: string | null
+          cover_letter_additional_info?: string | null
+          cover_letter_bof_details?: string | null
+          cover_letter_client_background?: string | null
+          cover_letter_completed?: boolean | null
+          cover_letter_completed_at?: string | null
+          cover_letter_employment_summary?: string | null
+          cover_letter_mortgage_amount?: number | null
+          cover_letter_mortgage_purpose?: string | null
+          cover_letter_pra_details?: string | null
+          cover_letter_property_details?: string | null
           created_at?: string
           credit_cards?: number | null
           credit_history?: string | null

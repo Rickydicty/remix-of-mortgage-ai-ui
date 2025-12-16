@@ -11,7 +11,6 @@ import { supabase } from "@/integrations/supabase/client";
 const DOCUMENT_TYPES = [
   { value: "certified_id", label: "Certified ID", required: true },
   { value: "proof_of_address", label: "Certified Proof of Address", required: true },
-  { value: "cover_letter", label: "Cover Letter", required: true },
   { value: "application_form", label: "BI Application Form", required: true },
   { value: "payslips", label: "3 Months Payslips", required: true },
   { value: "current_account_statements", label: "6 Months Current Account Statements", required: true },

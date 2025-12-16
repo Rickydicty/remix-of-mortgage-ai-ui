@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import DocumentReview from "./DocumentReview";
 import { PropertyValuationReview } from "./PropertyValuationReview";
+import CoverLetterView from "./CoverLetterView";
 
 interface PreEligibilityData {
   applicant_type: string;
@@ -1132,58 +1133,63 @@ const DocsTab = ({ applicationId, userId }: { applicationId: string | null; user
   };
 
   return (
-    <Card>
-      <CardContent className="pt-6">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-primary/10">
-              <TableHead>Q No.</TableHead>
-              <TableHead>Document Name</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Applicant</TableHead>
-              <TableHead>Request Date</TableHead>
-              <TableHead>Request By</TableHead>
-              <TableHead>Received Date</TableHead>
-              <TableHead>Received</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {documents.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
-                  No documents found
-                </TableCell>
+    <div className="space-y-6">
+      {/* Cover Letter Section */}
+      {userId && <CoverLetterView userId={userId} />}
+
+      <Card>
+        <CardContent className="pt-6">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-primary/10">
+                <TableHead>Q No.</TableHead>
+                <TableHead>Document Name</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Applicant</TableHead>
+                <TableHead>Request Date</TableHead>
+                <TableHead>Request By</TableHead>
+                <TableHead>Received Date</TableHead>
+                <TableHead>Received</TableHead>
               </TableRow>
-            ) : (
-              documents.map((doc, i) => (
-                <TableRow key={doc.id}>
-                  <TableCell>{i + 1}</TableCell>
-                  <TableCell>{doc.filename}</TableCell>
-                  <TableCell>{doc.document_type}</TableCell>
-                  <TableCell>Applicant 1</TableCell>
-                  <TableCell>{new Date(doc.created_at).toLocaleDateString('en-GB')}</TableCell>
-                  <TableCell>Broker</TableCell>
-                  <TableCell>{doc.status === 'approved' ? new Date(doc.updated_at).toLocaleDateString('en-GB') : ''}</TableCell>
-                  <TableCell>
-                    <Checkbox checked={doc.status === 'approved'} />
+            </TableHeader>
+            <TableBody>
+              {documents.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                    No documents found
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+              ) : (
+                documents.map((doc, i) => (
+                  <TableRow key={doc.id}>
+                    <TableCell>{i + 1}</TableCell>
+                    <TableCell>{doc.filename}</TableCell>
+                    <TableCell>{doc.document_type}</TableCell>
+                    <TableCell>Applicant 1</TableCell>
+                    <TableCell>{new Date(doc.created_at).toLocaleDateString('en-GB')}</TableCell>
+                    <TableCell>Broker</TableCell>
+                    <TableCell>{doc.status === 'approved' ? new Date(doc.updated_at).toLocaleDateString('en-GB') : ''}</TableCell>
+                    <TableCell>
+                      <Checkbox checked={doc.status === 'approved'} />
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
 
-        <div className="flex justify-between mt-6">
-          <Button variant="outline">Add document requirement &gt;&gt;</Button>
-          <Button variant="outline">Save received documents and Submit</Button>
-        </div>
+          <div className="flex justify-between mt-6">
+            <Button variant="outline">Add document requirement &gt;&gt;</Button>
+            <Button variant="outline">Save received documents and Submit</Button>
+          </div>
 
-        <div className="flex justify-end gap-2 mt-4">
-          <Button variant="outline" size="sm">Previous</Button>
-          <Button variant="outline" size="sm">Next</Button>
-        </div>
-      </CardContent>
-    </Card>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="outline" size="sm">Previous</Button>
+            <Button variant="outline" size="sm">Next</Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 
