@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { DocumentSection } from "./DocumentSection";
 import { supabase } from "@/integrations/supabase/client";
+import CoverLetterForm from "./client/CoverLetterForm";
 
 interface Document {
   id: string;
@@ -28,12 +29,6 @@ const DOCUMENT_SECTIONS = [
     type: "proof_of_address",
     title: "Proof of Address",
     description: "Recent utility bill, bank statement, or official document showing your current address",
-    required: true,
-  },
-  {
-    type: "cover_letter",
-    title: "Cover Letter",
-    description: "Cover letter detailing the case, client's situation, mortgage required, PRA, BOF, etc.",
     required: true,
   },
   {
@@ -164,6 +159,9 @@ export const DocumentList = ({ refreshTrigger }: DocumentListProps) => {
           {documents.filter(d => d.status === 'approved').length} of {DOCUMENT_SECTIONS.filter(s => s.required).length} required documents approved
         </p>
       </div>
+
+      {/* Cover Letter Form - First Section */}
+      <CoverLetterForm />
       
       {DOCUMENT_SECTIONS.map((section) => (
         <DocumentSection
