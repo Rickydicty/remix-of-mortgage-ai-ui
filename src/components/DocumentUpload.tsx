@@ -88,9 +88,32 @@ export const DocumentUpload = ({ onUploadComplete }: DocumentUploadProps) => {
         throw new Error(data.error || 'Upload failed');
       }
 
+      // Create admin approval record for the uploaded document
+      const { data: application } = await supabase
+        .from('applications')
+        .select('id')
+        .eq('user_id', session.user.id)
+        .maybeSingle();
+
+      await supabase
+        .from('admin_approvals')
+        .insert({
+          action_type: 'document_upload',
+          entity_id: data.document.id,
+          entity_table: 'documents',
+          client_id: session.user.id,
+          application_id: application?.id || null,
+          status: 'pending',
+          metadata: {
+            filename: file.name,
+            document_type: documentType,
+            score: data.document.score
+          }
+        });
+
       toast({
         title: "Document uploaded successfully",
-        description: `Status: ${data.document.status} (Score: ${data.document.score}/100)`,
+        description: "Awaiting admin approval before broker can review.",
       });
 
       setFile(null);

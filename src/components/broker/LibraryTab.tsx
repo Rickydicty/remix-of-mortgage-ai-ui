@@ -39,9 +39,11 @@ const BrokerLibraryTab = () => {
   const fetchDocuments = async () => {
     try {
       setLoading(true);
+      // Brokers only see approved documents
       const { data, error } = await supabase
         .from("documents")
         .select("*")
+        .eq("approval_status", "approved")
         .order("created_at", { ascending: false });
 
       if (error) throw error;

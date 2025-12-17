@@ -75,10 +75,12 @@ const DocumentReview = ({ clientId, clientName, applicationId, onUpdate }: Docum
 
   const fetchDocuments = async () => {
     setLoading(true);
+    // Brokers only see approved documents from admin
     const { data, error } = await supabase
       .from('documents')
       .select('*')
       .eq('user_id', clientId)
+      .eq('approval_status', 'approved')
       .order('created_at', { ascending: false });
 
     if (error) {
