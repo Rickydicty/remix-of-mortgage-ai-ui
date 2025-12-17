@@ -14,6 +14,59 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_approvals: {
+        Row: {
+          action_type: string
+          application_id: string | null
+          client_id: string
+          created_at: string
+          entity_id: string
+          entity_table: string
+          id: string
+          metadata: Json | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          action_type: string
+          application_id?: string | null
+          client_id: string
+          created_at?: string
+          entity_id: string
+          entity_table: string
+          id?: string
+          metadata?: Json | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          action_type?: string
+          application_id?: string | null
+          client_id?: string
+          created_at?: string
+          entity_id?: string
+          entity_table?: string
+          id?: string
+          metadata?: Json | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_approvals_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       aip_audit_logs: {
         Row: {
           actor_id: string | null
@@ -176,6 +229,7 @@ export type Database = {
           app2_title: string | null
           app2_years_at_address: number | null
           application_id: string | null
+          approval_status: string | null
           arrears_details: string | null
           ber_rating: string | null
           broker_notes: string | null
@@ -287,6 +341,7 @@ export type Database = {
           app2_title?: string | null
           app2_years_at_address?: number | null
           application_id?: string | null
+          approval_status?: string | null
           arrears_details?: string | null
           ber_rating?: string | null
           broker_notes?: string | null
@@ -398,6 +453,7 @@ export type Database = {
           app2_title?: string | null
           app2_years_at_address?: number | null
           application_id?: string | null
+          approval_status?: string | null
           arrears_details?: string | null
           ber_rating?: string | null
           broker_notes?: string | null
@@ -557,6 +613,7 @@ export type Database = {
       documents: {
         Row: {
           analysis_text: string | null
+          approval_status: string | null
           created_at: string | null
           document_type: string
           file_path: string
@@ -569,6 +626,7 @@ export type Database = {
         }
         Insert: {
           analysis_text?: string | null
+          approval_status?: string | null
           created_at?: string | null
           document_type: string
           file_path: string
@@ -581,6 +639,7 @@ export type Database = {
         }
         Update: {
           analysis_text?: string | null
+          approval_status?: string | null
           created_at?: string | null
           document_type?: string
           file_path?: string
@@ -667,6 +726,7 @@ export type Database = {
       messages: {
         Row: {
           application_id: string | null
+          approval_status: string | null
           created_at: string
           id: string
           message: string
@@ -677,6 +737,7 @@ export type Database = {
         }
         Insert: {
           application_id?: string | null
+          approval_status?: string | null
           created_at?: string
           id?: string
           message: string
@@ -687,6 +748,7 @@ export type Database = {
         }
         Update: {
           application_id?: string | null
+          approval_status?: string | null
           created_at?: string
           id?: string
           message?: string
@@ -837,6 +899,7 @@ export type Database = {
       signatures: {
         Row: {
           application_id: string
+          approval_status: string | null
           created_at: string
           document_type: string
           id: string
@@ -846,6 +909,7 @@ export type Database = {
         }
         Insert: {
           application_id: string
+          approval_status?: string | null
           created_at?: string
           document_type: string
           id?: string
@@ -855,6 +919,7 @@ export type Database = {
         }
         Update: {
           application_id?: string
+          approval_status?: string | null
           created_at?: string
           document_type?: string
           id?: string
@@ -889,6 +954,7 @@ export type Database = {
         Row: {
           application_id: string
           appointment_date: string | null
+          approval_status: string | null
           completed_at: string | null
           created_at: string | null
           id: string
@@ -905,6 +971,7 @@ export type Database = {
         Insert: {
           application_id: string
           appointment_date?: string | null
+          approval_status?: string | null
           completed_at?: string | null
           created_at?: string | null
           id?: string
@@ -921,6 +988,7 @@ export type Database = {
         Update: {
           application_id?: string
           appointment_date?: string | null
+          approval_status?: string | null
           completed_at?: string | null
           created_at?: string | null
           id?: string

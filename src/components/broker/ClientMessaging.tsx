@@ -72,10 +72,11 @@ const ClientMessaging = ({ clientId, clientName, applicationId }: ClientMessagin
   const fetchMessages = async () => {
     if (!user) return;
 
+    // Brokers only see approved messages from clients
     const { data, error } = await supabase
       .from('messages')
       .select('*')
-      .or(`and(sender_id.eq.${user.id},receiver_id.eq.${clientId}),and(sender_id.eq.${clientId},receiver_id.eq.${user.id})`)
+      .or(`and(sender_id.eq.${user.id},receiver_id.eq.${clientId}),and(sender_id.eq.${clientId},receiver_id.eq.${user.id},approval_status.eq.approved)`)
       .order('created_at', { ascending: true });
 
     if (error) {
@@ -90,22 +91,53 @@ const ClientMessaging = ({ clientId, clientName, applicationId }: ClientMessagin
     if (!user || !newMessage.trim()) return;
 
     setLoading(true);
-    const { error } = await supabase
+    
+    // Check if sender is a client (needs approval) or broker (direct send)
+    const { data: roleData } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    const isClient = roleData?.role === 'client';
+    
+    const { data: msgData, error } = await supabase
       .from('messages')
       .insert({
         sender_id: user.id,
         receiver_id: clientId,
         application_id: applicationId,
-        message: newMessage.trim()
-      });
+        message: newMessage.trim(),
+        approval_status: isClient ? 'pending' : 'approved' // Clients need approval
+      })
+      .select('id')
+      .single();
 
     if (error) {
       console.error('Error sending message:', error);
       toast.error("Failed to send message");
     } else {
+      // If client, create admin approval record
+      if (isClient && msgData) {
+        await supabase
+          .from('admin_approvals')
+          .insert({
+            action_type: 'message',
+            entity_id: msgData.id,
+            entity_table: 'messages',
+            client_id: user.id,
+            application_id: applicationId || null,
+            status: 'pending',
+            metadata: {
+              message_preview: newMessage.trim().substring(0, 100)
+            }
+          });
+        toast.success("Message sent for approval");
+      } else {
+        toast.success("Message sent");
+      }
       setNewMessage("");
       fetchMessages();
-      toast.success("Message sent");
     }
     
     setLoading(false);

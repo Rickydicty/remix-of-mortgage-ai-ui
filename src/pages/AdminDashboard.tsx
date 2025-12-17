@@ -4,16 +4,17 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import { Shield, Users, BarChart3, Settings, LogOut, Bell, CreditCard } from "lucide-react";
+import { Shield, Users, BarChart3, Settings, LogOut, Bell, CreditCard, ClipboardCheck } from "lucide-react";
 import { UserManagement } from "@/components/admin/UserManagement";
 import { NotificationSettings } from "@/components/admin/NotificationSettings";
 import PricingManagement from "@/components/admin/PricingManagement";
 import AnalyticsDashboard from "@/components/admin/AnalyticsDashboard";
+import AdminApprovalQueue from "@/components/admin/AdminApprovalQueue";
 
 const AdminDashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'notifications' | 'pricing' | 'analytics' | 'settings'>('users');
+  const [activeTab, setActiveTab] = useState<'approvals' | 'users' | 'notifications' | 'pricing' | 'analytics' | 'settings'>('approvals');
 
   const handleLogout = async () => {
     try {
@@ -47,6 +48,14 @@ const AdminDashboard = () => {
       <div className="border-b border-border bg-card">
         <div className="container mx-auto px-4">
           <nav className="flex gap-4">
+            <Button
+              variant={activeTab === 'approvals' ? 'default' : 'ghost'}
+              onClick={() => setActiveTab('approvals')}
+              className="rounded-b-none"
+            >
+              <ClipboardCheck className="h-4 w-4 mr-2" />
+              Approvals
+            </Button>
             <Button
               variant={activeTab === 'users' ? 'default' : 'ghost'}
               onClick={() => setActiveTab('users')}
@@ -92,6 +101,8 @@ const AdminDashboard = () => {
       </div>
 
       <main className="container mx-auto px-4 py-8">
+        {activeTab === 'approvals' && <AdminApprovalQueue />}
+        
         {activeTab === 'users' && <UserManagement />}
         
         {activeTab === 'notifications' && <NotificationSettings />}

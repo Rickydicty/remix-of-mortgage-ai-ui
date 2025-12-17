@@ -95,14 +95,17 @@ export default function CoverLetterForm({ onComplete }: CoverLetterFormProps) {
         cover_letter_completed: markComplete ? true : formData.cover_letter_completed,
         cover_letter_completed_at: markComplete ? new Date().toISOString() : null,
         updated_at: new Date().toISOString(),
+        approval_status: 'pending', // Require admin approval
       };
 
       // Check if record exists
       const { data: existing } = await supabase
         .from("application_form_data")
-        .select("id")
+        .select("id, application_id")
         .eq("user_id", user.id)
         .maybeSingle();
+
+      let formDataId: string | null = null;
 
       if (existing) {
         const { error } = await supabase
@@ -111,19 +114,59 @@ export default function CoverLetterForm({ onComplete }: CoverLetterFormProps) {
           .eq("user_id", user.id);
 
         if (error) throw error;
+        formDataId = existing.id;
+
+        // Create admin approval record for form update
+        if (markComplete) {
+          await supabase
+            .from('admin_approvals')
+            .insert({
+              action_type: 'cover_letter',
+              entity_id: existing.id,
+              entity_table: 'application_form_data',
+              client_id: user.id,
+              application_id: existing.application_id || null,
+              status: 'pending',
+              metadata: {
+                type: 'cover_letter_submission',
+                mortgage_amount: formData.cover_letter_mortgage_amount
+              }
+            });
+        }
       } else {
-        const { error } = await supabase
+        const { data: newData, error } = await supabase
           .from("application_form_data")
-          .insert({ ...updateData, user_id: user.id });
+          .insert({ ...updateData, user_id: user.id })
+          .select('id')
+          .single();
 
         if (error) throw error;
+        formDataId = newData?.id || null;
+
+        // Create admin approval record for new form
+        if (markComplete && formDataId) {
+          await supabase
+            .from('admin_approvals')
+            .insert({
+              action_type: 'cover_letter',
+              entity_id: formDataId,
+              entity_table: 'application_form_data',
+              client_id: user.id,
+              application_id: null,
+              status: 'pending',
+              metadata: {
+                type: 'cover_letter_submission',
+                mortgage_amount: formData.cover_letter_mortgage_amount
+              }
+            });
+        }
       }
 
       if (markComplete) {
         setFormData(prev => ({ ...prev, cover_letter_completed: true }));
       }
 
-      toast.success(markComplete ? "Cover letter completed and saved!" : "Cover letter saved as draft");
+      toast.success(markComplete ? "Cover letter submitted for approval!" : "Cover letter saved as draft");
       onComplete?.();
     } catch (error) {
       console.error("Error saving cover letter:", error);
