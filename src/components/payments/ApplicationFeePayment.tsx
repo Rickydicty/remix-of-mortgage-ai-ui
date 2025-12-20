@@ -43,11 +43,11 @@ const ApplicationFeePayment = ({ applicationId, onSuccess }: ApplicationFeePayme
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex items-baseline gap-1">
-          <span className="text-3xl font-bold">€99</span>
+          <span className="text-3xl font-bold">€50</span>
           <span className="text-muted-foreground">one-time fee</span>
         </div>
         <p className="text-sm text-muted-foreground">
-          This fee covers the processing of your mortgage application, including document verification and lender submissions.
+          This fee covers the processing of your mortgage application. Broker commission (0.75-1%) is paid separately by the lender.
         </p>
         <Button 
           onClick={handlePayment} 
