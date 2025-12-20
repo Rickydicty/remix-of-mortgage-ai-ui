@@ -4,16 +4,17 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import { Shield, Users, BarChart3, Settings, LogOut, Bell, ClipboardCheck } from "lucide-react";
+import { Shield, Users, BarChart3, Settings, LogOut, Bell, ClipboardCheck, CreditCard } from "lucide-react";
 import { UserManagement } from "@/components/admin/UserManagement";
 import { NotificationSettings } from "@/components/admin/NotificationSettings";
 import AnalyticsDashboard from "@/components/admin/AnalyticsDashboard";
 import AdminApprovalQueue from "@/components/admin/AdminApprovalQueue";
+import PaymentManagement from "@/components/admin/PaymentManagement";
 
 const AdminDashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<'approvals' | 'users' | 'notifications' | 'analytics' | 'settings'>('approvals');
+  const [activeTab, setActiveTab] = useState<'approvals' | 'users' | 'notifications' | 'payments' | 'analytics' | 'settings'>('approvals');
 
   const handleLogout = async () => {
     try {
@@ -72,6 +73,14 @@ const AdminDashboard = () => {
               Notifications
             </Button>
             <Button
+              variant={activeTab === 'payments' ? 'default' : 'ghost'}
+              onClick={() => setActiveTab('payments')}
+              className="rounded-b-none"
+            >
+              <CreditCard className="h-4 w-4 mr-2" />
+              Payments
+            </Button>
+            <Button
               variant={activeTab === 'analytics' ? 'default' : 'ghost'}
               onClick={() => setActiveTab('analytics')}
               className="rounded-b-none"
@@ -95,6 +104,10 @@ const AdminDashboard = () => {
         {activeTab === 'approvals' && <AdminApprovalQueue />}
         
         {activeTab === 'users' && <UserManagement />}
+        
+        {activeTab === 'notifications' && <NotificationSettings />}
+
+        {activeTab === 'payments' && <PaymentManagement />}
         
         {activeTab === 'analytics' && <AnalyticsDashboard />}
 
