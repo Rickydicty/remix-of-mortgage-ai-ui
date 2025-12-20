@@ -1,7 +1,7 @@
 // Stripe price and product IDs
 export const STRIPE_PRICES = {
-  // Client one-time payment
-  application_fee: "price_1SdwbT2FpGd4w0kowX1zxuJ3",
+  // Client one-time payment (€50)
+  application_fee: "price_1SgTIF2FpGd4w0komgFG8bO2",
   // Broker subscriptions
   broker_basic: "price_1Sdwbz2FpGd4w0koOHpmZMiV",
   broker_pro: "price_1SdwcI2FpGd4w0koBCLxBPqG",
