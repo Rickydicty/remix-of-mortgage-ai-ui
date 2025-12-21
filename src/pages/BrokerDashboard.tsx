@@ -1,14 +1,10 @@
 import { useState, useEffect } from "react";
 import { Routes, Route, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { LogOut, Globe, Activity, FileText, TrendingUp, BookOpen, Building2, CreditCard } from "lucide-react";
+import { LogOut, Globe, Activity, FileText, TrendingUp, BookOpen, Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
-import BrokerPricing from "@/components/payments/BrokerPricing";
-import { type SubscriptionTier } from "@/lib/stripe-config";
 
 // Tab Components
 import BrokerWebTab from "@/components/broker/WebTab";
@@ -22,23 +18,6 @@ const BrokerDashboard = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
-  const [subscriptionTier, setSubscriptionTier] = useState<SubscriptionTier | null>(null);
-  const [plansOpen, setPlansOpen] = useState(false);
-
-  useEffect(() => {
-    checkSubscription();
-  }, []);
-
-  const checkSubscription = async () => {
-    try {
-      const { data, error } = await supabase.functions.invoke('check-subscription');
-      if (!error && data?.tier) {
-        setSubscriptionTier(data.tier as SubscriptionTier);
-      }
-    } catch (error) {
-      console.error('Error checking subscription:', error);
-    }
-  };
 
   const handleLogout = async () => {
     try {
@@ -79,25 +58,6 @@ const BrokerDashboard = () => {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Dialog open={plansOpen} onOpenChange={setPlansOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    <CreditCard className="h-4 w-4 mr-2" />
-                    Plans
-                    {subscriptionTier && (
-                      <Badge variant="secondary" className="ml-2 capitalize">
-                        {subscriptionTier}
-                      </Badge>
-                    )}
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>Subscription Plans</DialogTitle>
-                  </DialogHeader>
-                  <BrokerPricing currentTier={subscriptionTier} />
-                </DialogContent>
-              </Dialog>
               <Button variant="ghost" size="sm" onClick={handleLogout}>
                 <LogOut className="h-4 w-4 mr-2" />
                 Logout
