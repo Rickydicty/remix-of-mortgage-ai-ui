@@ -240,57 +240,6 @@ const PricingManagement = () => {
         </CardContent>
       </Card>
 
-      {/* Active Subscriptions */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Active Subscriptions</CardTitle>
-          <CardDescription>View and manage customer subscriptions</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Customer</TableHead>
-                <TableHead>Plan</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Renews</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {subscriptions.filter(s => s.status === 'active').map(sub => {
-                const customer = customers.find(c => c.id === sub.customer);
-                const priceAmount = sub.items.data[0]?.price.unit_amount || 0;
-                const productId = sub.items.data[0]?.price.product as string;
-                
-                return (
-                  <TableRow key={sub.id}>
-                    <TableCell className="font-medium">
-                      {customer?.email || sub.customer}
-                    </TableCell>
-                    <TableCell>{getProductName(productId)}</TableCell>
-                    <TableCell>{formatCurrency(priceAmount)}/mo</TableCell>
-                    <TableCell>
-                      <Badge variant="default" className="bg-success">
-                        {sub.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{formatDate(sub.current_period_end)}</TableCell>
-                  </TableRow>
-                );
-              })}
-              {subscriptions.filter(s => s.status === 'active').length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                    No active subscriptions yet
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-
       {/* Recent Customers */}
       <Card>
         <CardHeader>
