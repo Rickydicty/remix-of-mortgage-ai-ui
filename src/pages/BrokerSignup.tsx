@@ -51,7 +51,7 @@ const BrokerSignup = () => {
       const validated = signupSchema.parse(formData);
       setLoading(true);
 
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      const { error: authError } = await supabase.auth.signUp({
         email: validated.email,
         password: validated.password,
         options: {
@@ -61,6 +61,7 @@ const BrokerSignup = () => {
             phone: validated.phone,
             company_name: validated.companyName,
             license_number: validated.licenseNumber,
+            role: 'broker',
           },
         },
       });
@@ -72,20 +73,6 @@ const BrokerSignup = () => {
           variant: "destructive",
         });
         return;
-      }
-
-      if (authData.user) {
-        // Insert the broker role
-        const { error: roleError } = await supabase
-          .from('user_roles')
-          .insert({
-            user_id: authData.user.id,
-            role: 'broker'
-          });
-
-        if (roleError) {
-          console.error('Error assigning role:', roleError);
-        }
       }
 
       toast({
