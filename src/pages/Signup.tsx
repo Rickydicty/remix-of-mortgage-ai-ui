@@ -1,154 +1,132 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
-import { Building2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { Building2, Home, Briefcase, ArrowRight } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/hooks/use-toast";
-import { z } from "zod";
-
-const signupSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Invalid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-  confirmPassword: z.string(),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"],
-});
+import { useUserRole } from "@/hooks/useUserRole";
 
 const Signup = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-  });
-  const [loading, setLoading] = useState(false);
+  const { user, loading: authLoading } = useAuth();
+  const { role, loading: roleLoading } = useUserRole();
 
   useEffect(() => {
-    if (user) {
-      navigate("/dashboard/client");
+    if (!authLoading && user && !roleLoading && role) {
+      if (role === 'admin') navigate("/dashboard/admin", { replace: true });
+      else if (role === 'broker') navigate("/dashboard/broker", { replace: true });
+      else navigate("/dashboard/client", { replace: true });
     }
-  }, [user, navigate]);
+  }, [user, role, authLoading, roleLoading, navigate]);
 
-  const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    try {
-      const validated = signupSchema.parse(formData);
-      setLoading(true);
-
-      const { error } = await supabase.auth.signUp({
-        email: validated.email,
-        password: validated.password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/`,
-          data: {
-            full_name: validated.name,
-          },
-        },
-      });
-
-      if (error) {
-        toast({
-          title: "Signup failed",
-          description: error.message,
-          variant: "destructive",
-        });
-        return;
-      }
-
-      toast({
-        title: "Account created!",
-        description: "Please check your email to verify your account.",
-      });
-      
-      navigate("/login");
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        toast({
-          title: "Validation error",
-          description: error.errors[0].message,
-          variant: "destructive",
-        });
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
+      <div className="w-full max-w-2xl">
+        <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
             <Building2 className="h-12 w-12 text-primary" />
           </div>
-          <CardTitle>Create Account</CardTitle>
-          <CardDescription>Get started with your mortgage journey</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSignup} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
-              <Input
-                id="name"
-                placeholder="John Doe"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="you@example.com"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm Password</Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                value={formData.confirmPassword}
-                onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                required
-              />
-            </div>
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Creating account..." : "Create Account"}
-            </Button>
-            <div className="text-center text-sm text-muted-foreground">
-              Already have an account?{" "}
-              <Button variant="link" className="p-0" onClick={() => navigate("/login")}>
-                Sign in
+          <h1 className="text-3xl font-bold mb-2">Create Your Account</h1>
+          <p className="text-muted-foreground">Choose how you'd like to join us</p>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-6">
+          {/* Client Card */}
+          <Card className="relative overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group"
+                onClick={() => navigate("/signup/client")}>
+            <CardHeader className="text-center pb-4">
+              <div className="flex justify-center mb-4">
+                <div className="p-4 bg-primary/10 rounded-full group-hover:bg-primary/20 transition-colors">
+                  <Home className="h-10 w-10 text-primary" />
+                </div>
+              </div>
+              <CardTitle className="text-xl">I'm a Client</CardTitle>
+              <CardDescription>
+                Looking to get a mortgage for my property
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li className="flex items-center gap-2">
+                  <ArrowRight className="h-4 w-4 text-primary" />
+                  Apply for mortgage pre-approval
+                </li>
+                <li className="flex items-center gap-2">
+                  <ArrowRight className="h-4 w-4 text-primary" />
+                  Upload and manage documents
+                </li>
+                <li className="flex items-center gap-2">
+                  <ArrowRight className="h-4 w-4 text-primary" />
+                  Track your application status
+                </li>
+                <li className="flex items-center gap-2">
+                  <ArrowRight className="h-4 w-4 text-primary" />
+                  Compare loan offers
+                </li>
+              </ul>
+              <Button className="w-full group-hover:bg-primary/90">
+                Sign Up as Client
+                <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+
+          {/* Broker Card */}
+          <Card className="relative overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group"
+                onClick={() => navigate("/signup/broker")}>
+            <CardHeader className="text-center pb-4">
+              <div className="flex justify-center mb-4">
+                <div className="p-4 bg-secondary/50 rounded-full group-hover:bg-secondary/70 transition-colors">
+                  <Briefcase className="h-10 w-10 text-secondary-foreground" />
+                </div>
+              </div>
+              <CardTitle className="text-xl">I'm a Broker</CardTitle>
+              <CardDescription>
+                Mortgage professional looking to manage clients
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li className="flex items-center gap-2">
+                  <ArrowRight className="h-4 w-4 text-secondary-foreground" />
+                  Manage client applications
+                </li>
+                <li className="flex items-center gap-2">
+                  <ArrowRight className="h-4 w-4 text-secondary-foreground" />
+                  Review and approve documents
+                </li>
+                <li className="flex items-center gap-2">
+                  <ArrowRight className="h-4 w-4 text-secondary-foreground" />
+                  Upload loan offers
+                </li>
+                <li className="flex items-center gap-2">
+                  <ArrowRight className="h-4 w-4 text-secondary-foreground" />
+                  Commission-based earnings
+                </li>
+              </ul>
+              <Button variant="secondary" className="w-full">
+                Sign Up as Broker
+                <ArrowRight className="h-4 w-4 ml-2" />
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="text-center mt-8 text-sm text-muted-foreground">
+          Already have an account?{" "}
+          <Button variant="link" className="p-0" onClick={() => navigate("/login")}>
+            Sign in
+          </Button>
+        </div>
+      </div>
     </div>
   );
 };

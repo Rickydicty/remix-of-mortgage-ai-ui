@@ -131,6 +131,16 @@ const Login = () => {
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? "Signing in..." : "Sign In"}
             </Button>
+            <div className="text-center">
+              <Button 
+                type="button"
+                variant="link" 
+                className="p-0 text-sm" 
+                onClick={() => navigate("/forgot-password")}
+              >
+                Forgot your password?
+              </Button>
+            </div>
             <div className="text-center text-sm text-muted-foreground">
               Don't have an account?{" "}
               <Button variant="link" className="p-0" onClick={() => navigate("/signup")}>

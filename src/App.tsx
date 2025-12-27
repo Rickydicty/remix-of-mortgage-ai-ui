@@ -11,6 +11,10 @@ import Index from "./pages/Index";
 import PreEligibility from "./pages/PreEligibility";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import ClientSignup from "./pages/ClientSignup";
+import BrokerSignup from "./pages/BrokerSignup";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import ClientDashboard from "./pages/ClientDashboard";
 import BrokerDashboard from "./pages/BrokerDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -37,6 +41,10 @@ const App = () => {
               } />
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
+              <Route path="/signup/client" element={<ClientSignup />} />
+              <Route path="/signup/broker" element={<BrokerSignup />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/dashboard/client" element={
                 <RoleBasedRoute allowedRoles={['client']}>
                   <ClientDashboard />
