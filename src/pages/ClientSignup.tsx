@@ -47,7 +47,7 @@ const ClientSignup = () => {
       const validated = signupSchema.parse(formData);
       setLoading(true);
 
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      const { error: authError } = await supabase.auth.signUp({
         email: validated.email,
         password: validated.password,
         options: {
@@ -55,6 +55,7 @@ const ClientSignup = () => {
           data: {
             full_name: validated.name,
             phone: validated.phone,
+            role: 'client',
           },
         },
       });
@@ -66,20 +67,6 @@ const ClientSignup = () => {
           variant: "destructive",
         });
         return;
-      }
-
-      if (authData.user) {
-        // Insert the client role
-        const { error: roleError } = await supabase
-          .from('user_roles')
-          .insert({
-            user_id: authData.user.id,
-            role: 'client'
-          });
-
-        if (roleError) {
-          console.error('Error assigning role:', roleError);
-        }
       }
 
       toast({
