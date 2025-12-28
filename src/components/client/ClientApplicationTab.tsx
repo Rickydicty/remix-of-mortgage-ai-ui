@@ -17,6 +17,7 @@ import { DocumentUpload } from "@/components/DocumentUpload";
 import { DocumentList } from "@/components/DocumentList";
 import ClientMessaging from "@/components/broker/ClientMessaging";
 import AIAssistantChat from "@/components/client/AIAssistantChat";
+import AgentChat from "@/components/client/AgentChat";
 
 import { AIPDocumentsList } from "@/components/client/AIPDocumentsList";
 import { ESignaturesTab } from "@/components/client/ESignaturesTab";
@@ -736,6 +737,11 @@ const ClientApplicationTab = ({ applicationId, application, brokerProfile, onRef
               </div>
             </CardContent>
           </Card>
+
+          {/* AI Broker Agent Chat */}
+          {application?.id && (
+            <AgentChat applicationId={application.id} />
+          )}
 
           {/* AI Assistant Chat */}
           <AIAssistantChat 

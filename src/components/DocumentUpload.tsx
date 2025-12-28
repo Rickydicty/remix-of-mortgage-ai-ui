@@ -111,6 +111,22 @@ export const DocumentUpload = ({ onUploadComplete }: DocumentUploadProps) => {
           }
         });
 
+      // Trigger AI Broker Agent analysis for the document
+      if (application?.id) {
+        fetch(
+          `https://urdyzlulkpgffzrwefwj.supabase.co/functions/v1/broker-agent`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              action: "analyze_document",
+              documentId: data.document.id,
+              applicationId: application.id,
+            }),
+          }
+        ).catch(err => console.log("AI analysis triggered in background:", err));
+      }
+
       toast({
         title: "Document uploaded successfully",
         description: "Awaiting admin approval before broker can review.",

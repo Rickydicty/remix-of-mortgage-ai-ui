@@ -7,6 +7,7 @@ import { FileText, CheckCircle, XCircle, Clock, ChevronDown, ChevronUp, ArrowRig
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import AgentInsightsPanel from "@/components/broker/AgentInsightsPanel";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -279,7 +280,19 @@ const DocumentReview = ({ clientId, clientName, applicationId, onUpdate }: Docum
   }
 
   return (
-    <>
+    <div className="space-y-6">
+      {/* AI Broker Agent Insights */}
+      {applicationId && (
+        <AgentInsightsPanel 
+          applicationId={applicationId} 
+          clientId={clientId}
+          onRefresh={() => {
+            fetchDocuments();
+            onUpdate?.();
+          }}
+        />
+      )}
+      
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -666,7 +679,7 @@ const DocumentReview = ({ clientId, clientName, applicationId, onUpdate }: Docum
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </>
+    </div>
   );
 };
 
