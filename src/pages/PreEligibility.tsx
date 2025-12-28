@@ -6,15 +6,14 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useNavigate } from "react-router-dom";
-import { Building2, ArrowRight, TrendingUp, Loader2 } from "lucide-react";
+import { Building2, ArrowRight, TrendingUp, Loader2, XCircle } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
-import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+
+const MIN_ELIGIBILITY_SCORE = 50;
 
 const PreEligibility = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
   const [showResults, setShowResults] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [calculatedResults, setCalculatedResults] = useState({
@@ -64,62 +63,57 @@ const PreEligibility = () => {
     let score = 70;
     if (formData.creditHistory === "good") score += 15;
     else if (formData.creditHistory === "fair") score += 5;
+    else if (formData.creditHistory === "poor") score -= 20;
     if (formData.firstTimeBuyer) score += 5;
     if (commitments < totalIncome * 0.3 / 12) score += 5;
     if (deposit > parseFloat(formData.propertyValue) * 0.2) score += 5;
-    score = Math.min(score, 100);
+    if (formData.residencyStatus === "other") score -= 10;
+    score = Math.min(Math.max(score, 0), 100);
     
     return { borrowingLow, borrowingHigh, monthlyPayment, eligibilityScore: score };
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!user) {
-      toast.error("You must be logged in to submit");
-      return;
-    }
-    
     setIsSubmitting(true);
     
     try {
       const results = calculateResults();
       
-      const { error } = await supabase
-        .from('pre_eligibility_data')
-        .insert({
-          user_id: user.id,
-          applicant_type: formData.applicantType,
-          employment_type: formData.employmentType,
-          income_1: parseFloat(formData.income1) || 0,
-          income_2: formData.income2 ? parseFloat(formData.income2) : null,
-          monthly_commitments: parseFloat(formData.monthlyCommitments) || 0,
-          deposit_amount: parseFloat(formData.depositAmount) || 0,
-          property_value: parseFloat(formData.propertyValue) || 0,
-          residency_status: formData.residencyStatus,
-          credit_history: formData.creditHistory,
-          first_time_buyer: formData.firstTimeBuyer,
-          desired_term: formData.desiredTerm[0],
-          phone: formData.phone || null,
-          email: formData.email || null,
-          borrowing_capacity_low: results.borrowingLow,
-          borrowing_capacity_high: results.borrowingHigh,
-          estimated_monthly_payment: results.monthlyPayment,
-          eligibility_score: results.eligibilityScore,
-        });
+      // Store eligibility data in localStorage for use after signup
+      const eligibilityData = {
+        applicantType: formData.applicantType,
+        employmentType: formData.employmentType,
+        income1: parseFloat(formData.income1) || 0,
+        income2: formData.income2 ? parseFloat(formData.income2) : null,
+        monthlyCommitments: parseFloat(formData.monthlyCommitments) || 0,
+        depositAmount: parseFloat(formData.depositAmount) || 0,
+        propertyValue: parseFloat(formData.propertyValue) || 0,
+        residencyStatus: formData.residencyStatus,
+        creditHistory: formData.creditHistory,
+        firstTimeBuyer: formData.firstTimeBuyer,
+        desiredTerm: formData.desiredTerm[0],
+        phone: formData.phone || null,
+        email: formData.email || null,
+        borrowingCapacityLow: results.borrowingLow,
+        borrowingCapacityHigh: results.borrowingHigh,
+        estimatedMonthlyPayment: results.monthlyPayment,
+        eligibilityScore: results.eligibilityScore,
+      };
       
-      if (error) throw error;
+      localStorage.setItem('pendingEligibilityData', JSON.stringify(eligibilityData));
       
       setCalculatedResults(results);
       setShowResults(true);
-      toast.success("Your eligibility data has been saved!");
     } catch (error: any) {
-      console.error("Error saving pre-eligibility data:", error);
-      toast.error("Failed to save your data. Please try again.");
+      console.error("Error calculating eligibility:", error);
+      toast.error("Failed to calculate eligibility. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  const isEligible = calculatedResults.eligibilityScore >= MIN_ELIGIBILITY_SCORE;
 
   if (showResults) {
     return (
@@ -180,11 +174,13 @@ const PreEligibility = () => {
             </CardHeader>
             <CardContent>
               <div className="flex items-center gap-4 mb-4">
-                <div className="text-5xl font-bold text-success">{calculatedResults.eligibilityScore}%</div>
+                <div className={`text-5xl font-bold ${isEligible ? 'text-success' : 'text-destructive'}`}>
+                  {calculatedResults.eligibilityScore}%
+                </div>
                 <div className="flex-1">
                   <div className="h-4 bg-muted rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-success"
+                      className={`h-full ${isEligible ? 'bg-success' : 'bg-destructive'}`}
                       style={{ width: `${calculatedResults.eligibilityScore}%` }}
                     />
                   </div>
@@ -193,64 +189,102 @@ const PreEligibility = () => {
                       ? "Strong eligibility - You're likely to be approved by multiple lenders"
                       : calculatedResults.eligibilityScore >= 60
                       ? "Good eligibility - Several lenders may approve your application"
-                      : "Moderate eligibility - Consider improving your credit profile"}
+                      : calculatedResults.eligibilityScore >= MIN_ELIGIBILITY_SCORE
+                      ? "Moderate eligibility - Some lenders may consider your application"
+                      : "Unfortunately, you don't meet the minimum eligibility requirements at this time"}
                   </p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="mb-8">
-            <CardHeader>
-              <CardTitle>Top Lender Matches</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {[
-                {
-                  name: "Bank of Ireland",
-                  rate: "3.1%",
-                  match: "95%",
-                  notes: "Best rate for first-time buyers, flexible overpayments",
-                },
-                {
-                  name: "AIB",
-                  rate: "3.3%",
-                  match: "92%",
-                  notes: "Green mortgage discount available, fast processing",
-                },
-                {
-                  name: "Haven",
-                  rate: "3.5%",
-                  match: "88%",
-                  notes: "Competitive for high LTV, excellent customer service",
-                },
-              ].map((lender) => (
-                <div
-                  key={lender.name}
-                  className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent/50 transition-colors"
-                >
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-lg">{lender.name}</h3>
-                    <p className="text-sm text-muted-foreground">{lender.notes}</p>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-2xl font-bold text-primary">{lender.rate}</div>
-                    <div className="text-sm text-success font-medium">{lender.match} Match</div>
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
+          {isEligible ? (
+            <>
+              <Card className="mb-8">
+                <CardHeader>
+                  <CardTitle>Top Lender Matches</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {[
+                    {
+                      name: "Bank of Ireland",
+                      rate: "3.1%",
+                      match: "95%",
+                      notes: "Best rate for first-time buyers, flexible overpayments",
+                    },
+                    {
+                      name: "AIB",
+                      rate: "3.3%",
+                      match: "92%",
+                      notes: "Green mortgage discount available, fast processing",
+                    },
+                    {
+                      name: "Haven",
+                      rate: "3.5%",
+                      match: "88%",
+                      notes: "Competitive for high LTV, excellent customer service",
+                    },
+                  ].map((lender) => (
+                    <div
+                      key={lender.name}
+                      className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent/50 transition-colors"
+                    >
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-lg">{lender.name}</h3>
+                        <p className="text-sm text-muted-foreground">{lender.notes}</p>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-2xl font-bold text-primary">{lender.rate}</div>
+                        <div className="text-sm text-success font-medium">{lender.match} Match</div>
+                      </div>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
 
-          <div className="text-center">
-            <Button size="lg" onClick={() => navigate("/dashboard/client")}>
-              <TrendingUp className="mr-2 h-5 w-5" />
-              Go to Dashboard
-            </Button>
-            <p className="text-sm text-muted-foreground mt-4">
-              Continue to your dashboard to complete your mortgage application
-            </p>
-          </div>
+              <div className="text-center">
+                <Button size="lg" onClick={() => navigate("/signup/client")}>
+                  <TrendingUp className="mr-2 h-5 w-5" />
+                  Continue to Sign Up
+                </Button>
+                <p className="text-sm text-muted-foreground mt-4">
+                  Create your account to start your mortgage application
+                </p>
+              </div>
+            </>
+          ) : (
+            <Card className="mb-8 border-destructive">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-destructive">
+                  <XCircle className="h-6 w-6" />
+                  Not Eligible at This Time
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-muted-foreground">
+                  Based on the information provided, you don't currently meet our minimum eligibility requirements. 
+                  This could be due to:
+                </p>
+                <ul className="list-disc list-inside text-muted-foreground space-y-2">
+                  <li>Credit history concerns</li>
+                  <li>High debt-to-income ratio</li>
+                  <li>Insufficient deposit amount</li>
+                  <li>Residency/visa status requirements</li>
+                </ul>
+                <p className="text-muted-foreground">
+                  We recommend speaking with a financial advisor to improve your eligibility before applying.
+                </p>
+                <div className="flex gap-4 pt-4">
+                  <Button variant="outline" onClick={() => setShowResults(false)}>
+                    Update Information
+                  </Button>
+                  <Button variant="outline" onClick={() => navigate("/")}>
+                    Return Home
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     );
@@ -264,8 +298,8 @@ const PreEligibility = () => {
             <Building2 className="h-8 w-8 text-primary" />
             <span className="text-xl font-bold">AI Mortgage Platform</span>
           </div>
-          <Button variant="outline" onClick={() => navigate("/dashboard/client")}>
-            Go to Dashboard
+          <Button variant="outline" onClick={() => navigate("/login")}>
+            Already have an account? Sign In
           </Button>
         </div>
       </header>
@@ -275,6 +309,9 @@ const PreEligibility = () => {
           <h1 className="text-4xl font-bold mb-4">Check Your Eligibility</h1>
           <p className="text-xl text-muted-foreground">
             Get an instant mortgage quote in under 5 minutes
+          </p>
+          <p className="text-sm text-muted-foreground mt-2">
+            Complete this form to see if you qualify before creating an account
           </p>
         </div>
 
@@ -440,24 +477,42 @@ const PreEligibility = () => {
                     required
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select status" />
+                      <SelectValue placeholder="Select rating" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="good">Good</SelectItem>
                       <SelectItem value="fair">Fair</SelectItem>
-                      <SelectItem value="adverse">Adverse</SelectItem>
+                      <SelectItem value="poor">Poor</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
 
+              <div className="space-y-4">
+                <Label>Mortgage Term: {formData.desiredTerm[0]} years</Label>
+                <Slider
+                  value={formData.desiredTerm}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, desiredTerm: value })
+                  }
+                  max={35}
+                  min={5}
+                  step={1}
+                  className="w-full"
+                />
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>5 years</span>
+                  <span>35 years</span>
+                </div>
+              </div>
+
               <div className="flex items-center justify-between p-4 border border-border rounded-lg">
                 <div>
-                  <Label htmlFor="firstTimeBuyer" className="text-base font-medium">
-                    First Time Buyer?
+                  <Label htmlFor="firstTimeBuyer" className="font-medium">
+                    First Time Buyer
                   </Label>
                   <p className="text-sm text-muted-foreground">
-                    Check if this is your first property purchase
+                    First-time buyers may qualify for higher borrowing limits
                   </p>
                 </div>
                 <Switch
@@ -469,41 +524,22 @@ const PreEligibility = () => {
                 />
               </div>
 
-              <div className="space-y-4">
-                <Label>Desired Term: {formData.desiredTerm[0]} years</Label>
-                <Slider
-                  value={formData.desiredTerm}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, desiredTerm: value })
-                  }
-                  min={5}
-                  max={35}
-                  step={1}
-                  className="w-full"
-                />
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>5 years</span>
-                  <span>35 years</span>
-                </div>
-              </div>
-
               <div className="grid md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number</Label>
+                  <Label htmlFor="phone">Phone (Optional)</Label>
                   <Input
                     id="phone"
                     type="tel"
-                    placeholder="+353 XXX XXXX"
+                    placeholder="+353 123 456 789"
                     value={formData.phone}
                     onChange={(e) =>
                       setFormData({ ...formData, phone: e.target.value })
                     }
-                    required
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email">Email (Optional)</Label>
                   <Input
                     id="email"
                     type="email"
@@ -512,7 +548,6 @@ const PreEligibility = () => {
                     onChange={(e) =>
                       setFormData({ ...formData, email: e.target.value })
                     }
-                    required
                   />
                 </div>
               </div>
@@ -520,13 +555,13 @@ const PreEligibility = () => {
               <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
                 {isSubmitting ? (
                   <>
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                    Processing...
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Calculating...
                   </>
                 ) : (
                   <>
-                    Get My Quote
-                    <ArrowRight className="ml-2 h-5 w-5" />
+                    Check My Eligibility
+                    <ArrowRight className="ml-2 h-4 w-4" />
                   </>
                 )}
               </Button>
