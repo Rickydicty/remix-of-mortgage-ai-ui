@@ -279,6 +279,10 @@ const ClientApplicationTab = ({ applicationId, application, brokerProfile, onRef
   const [formData, setFormData] = useState<FormData>(defaultFormData);
   const [formDataId, setFormDataId] = useState<string | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [eligibilityData, setEligibilityData] = useState<{
+    score: number | null;
+    employmentType: string | null;
+  }>({ score: null, employmentType: null });
 
   // All tabs now in a single row - stacked evenly
   const allTabs = [
@@ -353,6 +357,10 @@ const ClientApplicationTab = ({ applicationId, application, brokerProfile, onRef
           .maybeSingle();
 
         if (preElig) {
+          setEligibilityData({
+            score: preElig.eligibility_score,
+            employmentType: preElig.employment_type,
+          });
           setFormData(prev => ({
             ...prev,
             app1_gross_salary: preElig.income_1 || 0,
@@ -368,6 +376,24 @@ const ClientApplicationTab = ({ applicationId, application, brokerProfile, onRef
             app1_phone: preElig.phone || prev.app1_phone,
             app1_email: preElig.email || prev.app1_email,
           }));
+        }
+      }
+
+      // Always fetch eligibility data for display purposes
+      if (!eligibilityData.employmentType) {
+        const { data: preEligCheck } = await supabase
+          .from('pre_eligibility_data')
+          .select('eligibility_score, employment_type')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (preEligCheck) {
+          setEligibilityData({
+            score: preEligCheck.eligibility_score,
+            employmentType: preEligCheck.employment_type,
+          });
         }
       }
     } catch (error) {
@@ -517,7 +543,7 @@ const ClientApplicationTab = ({ applicationId, application, brokerProfile, onRef
       {activeTab === "documents" && (
         <div className="space-y-8">
           <DocumentUpload onUploadComplete={handleUploadComplete} />
-          <DocumentList refreshTrigger={refreshTrigger} />
+          <DocumentList refreshTrigger={refreshTrigger} employmentType={eligibilityData.employmentType} />
 
           {/* AIP Letter Section */}
           <Card>
@@ -762,7 +788,10 @@ const ClientApplicationTab = ({ applicationId, application, brokerProfile, onRef
           <CardContent className="py-8">
             <div className="text-center text-muted-foreground">
               <Home className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>No application found. Please complete the eligibility check first.</p>
+              <p>No application found. Please complete your application details first.</p>
+              {eligibilityData.score && (
+                <p className="mt-2 text-sm">Your eligibility score: <span className="font-semibold text-primary">{eligibilityData.score}%</span></p>
+              )}
             </div>
           </CardContent>
         </Card>
