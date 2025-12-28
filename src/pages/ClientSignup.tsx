@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
-import { Home, ArrowLeft } from "lucide-react";
+import { Home, ArrowLeft, CheckCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -21,10 +21,31 @@ const signupSchema = z.object({
   path: ["confirmPassword"],
 });
 
+interface EligibilityData {
+  applicantType: string;
+  employmentType: string;
+  income1: number;
+  income2: number | null;
+  monthlyCommitments: number;
+  depositAmount: number;
+  propertyValue: number;
+  residencyStatus: string;
+  creditHistory: string;
+  firstTimeBuyer: boolean;
+  desiredTerm: number;
+  phone: string | null;
+  email: string | null;
+  borrowingCapacityLow: number;
+  borrowingCapacityHigh: number;
+  estimatedMonthlyPayment: number;
+  eligibilityScore: number;
+}
+
 const ClientSignup = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
+  const [eligibilityData, setEligibilityData] = useState<EligibilityData | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -37,17 +58,63 @@ const ClientSignup = () => {
   useEffect(() => {
     if (user) {
       navigate("/dashboard/client");
+      return;
     }
-  }, [user, navigate]);
+
+    // Check for eligibility data
+    const storedData = localStorage.getItem('pendingEligibilityData');
+    if (!storedData) {
+      toast({
+        title: "Eligibility check required",
+        description: "Please complete the eligibility check first.",
+        variant: "destructive",
+      });
+      navigate("/pre-eligibility");
+      return;
+    }
+
+    try {
+      const data = JSON.parse(storedData) as EligibilityData;
+      if (data.eligibilityScore < 50) {
+        toast({
+          title: "Not eligible",
+          description: "You don't meet the minimum eligibility requirements.",
+          variant: "destructive",
+        });
+        navigate("/pre-eligibility");
+        return;
+      }
+      setEligibilityData(data);
+      // Pre-fill email and phone if provided in eligibility
+      if (data.email) {
+        setFormData(prev => ({ ...prev, email: data.email! }));
+      }
+      if (data.phone) {
+        setFormData(prev => ({ ...prev, phone: data.phone! }));
+      }
+    } catch {
+      navigate("/pre-eligibility");
+    }
+  }, [user, navigate, toast]);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!eligibilityData) {
+      toast({
+        title: "Error",
+        description: "Eligibility data not found. Please complete the eligibility check.",
+        variant: "destructive",
+      });
+      navigate("/pre-eligibility");
+      return;
+    }
+
     try {
       const validated = signupSchema.parse(formData);
       setLoading(true);
 
-      const { error: authError } = await supabase.auth.signUp({
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email: validated.email,
         password: validated.password,
         options: {
@@ -69,6 +136,40 @@ const ClientSignup = () => {
         return;
       }
 
+      // If user was created, save the eligibility data
+      if (authData.user) {
+        const { error: eligibilityError } = await supabase
+          .from('pre_eligibility_data')
+          .insert({
+            user_id: authData.user.id,
+            applicant_type: eligibilityData.applicantType,
+            employment_type: eligibilityData.employmentType,
+            income_1: eligibilityData.income1,
+            income_2: eligibilityData.income2,
+            monthly_commitments: eligibilityData.monthlyCommitments,
+            deposit_amount: eligibilityData.depositAmount,
+            property_value: eligibilityData.propertyValue,
+            residency_status: eligibilityData.residencyStatus,
+            credit_history: eligibilityData.creditHistory,
+            first_time_buyer: eligibilityData.firstTimeBuyer,
+            desired_term: eligibilityData.desiredTerm,
+            phone: validated.phone,
+            email: validated.email,
+            borrowing_capacity_low: eligibilityData.borrowingCapacityLow,
+            borrowing_capacity_high: eligibilityData.borrowingCapacityHigh,
+            estimated_monthly_payment: eligibilityData.estimatedMonthlyPayment,
+            eligibility_score: eligibilityData.eligibilityScore,
+          });
+
+        if (eligibilityError) {
+          console.error("Error saving eligibility data:", eligibilityError);
+          // Don't block signup if this fails, but log it
+        }
+
+        // Clear the stored eligibility data
+        localStorage.removeItem('pendingEligibilityData');
+      }
+
       toast({
         title: "Account created!",
         description: "Please check your email to verify your account.",
@@ -88,15 +189,23 @@ const ClientSignup = () => {
     }
   };
 
+  if (!eligibilityData) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
+        <CardHeader className="text-center relative">
           <Button 
             variant="ghost" 
             size="sm" 
             className="absolute left-4 top-4"
-            onClick={() => navigate("/signup")}
+            onClick={() => navigate("/pre-eligibility")}
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
@@ -107,9 +216,21 @@ const ClientSignup = () => {
             </div>
           </div>
           <CardTitle>Client Registration</CardTitle>
-          <CardDescription>Start your mortgage journey with us</CardDescription>
+          <CardDescription>Complete your registration to continue</CardDescription>
         </CardHeader>
         <CardContent>
+          {/* Eligibility Summary */}
+          <div className="mb-6 p-4 bg-success/10 border border-success/20 rounded-lg">
+            <div className="flex items-center gap-2 mb-2">
+              <CheckCircle className="h-5 w-5 text-success" />
+              <span className="font-medium text-success">Eligibility Confirmed</span>
+            </div>
+            <div className="text-sm text-muted-foreground space-y-1">
+              <p>Score: <span className="font-medium">{eligibilityData.eligibilityScore}%</span></p>
+              <p>Borrowing Capacity: <span className="font-medium">€{eligibilityData.borrowingCapacityLow.toLocaleString()} - €{eligibilityData.borrowingCapacityHigh.toLocaleString()}</span></p>
+            </div>
+          </div>
+
           <form onSubmit={handleSignup} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="name">Full Name</Label>
