@@ -20,3 +20,9 @@ verify_jwt = true
 
 [functions.admin-stripe-data]
 verify_jwt = true
+
+[functions.broker-agent]
+verify_jwt = false
+
+[functions.broker-agent-chat]
+verify_jwt = true

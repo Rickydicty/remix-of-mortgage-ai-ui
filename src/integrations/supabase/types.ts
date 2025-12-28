@@ -67,6 +67,228 @@ export type Database = {
           },
         ]
       }
+      agent_action_logs: {
+        Row: {
+          action_description: string
+          action_type: string
+          application_id: string
+          created_at: string | null
+          id: string
+          result: Json | null
+          success: boolean | null
+          trigger_type: string | null
+        }
+        Insert: {
+          action_description: string
+          action_type: string
+          application_id: string
+          created_at?: string | null
+          id?: string
+          result?: Json | null
+          success?: boolean | null
+          trigger_type?: string | null
+        }
+        Update: {
+          action_description?: string
+          action_type?: string
+          application_id?: string
+          created_at?: string | null
+          id?: string
+          result?: Json | null
+          success?: boolean | null
+          trigger_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_action_logs_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agent_application_analysis: {
+        Row: {
+          aggregated_flags: Json | null
+          application_id: string
+          broker_summary: string | null
+          client_id: string
+          client_summary: string | null
+          created_at: string | null
+          estimated_approval_amount: number | null
+          estimated_interest_range: Json | null
+          estimated_monthly_payment: number | null
+          handoff_reason: string | null
+          id: string
+          last_analysis_at: string | null
+          open_items: Json | null
+          overall_risk_level: string
+          readiness_score: number | null
+          recommended_programs: Json | null
+          requires_human_review: boolean | null
+          submission_ready: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          aggregated_flags?: Json | null
+          application_id: string
+          broker_summary?: string | null
+          client_id: string
+          client_summary?: string | null
+          created_at?: string | null
+          estimated_approval_amount?: number | null
+          estimated_interest_range?: Json | null
+          estimated_monthly_payment?: number | null
+          handoff_reason?: string | null
+          id?: string
+          last_analysis_at?: string | null
+          open_items?: Json | null
+          overall_risk_level?: string
+          readiness_score?: number | null
+          recommended_programs?: Json | null
+          requires_human_review?: boolean | null
+          submission_ready?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          aggregated_flags?: Json | null
+          application_id?: string
+          broker_summary?: string | null
+          client_id?: string
+          client_summary?: string | null
+          created_at?: string | null
+          estimated_approval_amount?: number | null
+          estimated_interest_range?: Json | null
+          estimated_monthly_payment?: number | null
+          handoff_reason?: string | null
+          id?: string
+          last_analysis_at?: string | null
+          open_items?: Json | null
+          overall_risk_level?: string
+          readiness_score?: number | null
+          recommended_programs?: Json | null
+          requires_human_review?: boolean | null
+          submission_ready?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_application_analysis_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: true
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agent_conversations: {
+        Row: {
+          application_id: string
+          client_id: string
+          created_at: string | null
+          id: string
+          message: string
+          message_type: string | null
+          metadata: Json | null
+          read: boolean | null
+          role: string
+        }
+        Insert: {
+          application_id: string
+          client_id: string
+          created_at?: string | null
+          id?: string
+          message: string
+          message_type?: string | null
+          metadata?: Json | null
+          read?: boolean | null
+          role: string
+        }
+        Update: {
+          application_id?: string
+          client_id?: string
+          created_at?: string | null
+          id?: string
+          message?: string
+          message_type?: string | null
+          metadata?: Json | null
+          read?: boolean | null
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_conversations_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agent_document_analysis: {
+        Row: {
+          application_id: string
+          broker_commentary: string | null
+          client_explanation: string | null
+          client_id: string
+          completeness_score: number | null
+          created_at: string | null
+          document_id: string
+          extracted_data: Json | null
+          id: string
+          quality_issues: Json | null
+          risk_flags: Json | null
+          risk_level: string
+          updated_at: string | null
+        }
+        Insert: {
+          application_id: string
+          broker_commentary?: string | null
+          client_explanation?: string | null
+          client_id: string
+          completeness_score?: number | null
+          created_at?: string | null
+          document_id: string
+          extracted_data?: Json | null
+          id?: string
+          quality_issues?: Json | null
+          risk_flags?: Json | null
+          risk_level?: string
+          updated_at?: string | null
+        }
+        Update: {
+          application_id?: string
+          broker_commentary?: string | null
+          client_explanation?: string | null
+          client_id?: string
+          completeness_score?: number | null
+          created_at?: string | null
+          document_id?: string
+          extracted_data?: Json | null
+          id?: string
+          quality_issues?: Json | null
+          risk_flags?: Json | null
+          risk_level?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_document_analysis_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_document_analysis_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       aip_audit_logs: {
         Row: {
           actor_id: string | null
