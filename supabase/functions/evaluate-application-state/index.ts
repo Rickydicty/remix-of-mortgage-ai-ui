@@ -121,7 +121,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Fetch application data
     const { data: application, error: appError } = await supabase
       .from("applications")
-      .select("*, profiles:user_id(email, full_name)")
+      .select("*")
       .eq("id", application_id)
       .single();
 
@@ -132,6 +132,13 @@ const handler = async (req: Request): Promise<Response> => {
         { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    // Fetch profile separately (no direct FK relationship)
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("email, full_name")
+      .eq("id", application.user_id)
+      .single();
 
     // Fetch current journey state (or create if doesn't exist)
     let { data: journeyState } = await supabase
@@ -272,8 +279,8 @@ const handler = async (req: Request): Promise<Response> => {
         console.log(`Triggering notification for: ${transitionKey}`);
         
         const notificationData = {
-          clientEmail: application.profiles?.email || 'Unknown',
-          clientName: application.profiles?.full_name || 'Unknown',
+          clientEmail: profile?.email || 'Unknown',
+          clientName: profile?.full_name || 'Unknown',
           applicationNumber: application.application_number,
           reason: reason || evaluationNotes,
           blockers
