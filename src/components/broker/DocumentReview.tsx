@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import AgentInsightsPanel from "@/components/broker/AgentInsightsPanel";
+import ExtractedDataDisplay from "@/components/broker/ExtractedDataDisplay";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,6 +31,16 @@ interface Document {
   file_path: string;
 }
 
+interface DocumentAnalysis {
+  document_id: string;
+  extracted_data: Record<string, unknown>;
+  risk_level: string;
+  completeness_score: number;
+  risk_flags: string[];
+  quality_issues: string[];
+  broker_commentary: string | null;
+}
+
 interface DocumentReviewProps {
   clientId: string;
   clientName: string;
@@ -39,6 +50,7 @@ interface DocumentReviewProps {
 
 const DocumentReview = ({ clientId, clientName, applicationId, onUpdate }: DocumentReviewProps) => {
   const [documents, setDocuments] = useState<Document[]>([]);
+  const [documentAnalyses, setDocumentAnalyses] = useState<Map<string, DocumentAnalysis>>(new Map());
   const [loading, setLoading] = useState(true);
   const [expandedDocs, setExpandedDocs] = useState<Set<string>>(new Set());
   const [application, setApplication] = useState<any>(null);
@@ -54,6 +66,7 @@ const DocumentReview = ({ clientId, clientName, applicationId, onUpdate }: Docum
 
   useEffect(() => {
     fetchDocuments();
+    fetchDocumentAnalyses();
     if (applicationId) fetchApplication();
   }, [clientId, applicationId]);
 
@@ -91,6 +104,34 @@ const DocumentReview = ({ clientId, clientName, applicationId, onUpdate }: Docum
       setDocuments(data || []);
     }
     setLoading(false);
+  };
+
+  const fetchDocumentAnalyses = async () => {
+    if (!applicationId) return;
+    
+    const { data, error } = await supabase
+      .from('agent_document_analysis')
+      .select('*')
+      .eq('application_id', applicationId);
+    
+    if (error) {
+      console.error('Error fetching document analyses:', error);
+      return;
+    }
+    
+    const analysisMap = new Map<string, DocumentAnalysis>();
+    (data || []).forEach((analysis: any) => {
+      analysisMap.set(analysis.document_id, {
+        document_id: analysis.document_id,
+        extracted_data: analysis.extracted_data || {},
+        risk_level: analysis.risk_level,
+        completeness_score: analysis.completeness_score,
+        risk_flags: analysis.risk_flags || [],
+        quality_issues: analysis.quality_issues || [],
+        broker_commentary: analysis.broker_commentary
+      });
+    });
+    setDocumentAnalyses(analysisMap);
   };
 
   const getStatusIcon = (status: string) => {
@@ -382,6 +423,18 @@ const DocumentReview = ({ clientId, clientName, applicationId, onUpdate }: Docum
                           </div>
                         </div>
 
+                        {/* Extracted Data Display */}
+                        {documentAnalyses.has(doc.id) && (
+                          <div className="mb-3">
+                            <ExtractedDataDisplay
+                              documentType={doc.document_type}
+                              extractedData={documentAnalyses.get(doc.id)!.extracted_data as any}
+                              riskLevel={documentAnalyses.get(doc.id)!.risk_level}
+                              completenessScore={documentAnalyses.get(doc.id)!.completeness_score}
+                            />
+                          </div>
+                        )}
+
                         {/* Full AI Analysis for Broker */}
                         {doc.analysis_text && (
                           <div className="bg-primary/5 border border-primary/20 rounded p-3 mt-2 mb-3">
@@ -479,6 +532,18 @@ const DocumentReview = ({ clientId, clientName, applicationId, onUpdate }: Docum
                           </div>
                         </div>
                         
+                        {/* Extracted Data Display */}
+                        {documentAnalyses.has(doc.id) && (
+                          <div className="mb-3">
+                            <ExtractedDataDisplay
+                              documentType={doc.document_type}
+                              extractedData={documentAnalyses.get(doc.id)!.extracted_data as any}
+                              riskLevel={documentAnalyses.get(doc.id)!.risk_level}
+                              completenessScore={documentAnalyses.get(doc.id)!.completeness_score}
+                            />
+                          </div>
+                        )}
+                        
                         {/* Full AI Analysis for Broker */}
                         {doc.analysis_text && (
                           <div className="bg-primary/5 border border-primary/20 rounded p-3 mt-2 mb-3">
@@ -559,6 +624,18 @@ const DocumentReview = ({ clientId, clientName, applicationId, onUpdate }: Docum
                             </Badge>
                           </div>
                         </div>
+
+                        {/* Extracted Data Display */}
+                        {documentAnalyses.has(doc.id) && (
+                          <div className="mb-3">
+                            <ExtractedDataDisplay
+                              documentType={doc.document_type}
+                              extractedData={documentAnalyses.get(doc.id)!.extracted_data as any}
+                              riskLevel={documentAnalyses.get(doc.id)!.risk_level}
+                              completenessScore={documentAnalyses.get(doc.id)!.completeness_score}
+                            />
+                          </div>
+                        )}
 
                         {/* Full AI Analysis for Broker */}
                         {doc.analysis_text && (
