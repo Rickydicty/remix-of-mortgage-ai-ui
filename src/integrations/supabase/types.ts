@@ -736,6 +736,127 @@ export type Database = {
           },
         ]
       }
+      application_journey_state: {
+        Row: {
+          ai_review_started_at: string | null
+          application_id: string
+          approved_at: string | null
+          blockers: Json | null
+          client_id: string
+          created_at: string | null
+          current_state: string
+          docs_complete_at: string | null
+          docs_started_at: string | null
+          documents_completion_percentage: number | null
+          documents_required: Json | null
+          documents_submitted: Json | null
+          evaluation_notes: string | null
+          human_review_requested_at: string | null
+          id: string
+          last_evaluation_at: string | null
+          previous_state: string | null
+          rejected_at: string | null
+          state_changed_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          ai_review_started_at?: string | null
+          application_id: string
+          approved_at?: string | null
+          blockers?: Json | null
+          client_id: string
+          created_at?: string | null
+          current_state?: string
+          docs_complete_at?: string | null
+          docs_started_at?: string | null
+          documents_completion_percentage?: number | null
+          documents_required?: Json | null
+          documents_submitted?: Json | null
+          evaluation_notes?: string | null
+          human_review_requested_at?: string | null
+          id?: string
+          last_evaluation_at?: string | null
+          previous_state?: string | null
+          rejected_at?: string | null
+          state_changed_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          ai_review_started_at?: string | null
+          application_id?: string
+          approved_at?: string | null
+          blockers?: Json | null
+          client_id?: string
+          created_at?: string | null
+          current_state?: string
+          docs_complete_at?: string | null
+          docs_started_at?: string | null
+          documents_completion_percentage?: number | null
+          documents_required?: Json | null
+          documents_submitted?: Json | null
+          evaluation_notes?: string | null
+          human_review_requested_at?: string | null
+          id?: string
+          last_evaluation_at?: string | null
+          previous_state?: string | null
+          rejected_at?: string | null
+          state_changed_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "application_journey_state_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: true
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      application_state_history: {
+        Row: {
+          application_id: string
+          created_at: string | null
+          from_state: string | null
+          id: string
+          metadata: Json | null
+          notification_sent: boolean | null
+          notification_type: string | null
+          to_state: string
+          trigger_reason: string | null
+        }
+        Insert: {
+          application_id: string
+          created_at?: string | null
+          from_state?: string | null
+          id?: string
+          metadata?: Json | null
+          notification_sent?: boolean | null
+          notification_type?: string | null
+          to_state: string
+          trigger_reason?: string | null
+        }
+        Update: {
+          application_id?: string
+          created_at?: string | null
+          from_state?: string | null
+          id?: string
+          metadata?: Json | null
+          notification_sent?: boolean | null
+          notification_type?: string | null
+          to_state?: string
+          trigger_reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "application_state_history_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       applications: {
         Row: {
           aip_affordability_data: Json | null
