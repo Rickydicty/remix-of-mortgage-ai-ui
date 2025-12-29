@@ -1,25 +1,25 @@
-import { useState, useEffect } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
-import { 
-  AlertCircle, 
-  AlertTriangle, 
-  CheckCircle, 
-  Bot, 
-  FileText, 
-  MessageSquare, 
+import {
+  AlertCircle,
+  AlertTriangle,
+  CheckCircle,
+  Bot,
+  FileText,
+  MessageSquare,
   TrendingUp,
   RefreshCw,
   User,
   Clock,
-  Shield
+  Shield,
 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import ExtractedDataDisplay from "@/components/broker/ExtractedDataDisplay";
 
 interface AgentInsightsPanelProps {
   applicationId: string;
@@ -52,6 +52,17 @@ interface DocumentAnalysis {
   broker_commentary: string;
   completeness_score: number;
   quality_issues: string[];
+  extracted_data?: Record<string, unknown>;
+}
+
+interface DocumentRow {
+  id: string;
+  filename: string;
+  document_type: string;
+  analysis_text: string | null;
+  score: number | null;
+  status: string;
+  created_at: string | null;
 }
 
 interface Conversation {
@@ -75,8 +86,15 @@ const AgentInsightsPanel = ({ applicationId, clientId, onRefresh }: AgentInsight
   const [analyzing, setAnalyzing] = useState(false);
   const [appAnalysis, setAppAnalysis] = useState<ApplicationAnalysis | null>(null);
   const [docAnalyses, setDocAnalyses] = useState<DocumentAnalysis[]>([]);
+  const [documents, setDocuments] = useState<DocumentRow[]>([]);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [actionLogs, setActionLogs] = useState<ActionLog[]>([]);
+
+  const analysesByDocumentId = useMemo(() => {
+    const map = new Map<string, DocumentAnalysis>();
+    docAnalyses.forEach((a) => map.set(a.document_id, a));
+    return map;
+  }, [docAnalyses]);
 
   const fetchInsights = async () => {
     setLoading(true);
@@ -94,6 +112,7 @@ const AgentInsightsPanel = ({ applicationId, clientId, onRefresh }: AgentInsight
       if (data.success) {
         setAppAnalysis(data.applicationAnalysis);
         setDocAnalyses(data.documentAnalyses || []);
+        setDocuments(data.documents || []);
         setConversations(data.conversations || []);
         setActionLogs(data.actionLogs || []);
       }
@@ -129,6 +148,30 @@ const AgentInsightsPanel = ({ applicationId, clientId, onRefresh }: AgentInsight
       toast.error("Failed to run analysis");
     } finally {
       setAnalyzing(false);
+    }
+  };
+
+  const analyzeOneDocument = async (documentId: string) => {
+    try {
+      const response = await fetch(
+        `https://urdyzlulkpgffzrwefwj.supabase.co/functions/v1/broker-agent`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "analyze_document", applicationId, documentId }),
+        }
+      );
+
+      const data = await response.json();
+      if (data.success) {
+        toast.success("Document parsing complete");
+        fetchInsights();
+      } else {
+        toast.error(data.error || "Document parsing failed");
+      }
+    } catch (error) {
+      console.error("Error analyzing document:", error);
+      toast.error("Failed to parse document");
     }
   };
 
@@ -350,35 +393,77 @@ const AgentInsightsPanel = ({ applicationId, clientId, onRefresh }: AgentInsight
 
           <TabsContent value="documents" className="mt-4">
             <ScrollArea className="h-[400px]">
-              {docAnalyses.length > 0 ? (
+              {documents.length > 0 ? (
                 <div className="space-y-3">
-                  {docAnalyses.map((doc) => (
-                    <Card key={doc.id} className="p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <FileText className="h-4 w-4" />
-                          <span className="font-medium text-sm">Document Analysis</span>
+                  {documents.map((doc) => {
+                    const analysis = analysesByDocumentId.get(doc.id);
+                    return (
+                      <Card key={doc.id} className="p-4">
+                        <div className="flex items-start justify-between gap-3 mb-2">
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <FileText className="h-4 w-4" />
+                              <span className="font-medium text-sm truncate">{doc.filename}</span>
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {doc.document_type.replace(/_/g, " ")}
+                              {typeof doc.score === "number" ? ` • Score: ${doc.score}/100` : ""}
+                            </p>
+                          </div>
+
+                          <div className="shrink-0 flex items-center gap-2">
+                            {analysis ? getRiskBadge(analysis.risk_level) : (
+                              <Badge variant="secondary">Not parsed yet</Badge>
+                            )}
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => analyzeOneDocument(doc.id)}
+                            >
+                              Parse
+                            </Button>
+                          </div>
                         </div>
-                        {getRiskBadge(doc.risk_level)}
-                      </div>
-                      <Progress value={doc.completeness_score} className="h-1 mb-2" />
-                      <p className="text-sm text-muted-foreground mb-2">{doc.broker_commentary}</p>
-                      {doc.risk_flags && doc.risk_flags.length > 0 && (
-                        <div className="flex flex-wrap gap-1">
-                          {doc.risk_flags.map((flag: string, i: number) => (
-                            <Badge key={i} variant="outline" className="text-xs">
-                              {flag}
-                            </Badge>
-                          ))}
-                        </div>
-                      )}
-                    </Card>
-                  ))}
+
+                        {analysis?.extracted_data && (
+                          <div className="mt-3">
+                            <ExtractedDataDisplay
+                              documentType={doc.document_type}
+                              extractedData={analysis.extracted_data as any}
+                              riskLevel={analysis.risk_level}
+                              completenessScore={analysis.completeness_score}
+                            />
+                          </div>
+                        )}
+
+                        {analysis?.broker_commentary && (
+                          <p className="text-sm text-muted-foreground mt-3">{analysis.broker_commentary}</p>
+                        )}
+
+                        {!analysis?.extracted_data && doc.analysis_text && (
+                          <div className="mt-3 rounded border border-border bg-muted/30 p-3">
+                            <p className="text-xs font-medium mb-1">AI analysis</p>
+                            <p className="text-sm text-muted-foreground">{doc.analysis_text}</p>
+                          </div>
+                        )}
+
+                        {analysis?.risk_flags?.length ? (
+                          <div className="flex flex-wrap gap-1 mt-3">
+                            {analysis.risk_flags.map((flag, i) => (
+                              <Badge key={i} variant="outline" className="text-xs">
+                                {flag}
+                              </Badge>
+                            ))}
+                          </div>
+                        ) : null}
+                      </Card>
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="text-center py-8">
                   <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-                  <p className="text-muted-foreground">No document analyses yet</p>
+                  <p className="text-muted-foreground">No documents found for this client</p>
                 </div>
               )}
             </ScrollArea>

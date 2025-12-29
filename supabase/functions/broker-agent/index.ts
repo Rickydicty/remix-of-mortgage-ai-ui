@@ -550,12 +550,26 @@ serve(async (req) => {
           .from("agent_application_analysis")
           .select("*")
           .eq("application_id", applicationId)
-          .single();
+          .maybeSingle();
 
         const { data: docAnalyses } = await supabase
           .from("agent_document_analysis")
           .select("*")
           .eq("application_id", applicationId);
+
+        // Fetch documents for this application so the broker can always see
+        // each uploaded document even if no analysis row exists yet.
+        const { data: app } = await supabase
+          .from("applications")
+          .select("user_id")
+          .eq("id", applicationId)
+          .single();
+
+        const { data: documents } = await supabase
+          .from("documents")
+          .select("id, filename, document_type, analysis_text, score, status, created_at")
+          .eq("user_id", app?.user_id)
+          .order("created_at", { ascending: false });
 
         const { data: conversations } = await supabase
           .from("agent_conversations")
@@ -571,15 +585,19 @@ serve(async (req) => {
           .order("created_at", { ascending: false })
           .limit(10);
 
-        return new Response(JSON.stringify({
-          success: true,
-          applicationAnalysis: appAnalysis,
-          documentAnalyses: docAnalyses || [],
-          conversations: conversations || [],
-          actionLogs: actionLogs || [],
-        }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        return new Response(
+          JSON.stringify({
+            success: true,
+            applicationAnalysis: appAnalysis,
+            documentAnalyses: docAnalyses || [],
+            documents: documents || [],
+            conversations: conversations || [],
+            actionLogs: actionLogs || [],
+          }),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
       }
 
       default:
