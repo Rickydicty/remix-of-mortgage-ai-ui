@@ -74,7 +74,7 @@ const handler = async (req: Request): Promise<Response> => {
             to: [{ email: setting.recipient_email }],
           },
         ],
-        from: { email: "notifications@yourdomain.com", name: "Mortgage Portal" },
+        from: { email: "raufpokemon00@gmail.com", name: "Mortgage Portal" },
         subject: subject,
         content: [
           {
