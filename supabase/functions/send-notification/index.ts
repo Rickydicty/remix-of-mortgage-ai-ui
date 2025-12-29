@@ -1,8 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { Resend } from "npm:resend@2.0.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+const SENDGRID_API_KEY = Deno.env.get("SENDGRID_API_KEY");
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -62,21 +61,42 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Send email via Resend
-    const emailResponse = await resend.emails.send({
-      from: "Mortgage Portal <notifications@resend.dev>",
-      to: [setting.recipient_email],
-      subject: subject,
-      html: html_content,
+    // Send email via SendGrid
+    const emailResponse = await fetch("https://api.sendgrid.com/v3/mail/send", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${SENDGRID_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        personalizations: [
+          {
+            to: [{ email: setting.recipient_email }],
+          },
+        ],
+        from: { email: "notifications@yourdomain.com", name: "Mortgage Portal" },
+        subject: subject,
+        content: [
+          {
+            type: "text/html",
+            value: html_content,
+          },
+        ],
+      }),
     });
 
-    console.log("Email sent successfully:", emailResponse);
+    if (!emailResponse.ok) {
+      const errorText = await emailResponse.text();
+      console.error("SendGrid error:", errorText);
+      throw new Error(`SendGrid API error: ${emailResponse.status}`);
+    }
+
+    console.log("Email sent successfully via SendGrid");
 
     return new Response(
       JSON.stringify({ 
         success: true, 
         sent: true,
-        email_id: emailResponse.data?.id 
       }),
       {
         status: 200,
