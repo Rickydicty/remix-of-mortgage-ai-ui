@@ -6,10 +6,61 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+interface ExtractedData {
+  // Income documents
+  income?: number;
+  employer?: string;
+  employmentType?: string;
+  payPeriod?: string;
+  netPay?: number;
+  grossPay?: number;
+  taxDeducted?: number;
+  startDate?: string;
+  
+  // Bank statements
+  avgBalance?: number;
+  endingBalance?: number;
+  totalDeposits?: number;
+  totalWithdrawals?: number;
+  accountType?: string;
+  bankName?: string;
+  
+  // ID documents
+  fullName?: string;
+  dateOfBirth?: string;
+  idNumber?: string;
+  idType?: string;
+  expiryDate?: string;
+  nationality?: string;
+  
+  // Address proof
+  address?: string;
+  documentDate?: string;
+  utilityProvider?: string;
+  
+  // Tax documents
+  taxYear?: string;
+  totalIncome?: number;
+  taxPaid?: number;
+  ppsNumber?: string;
+  
+  // Liabilities
+  loanBalance?: number;
+  monthlyPayment?: number;
+  lender?: string;
+  interestRate?: number;
+  
+  // General
+  missingPages?: boolean;
+  dateRange?: { from: string; to: string };
+  inconsistencies?: string[];
+}
+
 interface AnalysisResponse {
   score: number;
   analysis: string;
   status: 'approved' | 'disapproved' | 'waiting';
+  extractedData: ExtractedData;
 }
 
 const DOCUMENT_TYPE_DESCRIPTIONS: Record<string, string> = {
@@ -32,32 +83,170 @@ const DOCUMENT_TYPE_DESCRIPTIONS: Record<string, string> = {
   other: "Any other supporting document relevant to the mortgage application."
 };
 
+// Define extraction schema based on document type
+function getExtractionTool(documentType: string) {
+  const baseProperties: Record<string, any> = {
+    missingPages: { type: "boolean", description: "Whether pages appear to be missing from the document" },
+    inconsistencies: { type: "array", items: { type: "string" }, description: "Any inconsistencies or red flags found" }
+  };
+
+  const typeSpecificProperties: Record<string, any> = {
+    payslips: {
+      income: { type: "number", description: "Annual gross salary/income in EUR" },
+      grossPay: { type: "number", description: "Gross pay for the period shown" },
+      netPay: { type: "number", description: "Net pay after deductions" },
+      taxDeducted: { type: "number", description: "Tax deducted for the period" },
+      employer: { type: "string", description: "Employer name" },
+      employmentType: { type: "string", enum: ["permanent", "contract", "part-time", "temporary"] },
+      payPeriod: { type: "string", description: "Pay period (e.g., 'monthly', 'weekly', 'fortnightly')" },
+      startDate: { type: "string", description: "Employment start date if visible (YYYY-MM-DD)" },
+      ppsNumber: { type: "string", description: "PPS number if visible" }
+    },
+    current_account_statements: {
+      avgBalance: { type: "number", description: "Average account balance over the statement period" },
+      endingBalance: { type: "number", description: "Closing balance at end of statement" },
+      totalDeposits: { type: "number", description: "Total deposits/credits during period" },
+      totalWithdrawals: { type: "number", description: "Total withdrawals/debits during period" },
+      bankName: { type: "string", description: "Name of the bank" },
+      accountType: { type: "string", description: "Type of account" },
+      dateRange: { 
+        type: "object", 
+        properties: { 
+          from: { type: "string", description: "Start date (YYYY-MM-DD)" }, 
+          to: { type: "string", description: "End date (YYYY-MM-DD)" } 
+        } 
+      }
+    },
+    savings_account_statements: {
+      avgBalance: { type: "number", description: "Average savings balance" },
+      endingBalance: { type: "number", description: "Current savings balance" },
+      bankName: { type: "string", description: "Name of the bank" },
+      interestRate: { type: "number", description: "Interest rate if shown" },
+      dateRange: { 
+        type: "object", 
+        properties: { 
+          from: { type: "string" }, 
+          to: { type: "string" } 
+        } 
+      }
+    },
+    certified_id: {
+      fullName: { type: "string", description: "Full name as shown on ID" },
+      dateOfBirth: { type: "string", description: "Date of birth (YYYY-MM-DD)" },
+      idNumber: { type: "string", description: "ID/passport number" },
+      idType: { type: "string", enum: ["passport", "drivers_license", "national_id", "other"] },
+      expiryDate: { type: "string", description: "Expiry date if applicable (YYYY-MM-DD)" },
+      nationality: { type: "string", description: "Nationality/citizenship" }
+    },
+    proof_of_address: {
+      fullName: { type: "string", description: "Name on the document" },
+      address: { type: "string", description: "Full address shown" },
+      documentDate: { type: "string", description: "Date of the document (YYYY-MM-DD)" },
+      utilityProvider: { type: "string", description: "Utility/service provider name" }
+    },
+    employment_summary: {
+      income: { type: "number", description: "Total annual income" },
+      employer: { type: "string", description: "Employer name" },
+      taxYear: { type: "string", description: "Tax year covered" },
+      taxPaid: { type: "number", description: "Total tax paid" },
+      ppsNumber: { type: "string", description: "PPS number" }
+    },
+    salary_cert: {
+      income: { type: "number", description: "Annual salary confirmed" },
+      employer: { type: "string", description: "Employer name" },
+      employmentType: { type: "string", enum: ["permanent", "contract", "part-time", "temporary"] },
+      startDate: { type: "string", description: "Employment start date" }
+    },
+    loan_account_statements: {
+      loanBalance: { type: "number", description: "Outstanding loan balance" },
+      monthlyPayment: { type: "number", description: "Monthly repayment amount" },
+      lender: { type: "string", description: "Lender name" },
+      interestRate: { type: "number", description: "Interest rate" },
+      dateRange: { 
+        type: "object", 
+        properties: { 
+          from: { type: "string" }, 
+          to: { type: "string" } 
+        } 
+      }
+    },
+    mortgage_statements: {
+      loanBalance: { type: "number", description: "Outstanding mortgage balance" },
+      monthlyPayment: { type: "number", description: "Monthly mortgage payment" },
+      lender: { type: "string", description: "Lender/bank name" },
+      interestRate: { type: "number", description: "Current interest rate" },
+      address: { type: "string", description: "Property address" }
+    },
+    tax_clearance: {
+      taxYear: { type: "string", description: "Tax year" },
+      ppsNumber: { type: "string", description: "PPS number" },
+      totalIncome: { type: "number", description: "Total income declared" },
+      taxPaid: { type: "number", description: "Total tax paid" }
+    },
+    self_employed_docs: {
+      income: { type: "number", description: "Net profit/income" },
+      taxYear: { type: "string", description: "Tax/accounting year" },
+      totalIncome: { type: "number", description: "Gross revenue/turnover" }
+    }
+  };
+
+  const properties = {
+    ...baseProperties,
+    ...(typeSpecificProperties[documentType] || {})
+  };
+
+  return {
+    type: "function",
+    function: {
+      name: "extract_document_data",
+      description: `Extract structured data from a ${documentType} document for mortgage application processing`,
+      parameters: {
+        type: "object",
+        properties: {
+          score: { type: "number", description: "Document quality score 0-100" },
+          analysis: { type: "string", description: "Brief analysis of the document" },
+          extractedData: {
+            type: "object",
+            properties,
+            description: "Structured data extracted from the document"
+          }
+        },
+        required: ["score", "analysis", "extractedData"]
+      }
+    }
+  };
+}
+
 async function analyzeDocumentWithAI(imageBase64: string, mimeType: string, documentType: string): Promise<AnalysisResponse> {
   const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
   
   const expectedDocDescription = DOCUMENT_TYPE_DESCRIPTIONS[documentType] || "Unknown document type";
   
-  const systemPrompt = `You are a STRICT document verification expert for mortgage applications. Your job is to verify that uploaded documents match the expected document type EXACTLY.
+  const systemPrompt = `You are an expert document OCR and data extraction system for mortgage applications. Your job is to:
 
-CRITICAL RULES:
-1. You must REJECT documents that do not match the expected document type
-2. Random images, selfies, memes, screenshots, or unrelated content should get a score of 0-10
-3. Documents that are a different type than expected should get a score of 10-30 (e.g., marriage certificate uploaded as ID)
-4. Only documents that ACTUALLY match the expected type should score above 50
-5. High scores (70+) require the document to be the CORRECT TYPE, clearly readable, and authentic-looking
+1. VERIFY the document matches the expected type
+2. EXTRACT all relevant structured data from the document
+3. FLAG any inconsistencies, missing pages, or red flags
 
 EXPECTED DOCUMENT TYPE: "${documentType}"
 EXPECTED DOCUMENT DESCRIPTION: "${expectedDocDescription}"
 
-Scoring guide:
-- 0-10: Random image, meme, selfie, screenshot, or completely unrelated content
-- 10-30: A real document but WRONG TYPE (e.g., uploading a utility bill when ID is expected)
-- 30-50: Correct document type but poor quality, expired, or has issues
-- 50-70: Correct document type, readable, but minor issues
-- 70-90: Correct document type, good quality, no major issues
+EXTRACTION RULES:
+- Extract ALL visible data fields relevant to mortgage applications
+- For financial figures, use EUR and convert if necessary
+- For dates, use YYYY-MM-DD format
+- If a field is not visible or unclear, omit it (don't guess)
+- Flag any inconsistencies (e.g., dates don't match, amounts seem wrong)
+
+SCORING GUIDE:
+- 0-10: Random image, meme, selfie, or completely unrelated content
+- 10-30: A real document but WRONG TYPE
+- 30-50: Correct document type but poor quality or has issues
+- 50-70: Correct document type, readable, minor issues
+- 70-90: Correct document type, good quality
 - 90-100: Perfect document - correct type, high quality, all details visible
 
-Always respond with valid JSON: {"score": number, "analysis": "your analysis explaining why this score was given"}`;
+Use the extract_document_data function to return your analysis.`;
 
   const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
     method: 'POST',
@@ -77,16 +266,14 @@ Always respond with valid JSON: {"score": number, "analysis": "your analysis exp
           content: [
             {
               type: 'text',
-              text: `Analyze this document. The user claims this is a "${documentType}" document. 
-              
-VERIFY: Does this document actually match what a "${documentType}" should look like?
+              text: `Analyze this "${documentType}" document. Extract all structured data and verify authenticity.
 
 Expected: ${expectedDocDescription}
 
-If this is NOT the correct document type, or if this is a random image/meme/selfie, give a LOW score (0-30).
-Only give scores above 50 if this IS actually a ${documentType} document.
-
-Respond ONLY with JSON: {"score": number, "analysis": "your analysis"}`
+Use the extract_document_data function to return:
+1. A quality score (0-100)
+2. Brief analysis
+3. All extracted data fields relevant to this document type`
             },
             {
               type: 'image_url',
@@ -97,6 +284,8 @@ Respond ONLY with JSON: {"score": number, "analysis": "your analysis"}`
           ]
         }
       ],
+      tools: [getExtractionTool(documentType)],
+      tool_choice: { type: "function", function: { name: "extract_document_data" } }
     }),
   });
 
@@ -107,33 +296,66 @@ Respond ONLY with JSON: {"score": number, "analysis": "your analysis"}`
   }
 
   const data = await response.json();
-  console.log('AI response:', data);
+  console.log('AI response:', JSON.stringify(data, null, 2));
   
-  let content = data.choices[0].message.content;
+  // Parse tool call response
+  const toolCall = data.choices[0]?.message?.tool_calls?.[0];
   
-  // Remove markdown code blocks if present
+  if (toolCall && toolCall.function?.arguments) {
+    const parsed = JSON.parse(toolCall.function.arguments);
+    
+    let status: 'approved' | 'disapproved' | 'waiting';
+    if (parsed.score >= 70) {
+      status = 'approved';
+    } else if (parsed.score < 50) {
+      status = 'disapproved';
+    } else {
+      status = 'waiting';
+    }
+
+    return {
+      score: parsed.score,
+      analysis: parsed.analysis,
+      status,
+      extractedData: parsed.extractedData || {}
+    };
+  }
+  
+  // Fallback: try parsing message content
+  let content = data.choices[0]?.message?.content || '{}';
+  
   if (content.includes('```json')) {
     content = content.replace(/```json\s*/g, '').replace(/```\s*/g, '');
   } else if (content.includes('```')) {
     content = content.replace(/```\s*/g, '');
   }
   
-  const parsed = JSON.parse(content.trim());
-  
-  let status: 'approved' | 'disapproved' | 'waiting';
-  if (parsed.score >= 70) {
-    status = 'approved';
-  } else if (parsed.score < 50) {
-    status = 'disapproved';
-  } else {
-    status = 'waiting';
-  }
+  try {
+    const parsed = JSON.parse(content.trim());
+    
+    let status: 'approved' | 'disapproved' | 'waiting';
+    if (parsed.score >= 70) {
+      status = 'approved';
+    } else if (parsed.score < 50) {
+      status = 'disapproved';
+    } else {
+      status = 'waiting';
+    }
 
-  return {
-    score: parsed.score,
-    analysis: parsed.analysis,
-    status,
-  };
+    return {
+      score: parsed.score || 50,
+      analysis: parsed.analysis || 'Document analyzed',
+      status,
+      extractedData: parsed.extractedData || {}
+    };
+  } catch {
+    return {
+      score: 50,
+      analysis: 'Unable to fully analyze document - manual review recommended',
+      status: 'waiting',
+      extractedData: {}
+    };
+  }
 }
 
 Deno.serve(async (req) => {
@@ -150,6 +372,11 @@ Deno.serve(async (req) => {
           headers: { Authorization: req.headers.get('Authorization')! },
         },
       }
+    );
+
+    const serviceClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
     const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
@@ -198,10 +425,12 @@ Deno.serve(async (req) => {
       new Uint8Array(fileBuffer).reduce((data, byte) => data + String.fromCharCode(byte), '')
     );
 
-    // Analyze with AI - pass document type for strict validation
+    // Analyze with AI - extract structured data
     const analysis = await analyzeDocumentWithAI(base64Image, file.type, documentType);
 
-    // Save to database
+    console.log('Extracted data:', JSON.stringify(analysis.extractedData, null, 2));
+
+    // Save document to database
     const { data: document, error: dbError } = await supabaseClient
       .from('documents')
       .insert({
@@ -224,11 +453,43 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Get application for this user
+    const { data: application } = await supabaseClient
+      .from('applications')
+      .select('id')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    // Save extracted data to agent_document_analysis (using service role)
+    if (application?.id) {
+      const { error: analysisError } = await serviceClient
+        .from('agent_document_analysis')
+        .upsert({
+          document_id: document.id,
+          application_id: application.id,
+          client_id: user.id,
+          extracted_data: analysis.extractedData,
+          risk_level: analysis.score >= 70 ? 'low' : analysis.score >= 50 ? 'medium' : 'high',
+          risk_flags: analysis.extractedData.inconsistencies || [],
+          quality_issues: analysis.score < 70 ? ['Document quality below threshold'] : [],
+          completeness_score: analysis.score,
+          broker_commentary: `Auto-extracted: ${Object.keys(analysis.extractedData).filter(k => k !== 'inconsistencies' && k !== 'missingPages').join(', ')}`,
+          client_explanation: analysis.analysis
+        }, { onConflict: 'document_id' });
+
+      if (analysisError) {
+        console.error('Error saving document analysis:', analysisError);
+      } else {
+        console.log('Saved extracted data to agent_document_analysis');
+      }
+    }
+
     console.log('Document processed successfully:', document.id);
 
     return new Response(JSON.stringify({ 
       success: true,
       document,
+      extractedData: analysis.extractedData
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
