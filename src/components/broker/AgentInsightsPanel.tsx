@@ -175,6 +175,52 @@ const AgentInsightsPanel = ({ applicationId, clientId, onRefresh }: AgentInsight
     }
   };
 
+  const [parsingAll, setParsingAll] = useState(false);
+
+  const unparsedDocs = useMemo(() => {
+    return documents.filter((d) => !analysesByDocumentId.has(d.id));
+  }, [documents, analysesByDocumentId]);
+
+  const parseAllUnparsed = async () => {
+    if (unparsedDocs.length === 0) {
+      toast.info("All documents are already parsed");
+      return;
+    }
+    setParsingAll(true);
+    let successCount = 0;
+    let failCount = 0;
+
+    for (const doc of unparsedDocs) {
+      try {
+        const response = await fetch(
+          `https://urdyzlulkpgffzrwefwj.supabase.co/functions/v1/broker-agent`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "analyze_document", applicationId, documentId: doc.id }),
+          }
+        );
+        const data = await response.json();
+        if (data.success) {
+          successCount++;
+        } else {
+          failCount++;
+        }
+      } catch {
+        failCount++;
+      }
+    }
+
+    setParsingAll(false);
+    fetchInsights();
+    if (successCount > 0) {
+      toast.success(`Parsed ${successCount} document${successCount > 1 ? "s" : ""}`);
+    }
+    if (failCount > 0) {
+      toast.error(`Failed to parse ${failCount} document${failCount > 1 ? "s" : ""}`);
+    }
+  };
+
   useEffect(() => {
     if (applicationId) {
       fetchInsights();
@@ -392,6 +438,24 @@ const AgentInsightsPanel = ({ applicationId, clientId, onRefresh }: AgentInsight
           </TabsContent>
 
           <TabsContent value="documents" className="mt-4">
+            {/* Parse All button */}
+            {unparsedDocs.length > 0 && (
+              <div className="mb-3 flex items-center justify-between">
+                <p className="text-sm text-muted-foreground">
+                  {unparsedDocs.length} of {documents.length} document{documents.length > 1 ? "s" : ""} not parsed
+                </p>
+                <Button size="sm" onClick={parseAllUnparsed} disabled={parsingAll}>
+                  {parsingAll ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      Parsing...
+                    </>
+                  ) : (
+                    "Parse All"
+                  )}
+                </Button>
+              </div>
+            )}
             <ScrollArea className="h-[400px]">
               {documents.length > 0 ? (
                 <div className="space-y-3">
