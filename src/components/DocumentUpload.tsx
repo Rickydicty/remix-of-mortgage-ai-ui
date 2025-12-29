@@ -127,6 +127,30 @@ export const DocumentUpload = ({ onUploadComplete }: DocumentUploadProps) => {
         ).catch(err => console.log("AI analysis triggered in background:", err));
       }
 
+      // Send notification email for document upload
+      supabase.functions.invoke('send-notification', {
+        body: {
+          notification_type: 'document_uploaded',
+          subject: `New Document Uploaded: ${DOCUMENT_TYPES.find(t => t.value === documentType)?.label || documentType}`,
+          html_content: `
+            <h2>New Document Uploaded</h2>
+            <p>A client has uploaded a new document.</p>
+            <ul>
+              <li><strong>Document Type:</strong> ${DOCUMENT_TYPES.find(t => t.value === documentType)?.label || documentType}</li>
+              <li><strong>Filename:</strong> ${file.name}</li>
+              <li><strong>AI Score:</strong> ${data.document.score}/100</li>
+            </ul>
+            <p>Please review the document in the admin dashboard.</p>
+          `,
+          event_data: {
+            document_id: data.document.id,
+            document_type: documentType,
+            filename: file.name,
+            score: data.document.score
+          }
+        }
+      }).catch(err => console.log("Notification sent:", err));
+
       toast({
         title: "Document uploaded successfully",
         description: "Awaiting admin approval before broker can review.",
