@@ -50,6 +50,7 @@ interface DocumentAnalysis {
   risk_level: string;
   risk_flags: string[];
   broker_commentary: string;
+  client_explanation: string | null;
   completeness_score: number;
   quality_issues: string[];
   extracted_data?: Record<string, unknown>;
@@ -500,8 +501,36 @@ const AgentInsightsPanel = ({ applicationId, clientId, onRefresh }: AgentInsight
                           </div>
                         )}
 
+                        {/* Agent Comment - actionable feedback */}
                         {analysis?.broker_commentary && (
-                          <p className="text-sm text-muted-foreground mt-3">{analysis.broker_commentary}</p>
+                          <div className="mt-3 p-3 rounded-lg bg-primary/5 border border-primary/20">
+                            <div className="flex items-start gap-2">
+                              <Bot className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                              <div>
+                                <p className="text-xs font-medium text-primary mb-1">Agent Comment</p>
+                                <p className="text-sm">{analysis.broker_commentary}</p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Quality Issues */}
+                        {analysis?.quality_issues && analysis.quality_issues.length > 0 && (
+                          <div className="mt-3 p-3 rounded-lg bg-warning/10 border border-warning/30">
+                            <div className="flex items-start gap-2">
+                              <AlertTriangle className="h-4 w-4 text-warning shrink-0 mt-0.5" />
+                              <div>
+                                <p className="text-xs font-medium text-warning mb-1">Quality Issues</p>
+                                <ul className="space-y-1">
+                                  {analysis.quality_issues.map((issue, i) => (
+                                    <li key={i} className="text-sm flex items-center gap-1">
+                                      <span className="text-warning">•</span> {issue}
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            </div>
+                          </div>
                         )}
 
                         {!analysis?.extracted_data && doc.analysis_text && (
@@ -514,7 +543,7 @@ const AgentInsightsPanel = ({ applicationId, clientId, onRefresh }: AgentInsight
                         {analysis?.risk_flags?.length ? (
                           <div className="flex flex-wrap gap-1 mt-3">
                             {analysis.risk_flags.map((flag, i) => (
-                              <Badge key={i} variant="outline" className="text-xs">
+                              <Badge key={i} variant="outline" className="text-xs border-destructive/50 text-destructive">
                                 {flag}
                               </Badge>
                             ))}

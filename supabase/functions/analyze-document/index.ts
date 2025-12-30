@@ -50,6 +50,10 @@ interface ExtractedData {
   lender?: string;
   interestRate?: number;
   
+  // Quality issues detected by AI
+  qualityIssues?: string[];
+  agentComment?: string;
+  
   // General
   missingPages?: boolean;
   dateRange?: { from: string; to: string };
@@ -87,7 +91,16 @@ const DOCUMENT_TYPE_DESCRIPTIONS: Record<string, string> = {
 function getExtractionTool(documentType: string) {
   const baseProperties: Record<string, any> = {
     missingPages: { type: "boolean", description: "Whether pages appear to be missing from the document" },
-    inconsistencies: { type: "array", items: { type: "string" }, description: "Any inconsistencies or red flags found" }
+    inconsistencies: { type: "array", items: { type: "string" }, description: "Any inconsistencies or red flags found" },
+    qualityIssues: { 
+      type: "array", 
+      items: { type: "string" }, 
+      description: "Quality issues detected: blurry/unreadable, expired document, incomplete/missing pages, cropped/cut off, name mismatch, date mismatch, missing signature, old/outdated (e.g. payslips older than 3 months)" 
+    },
+    agentComment: { 
+      type: "string", 
+      description: "Specific actionable comment for the client explaining what needs to be fixed. E.g. 'The uploaded bank statement is missing page 3. Please upload the complete document.' or 'This ID has expired. Please upload a valid, non-expired ID.'" 
+    }
   };
 
   const typeSpecificProperties: Record<string, any> = {
@@ -226,10 +239,22 @@ async function analyzeDocumentWithAI(imageBase64: string, mimeType: string, docu
 
 1. VERIFY the document matches the expected type
 2. EXTRACT all relevant structured data from the document
-3. FLAG any inconsistencies, missing pages, or red flags
+3. CHECK DOCUMENT QUALITY AND COMPLETENESS
+4. FLAG any issues and provide actionable comments
 
 EXPECTED DOCUMENT TYPE: "${documentType}"
 EXPECTED DOCUMENT DESCRIPTION: "${expectedDocDescription}"
+
+DOCUMENT QUALITY CHECKS - Look for these issues:
+- BLURRY/UNREADABLE: Is the document blurry, pixelated, or hard to read?
+- EXPIRED: For IDs/passports, check if the expiry date has passed
+- INCOMPLETE/MISSING PAGES: Are pages missing? (e.g., "Page 1 of 3" but only page 1 provided)
+- CROPPED/CUT OFF: Is important information cut off at edges?
+- NAME MISMATCH: Does the name on document match applicant name if known?
+- DATE ISSUES: Are dates inconsistent or don't match other documents?
+- MISSING SIGNATURE: For documents requiring signatures, is it signed?
+- OUTDATED: For payslips, check if older than 3 months. For bank statements, older than 6 months
+- WRONG FORMAT: Screenshot instead of original PDF, photo of screen, etc.
 
 EXTRACTION RULES:
 - Extract ALL visible data fields relevant to mortgage applications
@@ -238,13 +263,23 @@ EXTRACTION RULES:
 - If a field is not visible or unclear, omit it (don't guess)
 - Flag any inconsistencies (e.g., dates don't match, amounts seem wrong)
 
+AGENT COMMENT - CRITICAL:
+- If ANY quality issues are found, you MUST provide a specific, actionable "agentComment"
+- Be specific about what's wrong and what the client needs to do
+- Examples:
+  - "The uploaded bank statement is missing page 3. Please upload the complete document."
+  - "This passport has expired on 2023-05-15. Please upload a valid, non-expired passport."
+  - "The payslip is from January 2024 which is over 3 months old. Please upload your most recent payslips."
+  - "The document appears blurry and key information is unreadable. Please upload a clearer scan."
+  - "The bank statement appears to be cropped - the account holder name is cut off. Please upload the full document."
+
 SCORING GUIDE:
 - 0-10: Random image, meme, selfie, or completely unrelated content
 - 10-30: A real document but WRONG TYPE
-- 30-50: Correct document type but poor quality or has issues
+- 30-50: Correct document type but has quality issues (blurry, expired, incomplete)
 - 50-70: Correct document type, readable, minor issues
 - 70-90: Correct document type, good quality
-- 90-100: Perfect document - correct type, high quality, all details visible
+- 90-100: Perfect document - correct type, high quality, all details visible, no issues
 
 Use the extract_document_data function to return your analysis.`;
 
@@ -471,9 +506,9 @@ Deno.serve(async (req) => {
           extracted_data: analysis.extractedData,
           risk_level: analysis.score >= 70 ? 'low' : analysis.score >= 50 ? 'medium' : 'high',
           risk_flags: analysis.extractedData.inconsistencies || [],
-          quality_issues: analysis.score < 70 ? ['Document quality below threshold'] : [],
+          quality_issues: analysis.extractedData.qualityIssues || (analysis.score < 70 ? ['Document quality below threshold'] : []),
           completeness_score: analysis.score,
-          broker_commentary: `Auto-extracted: ${Object.keys(analysis.extractedData).filter(k => k !== 'inconsistencies' && k !== 'missingPages').join(', ')}`,
+          broker_commentary: analysis.extractedData.agentComment || `Auto-extracted: ${Object.keys(analysis.extractedData).filter(k => !['inconsistencies', 'missingPages', 'qualityIssues', 'agentComment'].includes(k)).join(', ')}`,
           client_explanation: analysis.analysis
         }, { onConflict: 'document_id' });
 
