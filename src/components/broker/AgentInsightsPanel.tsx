@@ -27,6 +27,15 @@ interface AgentInsightsPanelProps {
   onRefresh?: () => void;
 }
 
+interface EligibilityMetrics {
+  ltvRatio: number;
+  dtiRatio: number;
+  incomeMultiple: number;
+  maxBorrowingCapacity: number;
+  stressTestedPayment: number;
+  affordabilityStatus: string;
+}
+
 interface ApplicationAnalysis {
   overall_risk_level: string;
   aggregated_flags: string[];
@@ -42,6 +51,7 @@ interface ApplicationAnalysis {
   requires_human_review: boolean;
   handoff_reason: string | null;
   last_analysis_at: string;
+  eligibility_metrics?: EligibilityMetrics;
 }
 
 interface DocumentAnalysis {
@@ -340,11 +350,14 @@ const AgentInsightsPanel = ({ applicationId, clientId, onRefresh }: AgentInsight
                 {/* Estimates */}
                 {(appAnalysis.estimated_approval_amount || appAnalysis.estimated_monthly_payment) && (
                   <Card className="p-4">
-                    <h4 className="font-medium mb-3">AI Estimates</h4>
+                    <h4 className="font-medium mb-3 flex items-center gap-2">
+                      <TrendingUp className="h-4 w-4 text-primary" />
+                      Eligibility & Pre-Approval Estimates
+                    </h4>
                     <div className="grid grid-cols-3 gap-4 text-sm">
                       <div>
-                        <span className="text-muted-foreground block">Est. Approval</span>
-                        <span className="font-bold text-lg">
+                        <span className="text-muted-foreground block">Est. Approval Amount</span>
+                        <span className="font-bold text-lg text-primary">
                           {formatCurrency(appAnalysis.estimated_approval_amount)}
                         </span>
                       </div>
@@ -356,12 +369,70 @@ const AgentInsightsPanel = ({ applicationId, clientId, onRefresh }: AgentInsight
                       </div>
                       {appAnalysis.estimated_interest_range && (
                         <div>
-                          <span className="text-muted-foreground block">Rate Range</span>
+                          <span className="text-muted-foreground block">Interest Rate Range</span>
                           <span className="font-bold text-lg">
                             {appAnalysis.estimated_interest_range.min}% - {appAnalysis.estimated_interest_range.max}%
                           </span>
                         </div>
                       )}
+                    </div>
+                  </Card>
+                )}
+
+                {/* Eligibility Metrics - New detailed section */}
+                {appAnalysis.eligibility_metrics && (
+                  <Card className="p-4 border-primary/30 bg-primary/5">
+                    <h4 className="font-medium mb-3 flex items-center gap-2">
+                      <Shield className="h-4 w-4 text-primary" />
+                      Loan Eligibility Metrics
+                    </h4>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                      <div>
+                        <span className="text-muted-foreground block">LTV Ratio</span>
+                        <span className={`font-bold text-lg ${appAnalysis.eligibility_metrics.ltvRatio > 90 ? 'text-destructive' : appAnalysis.eligibility_metrics.ltvRatio > 80 ? 'text-warning' : 'text-success'}`}>
+                          {appAnalysis.eligibility_metrics.ltvRatio}%
+                        </span>
+                        <span className="text-xs text-muted-foreground block">Max 90% FTB / 80% Other</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block">Income Multiple</span>
+                        <span className={`font-bold text-lg ${appAnalysis.eligibility_metrics.incomeMultiple > 3.5 ? 'text-destructive' : appAnalysis.eligibility_metrics.incomeMultiple > 3 ? 'text-warning' : 'text-success'}`}>
+                          {appAnalysis.eligibility_metrics.incomeMultiple}x
+                        </span>
+                        <span className="text-xs text-muted-foreground block">Max 3.5x income</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block">DTI Ratio</span>
+                        <span className={`font-bold text-lg ${appAnalysis.eligibility_metrics.dtiRatio > 45 ? 'text-destructive' : appAnalysis.eligibility_metrics.dtiRatio > 35 ? 'text-warning' : 'text-success'}`}>
+                          {appAnalysis.eligibility_metrics.dtiRatio}%
+                        </span>
+                        <span className="text-xs text-muted-foreground block">Target &lt;35%</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block">Max Borrowing Power</span>
+                        <span className="font-bold text-lg">
+                          {formatCurrency(appAnalysis.eligibility_metrics.maxBorrowingCapacity)}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block">Stress Test Payment</span>
+                        <span className="font-bold text-lg">
+                          {formatCurrency(appAnalysis.eligibility_metrics.stressTestedPayment)}
+                        </span>
+                        <span className="text-xs text-muted-foreground block">At rate +2%</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block">Affordability</span>
+                        <Badge className={
+                          appAnalysis.eligibility_metrics.affordabilityStatus === 'Affordable' 
+                            ? 'bg-success text-success-foreground' 
+                            : appAnalysis.eligibility_metrics.affordabilityStatus.includes('Tight')
+                            ? 'bg-warning text-warning-foreground'
+                            : 'bg-destructive text-destructive-foreground'
+                        }>
+                          {appAnalysis.eligibility_metrics.affordabilityStatus}
+                        </Badge>
+                      </div>
                     </div>
                   </Card>
                 )}

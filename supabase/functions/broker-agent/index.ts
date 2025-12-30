@@ -166,34 +166,104 @@ async function analyzeFullApplication(
   clientSummary: string;
   requiresHumanReview: boolean;
   handoffReason: string | null;
+  eligibilityMetrics: {
+    ltvRatio: number;
+    dtiRatio: number;
+    incomeMultiple: number;
+    maxBorrowingCapacity: number;
+    stressTestedPayment: number;
+    affordabilityStatus: string;
+  };
 }> {
-  // Calculate key metrics
+  // Calculate key metrics using Irish mortgage rules
   const totalIncome = (formData.app1_gross_salary || 0) + 
-    (formData.app1_overtime || 0) + 
-    (formData.app1_bonuses || 0) + 
+    (formData.app1_overtime || 0) * 0.5 + // Overtime typically counted at 50%
+    (formData.app1_bonuses || 0) * 0.5 + // Bonuses typically counted at 50%
+    (formData.app1_commissions || 0) * 0.5 +
     (formData.app2_gross_salary || 0);
   
   const loanAmount = formData.loan_amount || 0;
   const propertyValue = formData.property_value || 0;
+  const mortgageTerm = formData.mortgage_term || 25;
+  const monthlyCommitments = (formData.monthly_commitments || 0) + 
+    (formData.existing_loans || 0) + 
+    (formData.credit_cards || 0);
+  
+  // Irish Central Bank Rules Calculations
   const ltv = propertyValue > 0 ? (loanAmount / propertyValue) * 100 : 0;
-  const monthlyCommitments = formData.monthly_commitments || 0;
+  const maxLtv = formData.first_time_buyer ? 90 : 80;
+  
   const monthlyIncome = totalIncome / 12;
   const dti = monthlyIncome > 0 ? (monthlyCommitments / monthlyIncome) * 100 : 0;
+  
+  // Income multiple (Central Bank limit is 3.5x for most borrowers)
   const incomeMultiple = totalIncome > 0 ? loanAmount / totalIncome : 0;
+  const maxIncomeMultiple = 3.5;
+  const maxBorrowingCapacity = totalIncome * maxIncomeMultiple;
+  
+  // Estimate interest rate based on LTV and profile
+  const baseRate = 3.5; // Current typical Irish mortgage rate
+  const ltvPremium = ltv > 80 ? 0.25 : ltv > 60 ? 0 : -0.1;
+  const ftbDiscount = formData.first_time_buyer ? -0.1 : 0;
+  const estimatedRate = baseRate + ltvPremium + ftbDiscount;
+  const stressTestRate = estimatedRate + 2; // Central Bank stress test
+  
+  // Monthly payment calculations
+  const monthlyRate = estimatedRate / 100 / 12;
+  const numPayments = mortgageTerm * 12;
+  const monthlyPayment = loanAmount > 0 
+    ? (loanAmount * monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / (Math.pow(1 + monthlyRate, numPayments) - 1)
+    : 0;
+  
+  // Stress tested payment
+  const stressMonthlyRate = stressTestRate / 100 / 12;
+  const stressTestedPayment = loanAmount > 0 
+    ? (loanAmount * stressMonthlyRate * Math.pow(1 + stressMonthlyRate, numPayments)) / (Math.pow(1 + stressMonthlyRate, numPayments) - 1)
+    : 0;
+  
+  // Net Disposable Income (NDI) check
+  const totalMonthlyOutgoings = monthlyCommitments + stressTestedPayment;
+  const ndi = monthlyIncome - totalMonthlyOutgoings;
+  const ndiRatio = monthlyIncome > 0 ? (ndi / monthlyIncome) * 100 : 0;
+  
+  // Determine affordability status
+  let affordabilityStatus = "Affordable";
+  if (ndiRatio < 15) affordabilityStatus = "Tight - May not pass stress test";
+  if (ndiRatio < 10) affordabilityStatus = "Unaffordable - Fails stress test";
+  if (incomeMultiple > maxIncomeMultiple) affordabilityStatus = "Exceeds income multiple limit";
+  if (ltv > maxLtv) affordabilityStatus = "Exceeds LTV limit";
+  
+  const eligibilityMetrics = {
+    ltvRatio: Math.round(ltv * 10) / 10,
+    dtiRatio: Math.round(dti * 10) / 10,
+    incomeMultiple: Math.round(incomeMultiple * 100) / 100,
+    maxBorrowingCapacity: Math.round(maxBorrowingCapacity),
+    stressTestedPayment: Math.round(stressTestedPayment),
+    affordabilityStatus,
+  };
 
-  const prompt = `Perform a comprehensive mortgage application analysis.
+  const prompt = `Perform a comprehensive mortgage eligibility and pre-approval estimation for an Irish mortgage application.
 
-APPLICATION METRICS:
-- Total Annual Income: €${totalIncome}
-- Requested Loan Amount: €${loanAmount}
-- Property Value: €${propertyValue}
-- LTV Ratio: ${ltv.toFixed(1)}%
+APPLICATION METRICS (PRE-CALCULATED):
+- Total Annual Income: €${totalIncome.toLocaleString()}
+- Requested Loan Amount: €${loanAmount.toLocaleString()}
+- Property Value: €${propertyValue.toLocaleString()}
+- LTV Ratio: ${ltv.toFixed(1)}% (Max allowed: ${maxLtv}%)
 - Monthly Income: €${monthlyIncome.toFixed(0)}
 - Monthly Commitments: €${monthlyCommitments}
 - DTI Ratio: ${dti.toFixed(1)}%
-- Income Multiple: ${incomeMultiple.toFixed(2)}x
+- Income Multiple: ${incomeMultiple.toFixed(2)}x (Max: 3.5x)
+- Max Borrowing Capacity: €${maxBorrowingCapacity.toLocaleString()}
 - First Time Buyer: ${formData.first_time_buyer ? 'Yes' : 'No'}
-- Mortgage Term: ${formData.mortgage_term || 25} years
+- Mortgage Term: ${mortgageTerm} years
+
+ESTIMATED PAYMENTS:
+- Estimated Rate: ${estimatedRate.toFixed(2)}%
+- Monthly Payment: €${monthlyPayment.toFixed(0)}
+- Stress Test Rate (+2%): ${stressTestRate.toFixed(2)}%
+- Stress Tested Payment: €${stressTestedPayment.toFixed(0)}
+- Net Disposable Income Ratio: ${ndiRatio.toFixed(1)}%
+- Affordability Status: ${affordabilityStatus}
 
 DOCUMENTS SUBMITTED (${documents.length} total):
 ${documents.map(d => `- ${d.document_type}: ${d.status} (Score: ${d.score || 'N/A'})`).join('\n')}
@@ -203,23 +273,33 @@ ${existingAnalysis.map(a => `- ${a.risk_level}: ${JSON.stringify(a.risk_flags)}`
 
 IRISH MORTGAGE RULES TO APPLY:
 - Central Bank LTV limits: FTB 90%, Others 80%
-- Income multiple cap: 3.5x (exceptions possible)
+- Income multiple cap: 3.5x (10% of bank's lending can exceed)
 - Stress test at current rate + 2%
-- Required docs: P60, payslips, bank statements, ID, proof of address
+- Required docs: Employment summary, payslips (3 months), bank statements (6 months), ID, proof of address
+- Minimum NDI of 15% recommended
+
+MORTGAGE PROGRAM MATCHING:
+Based on the profile, recommend suitable programs:
+- Standard Variable Rate
+- Fixed Rate (1-10 years)
+- Green Mortgage (for BER A/B rated properties)
+- First Time Buyer Schemes (if FTB)
+- Local Authority Home Loan (if income under €65k single / €75k joint)
+- Help to Buy (for new builds, FTB)
 
 Respond with JSON:
 {
   "overallRiskLevel": "low" | "medium" | "high",
-  "aggregatedFlags": ["all significant concerns"],
-  "estimatedApprovalAmount": number or null,
-  "estimatedMonthlyPayment": number or null,
-  "estimatedInterestRange": {"min": number, "max": number} or null,
-  "recommendedPrograms": ["suitable mortgage types"],
+  "aggregatedFlags": ["all significant concerns including affordability issues"],
+  "estimatedApprovalAmount": ${Math.min(loanAmount, maxBorrowingCapacity) || 'null'},
+  "estimatedMonthlyPayment": ${Math.round(monthlyPayment) || 'null'},
+  "estimatedInterestRange": {"min": ${(estimatedRate - 0.5).toFixed(2)}, "max": ${(estimatedRate + 0.5).toFixed(2)}},
+  "recommendedPrograms": ["list 2-4 suitable mortgage types based on profile"],
   "submissionReady": boolean,
-  "openItems": ["what's still needed"],
+  "openItems": ["what's still needed for approval"],
   "readinessScore": 0-100,
-  "brokerSummary": "detailed internal summary for broker",
-  "clientSummary": "friendly summary for client",
+  "brokerSummary": "detailed internal summary including eligibility assessment, income vs loan analysis, stress test results",
+  "clientSummary": "friendly summary explaining their borrowing power and next steps",
   "requiresHumanReview": boolean,
   "handoffReason": "reason if human review needed" or null
 }`;
@@ -228,7 +308,8 @@ Respond with JSON:
     const response = await callAI(prompt);
     const jsonMatch = response.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
-      return JSON.parse(jsonMatch[0]);
+      const parsed = JSON.parse(jsonMatch[0]);
+      return { ...parsed, eligibilityMetrics };
     }
     throw new Error("Failed to parse AI response");
   } catch (error) {
@@ -236,9 +317,9 @@ Respond with JSON:
     return {
       overallRiskLevel: "pending",
       aggregatedFlags: ["Analysis incomplete"],
-      estimatedApprovalAmount: null,
-      estimatedMonthlyPayment: null,
-      estimatedInterestRange: null,
+      estimatedApprovalAmount: Math.round(Math.min(loanAmount, maxBorrowingCapacity)) || null,
+      estimatedMonthlyPayment: Math.round(monthlyPayment) || null,
+      estimatedInterestRange: { min: estimatedRate - 0.5, max: estimatedRate + 0.5 },
       recommendedPrograms: [],
       submissionReady: false,
       openItems: ["Manual review required"],
@@ -247,6 +328,7 @@ Respond with JSON:
       clientSummary: "Your application is being reviewed by our team.",
       requiresHumanReview: true,
       handoffReason: "Automated analysis failed",
+      eligibilityMetrics,
     };
   }
 }
