@@ -481,13 +481,22 @@ const AgentInsightsPanel = ({ applicationId, clientId, onRefresh }: AgentInsight
                   </Card>
                 )}
 
-                {/* Recommended Programs */}
+                {/* Recommended Mortgage Programs */}
                 {appAnalysis.recommended_programs && appAnalysis.recommended_programs.length > 0 && (
-                  <Card className="p-4">
-                    <h4 className="font-medium mb-3">Recommended Programs</h4>
-                    <div className="flex flex-wrap gap-2">
+                  <Card className="p-4 border-success/30 bg-success/5">
+                    <h4 className="font-medium mb-3 flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4 text-success" />
+                      Recommended Mortgage Programs
+                    </h4>
+                    <p className="text-xs text-muted-foreground mb-3">
+                      Based on the applicant's profile, these programs may offer the best fit:
+                    </p>
+                    <div className="space-y-2">
                       {appAnalysis.recommended_programs.map((program: string, i: number) => (
-                        <Badge key={i} variant="outline">{program}</Badge>
+                        <div key={i} className="flex items-start gap-2 p-2 rounded bg-background/50 border border-success/20">
+                          <Badge className="bg-success/20 text-success-foreground border-success/30">{i + 1}</Badge>
+                          <p className="text-sm">{program}</p>
+                        </div>
                       ))}
                     </div>
                   </Card>
