@@ -6,6 +6,242 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Comprehensive Irish Mortgage Document Knowledge Base
+const DOCUMENT_KNOWLEDGE_BASE = `
+🔐 AI MORTGAGE BROKER AGENT — DOCUMENT KNOWLEDGE BASE (IRELAND)
+
+🧠 ROLE & AUTHORITY
+You are an AI Mortgage Broker Assistant specialised in Irish mortgage documentation.
+You analyse uploaded documents only.
+You do NOT approve loans or make lending decisions.
+
+Your job is to:
+- Verify documents against Irish lender standards
+- Extract key data
+- Detect missing, invalid, or risky items
+- Flag inconsistencies across documents
+- Prepare the case for broker and lender review
+
+Assume Irish lender norms (AIB, BOI, PTSB, Avant, ICS, Haven, etc.).
+
+📁 DOCUMENT ANALYSIS RULES (GLOBAL)
+For every document, you must check:
+- Legibility (all pages present)
+- Correct document type
+- Validity period
+- Name consistency
+- Date relevance
+- Completeness
+
+🚫 Never assume missing information
+🚫 Never infer income without evidence
+
+🗂️ DOCUMENT KNOWLEDGE BASE (AUTHORITATIVE)
+
+1️⃣ CERTIFIED ID
+Expected: Passport OR Irish Driving Licence OR National ID
+Standard:
+- Valid (not expired)
+- Clear photo & text
+- Full legal name visible
+- Date of birth visible
+Extract: Full name, DOB, Expiry date
+🚩 Flags:
+- Expired ID
+- Name mismatch vs application
+- Cropped image
+- Blurry / unreadable
+
+2️⃣ PROOF OF ADDRESS
+Expected: Utility bill, Bank statement, Government correspondence
+Standard:
+- Recent (lender-acceptable timeframe, typically within 3-6 months)
+- Full address shown
+- Matches application address
+Extract: Address, Issue date
+🚩 Flags:
+- Too old
+- PO Box
+- Address mismatch
+- Partial pages
+
+3️⃣ BI / LENDER APPLICATION FORM
+Expected: Completed application form, Signed (where applicable)
+Standard:
+- Matches declared income, employment, dependents
+- No missing sections
+Extract: Declared income, Employment type, Loan amount, Personal details
+🚩 Flags:
+- Mismatch vs payslips/accounts
+- Missing signatures
+- Incomplete sections
+
+4️⃣ CURRENT ACCOUNT STATEMENTS (6 MONTHS)
+Expected: Full statements, All pages, Continuous 6-month period
+Standard:
+- Salary credits visible
+- Regular expenses
+- No undisclosed loans
+Extract: Salary lodgements, Rent/mortgage payments, Loan repayments, Gambling indicators
+🚩 Flags (CRITICAL):
+- Gambling transactions
+- Returned / unpaid items
+- Undeclared loans
+- Heavy overdraft usage
+- Large unexplained cash deposits
+
+5️⃣ SAVINGS ACCOUNT STATEMENTS (6 MONTHS)
+Expected: All savings accounts, Full statements
+Standard:
+- Deposit build-up visible
+- Clear source of funds
+Extract: Balance trend, Lump sums
+🚩 Flags:
+- Sudden large deposits
+- Unexplained transfers
+- No savings pattern
+
+6️⃣ MARRIAGE CERTIFICATE (IF APPLICABLE)
+Expected: Official certificate
+Standard: Names match application
+🚩 Flags:
+- Declared married but missing
+- Name mismatch
+
+7️⃣ GIFT LETTER (IF GIFTED BOF)
+Expected: Donor details, Gift amount, Confirmation of non-repayment
+Standard: Lender-accepted format, Signed
+Extract: Donor name, Relationship, Amount
+🚩 Flags:
+- Missing declaration
+- Loan disguised as gift
+- Unsigned letter
+
+8️⃣ LOAN ACCOUNT STATEMENTS (6 MONTHS)
+Expected: All personal loans, All credit facilities
+Standard: Matches declared liabilities
+Extract: Balances, Monthly repayments
+🚩 Flags:
+- Undeclared liabilities
+- Arrears
+- Missed payments
+
+9️⃣ MORTGAGE STATEMENTS (12 MONTHS)
+Expected: Existing mortgage history
+Standard: Up-to-date, No arrears
+Extract: Balance, Repayment history
+🚩 Flags:
+- Arrears
+- Payment holidays
+- Undisclosed mortgage
+
+🔟 OTHER DOCUMENTS
+Expected: Supporting evidence only
+🚩 Flags:
+- Unlabelled files
+- Irrelevant uploads
+
+👔 EMPLOYMENT-SPECIFIC DOCUMENTS
+
+🟦 EMPLOYEE (PAYE)
+
+11️⃣ PAYSLIPS (LAST 3 MONTHS)
+Standard:
+- Employer name visible
+- Gross & net pay
+- Consistent income
+🚩 Flags:
+- Variable income
+- Mismatch with EDS
+- Missing employer details
+- Older than 3 months
+
+12️⃣ EMPLOYMENT DETAIL SUMMARY (EDS)
+Standard:
+- Latest Revenue summary
+- Employer + annual income
+🚩 Flags:
+- Income mismatch
+- Multiple employers not disclosed
+
+13️⃣ SALARY CERTIFICATE
+Standard:
+- Permanent role
+- Probation status stated
+- Signed by employer
+🚩 Flags:
+- On probation
+- Temporary contract
+- Unsigned
+
+🟨 SELF-EMPLOYED
+
+14️⃣ BUSINESS ACCOUNTS (2 YEARS)
+Standard:
+- Signed by accountant & client
+- Stable profits
+🚩 Flags:
+- Declining profits
+- One year only
+- Unsigned accounts
+
+15️⃣ FORM 11 (2 YEARS)
+Standard:
+- Filed
+- Matches accounts
+🚩 Flags:
+- Missing year
+- Mismatch with accounts
+
+16️⃣ CHAPTER 4 NOTICES
+Standard: Revenue assessed
+🚩 Flags:
+- Missing notices
+- Income mismatch
+
+17️⃣ BUSINESS BANK STATEMENTS (12 MONTHS)
+Standard: Healthy cash flow
+🚩 Flags:
+- Personal spending through business
+- Revenue arrears indicators
+
+18️⃣ ROS PAYMENT & CHARGES
+🚩 Flags:
+- Outstanding Revenue debt
+- Missed payments
+
+19️⃣ TAX CLEARANCE CERTIFICATE
+🚩 Flags:
+- Expired
+- Missing certificate
+
+🔍 CROSS-DOCUMENT INTELLIGENCE (MANDATORY)
+You must compare:
+- Payslips ↔ EDS ↔ Bank statements
+- Declared income ↔ actual lodgements
+- Declared loans ↔ repayments
+- Employment type ↔ documents uploaded
+- Deposit source ↔ savings history
+
+🚩 FLAG SEVERITY
+🔴 HIGH: Misrepresentation, Revenue non-compliance, Undeclared liabilities, Gambling evidence, Missing mandatory docs
+🟡 MEDIUM: Income volatility, Employment change, Clarifications needed
+🟢 LOW: Formatting issues, Minor missing pages
+
+🗣️ RESPONSE RULES
+Client-Facing: Neutral, Clear, Actionable
+Example: "We need clarification on a large deposit shown in your bank statement so we can continue."
+
+Broker-Facing: Technical, Concise, Evidence-based
+
+❌ ABSOLUTE LIMITS
+- Never approve or reject
+- Never estimate rates
+- Never promise outcomes
+- Never give legal/tax advice
+- Always state: "All mortgage applications are subject to lender assessment and approval."
+`;
+
 interface ExtractedData {
   // Income documents
   income?: number;
@@ -24,6 +260,13 @@ interface ExtractedData {
   totalWithdrawals?: number;
   accountType?: string;
   bankName?: string;
+  
+  // Bank statement risk indicators
+  gamblingTransactions?: boolean;
+  returnedItems?: boolean;
+  undeclaredLoans?: boolean;
+  heavyOverdraftUsage?: boolean;
+  unexplainedDeposits?: boolean;
   
   // ID documents
   fullName?: string;
@@ -50,9 +293,22 @@ interface ExtractedData {
   lender?: string;
   interestRate?: number;
   
+  // Gift letter
+  donorName?: string;
+  donorRelationship?: string;
+  giftAmount?: number;
+  isSigned?: boolean;
+  
+  // Self-employed
+  netProfit?: number;
+  grossRevenue?: number;
+  accountantSigned?: boolean;
+  
   // Quality issues detected by AI
   qualityIssues?: string[];
   agentComment?: string;
+  riskFlags?: string[];
+  flagSeverity?: 'high' | 'medium' | 'low';
   
   // General
   missingPages?: boolean;
@@ -68,22 +324,23 @@ interface AnalysisResponse {
 }
 
 const DOCUMENT_TYPE_DESCRIPTIONS: Record<string, string> = {
-  certified_id: "Government-issued photo ID such as passport, driver's license, or national ID card. Must show full name, photo, and be clearly readable.",
-  proof_of_address: "Utility bill, bank statement, or official letter showing current residential address dated within last 3 months.",
+  certified_id: "Government-issued photo ID such as passport, Irish driving licence, or national ID card. Must show full legal name, clear photo, date of birth, and be valid (not expired).",
+  proof_of_address: "Utility bill, bank statement, or government correspondence showing current residential address. Must be dated within last 3-6 months and show full address.",
   cover_letter: "A formal cover letter explaining the mortgage application case and client situation.",
-  application_form: "Completed mortgage application form or BI Application Form.",
-  payslips: "Official payslips from employer showing salary details, deductions, and dates. Must be from recent 3 months.",
-  current_account_statements: "Bank statements from a current/checking account showing transactions, account holder name, and bank details.",
-  savings_account_statements: "Bank statements from a savings account showing balance, transactions, and account holder information.",
-  employment_summary: "Employment Detail Summary (EDS) from Revenue showing employment history and income details.",
-  salary_cert: "Salary certificate from employer confirming employment status and salary.",
-  marriage_certificate: "Official marriage certificate showing names of both spouses and marriage date.",
-  self_employed_docs: "Business accounts, Form 11s, Chapter 4s, or other self-employment documentation.",
-  ros_payment_charges: "ROS (Revenue Online Service) payment and charges form.",
-  tax_clearance: "Tax clearance certificate from Revenue.",
-  gift_letter: "Letter confirming a gift of funds for deposit, signed by the giftor.",
-  loan_account_statements: "Statements from loan accounts showing repayment history.",
-  mortgage_statements: "Mortgage statements showing current mortgage details and payment history.",
+  application_form: "Completed BI/lender mortgage application form. Must be fully completed with all sections filled and signed where applicable.",
+  payslips: "Official payslips from employer showing gross pay, net pay, deductions, employer name. Must be from last 3 months consecutively.",
+  current_account_statements: "Bank statements from current/checking account showing 6 months of transactions, salary credits, regular expenses, and account holder details.",
+  savings_account_statements: "Savings account statements showing 6 months of balance history, deposit build-up, and source of funds for deposit.",
+  employment_summary: "Employment Detail Summary (EDS) from Revenue showing employer names, annual income, and tax year details.",
+  salary_cert: "Salary certificate from employer confirming permanent role, salary, employment start date, and probation status. Must be signed by employer.",
+  marriage_certificate: "Official marriage certificate showing names of both spouses matching application details.",
+  self_employed_docs: "Business accounts (2 years minimum), Form 11s, Chapter 4 notices, signed by accountant and client with stable/consistent profits.",
+  ros_payment_charges: "ROS (Revenue Online Service) payment history showing no outstanding Revenue debt or missed payments.",
+  tax_clearance: "Valid Tax Clearance Certificate from Revenue. Must not be expired.",
+  gift_letter: "Letter confirming gift of funds for deposit with donor name, relationship, gift amount, and signed confirmation that it is non-repayable.",
+  loan_account_statements: "Statements from all personal loan accounts and credit facilities showing 6 months of repayment history, balances, and monthly payments.",
+  mortgage_statements: "Existing mortgage statements showing 12 months of repayment history, current balance, and no arrears or payment holidays.",
+  business_bank_statements: "Business bank statements showing 12 months of healthy cash flow with no personal spending through business or Revenue arrears indicators.",
   other: "Any other supporting document relevant to the mortgage application."
 };
 
@@ -95,11 +352,21 @@ function getExtractionTool(documentType: string) {
     qualityIssues: { 
       type: "array", 
       items: { type: "string" }, 
-      description: "Quality issues detected: blurry/unreadable, expired document, incomplete/missing pages, cropped/cut off, name mismatch, date mismatch, missing signature, old/outdated (e.g. payslips older than 3 months)" 
+      description: "Quality issues: blurry/unreadable, expired, incomplete/missing pages, cropped/cut off, name mismatch, date mismatch, missing signature, outdated" 
+    },
+    riskFlags: {
+      type: "array",
+      items: { type: "string" },
+      description: "Risk flags detected: gambling transactions, returned items, undeclared loans, heavy overdraft, unexplained deposits, income mismatch, probation, declining profits, etc."
+    },
+    flagSeverity: {
+      type: "string",
+      enum: ["high", "medium", "low"],
+      description: "Severity: HIGH (misrepresentation, gambling, undeclared liabilities), MEDIUM (income volatility, employment change), LOW (formatting issues)"
     },
     agentComment: { 
       type: "string", 
-      description: "Specific actionable comment for the client explaining what needs to be fixed. E.g. 'The uploaded bank statement is missing page 3. Please upload the complete document.' or 'This ID has expired. Please upload a valid, non-expired ID.'" 
+      description: "Specific actionable comment for the client explaining what needs attention. Be clear and neutral." 
     }
   };
 
@@ -113,7 +380,14 @@ function getExtractionTool(documentType: string) {
       employmentType: { type: "string", enum: ["permanent", "contract", "part-time", "temporary"] },
       payPeriod: { type: "string", description: "Pay period (e.g., 'monthly', 'weekly', 'fortnightly')" },
       startDate: { type: "string", description: "Employment start date if visible (YYYY-MM-DD)" },
-      ppsNumber: { type: "string", description: "PPS number if visible" }
+      ppsNumber: { type: "string", description: "PPS number if visible" },
+      dateRange: { 
+        type: "object", 
+        properties: { 
+          from: { type: "string" }, 
+          to: { type: "string" } 
+        } 
+      }
     },
     current_account_statements: {
       avgBalance: { type: "number", description: "Average account balance over the statement period" },
@@ -122,6 +396,11 @@ function getExtractionTool(documentType: string) {
       totalWithdrawals: { type: "number", description: "Total withdrawals/debits during period" },
       bankName: { type: "string", description: "Name of the bank" },
       accountType: { type: "string", description: "Type of account" },
+      gamblingTransactions: { type: "boolean", description: "Are there gambling transactions visible?" },
+      returnedItems: { type: "boolean", description: "Are there returned/unpaid items?" },
+      undeclaredLoans: { type: "boolean", description: "Are there loan repayments not declared?" },
+      heavyOverdraftUsage: { type: "boolean", description: "Is there heavy overdraft usage?" },
+      unexplainedDeposits: { type: "boolean", description: "Are there large unexplained cash deposits?" },
       dateRange: { 
         type: "object", 
         properties: { 
@@ -135,6 +414,8 @@ function getExtractionTool(documentType: string) {
       endingBalance: { type: "number", description: "Current savings balance" },
       bankName: { type: "string", description: "Name of the bank" },
       interestRate: { type: "number", description: "Interest rate if shown" },
+      unexplainedDeposits: { type: "boolean", description: "Are there sudden large unexplained deposits?" },
+      savingsPattern: { type: "boolean", description: "Is there a consistent savings pattern visible?" },
       dateRange: { 
         type: "object", 
         properties: { 
@@ -149,32 +430,38 @@ function getExtractionTool(documentType: string) {
       idNumber: { type: "string", description: "ID/passport number" },
       idType: { type: "string", enum: ["passport", "drivers_license", "national_id", "other"] },
       expiryDate: { type: "string", description: "Expiry date if applicable (YYYY-MM-DD)" },
-      nationality: { type: "string", description: "Nationality/citizenship" }
+      nationality: { type: "string", description: "Nationality/citizenship" },
+      isExpired: { type: "boolean", description: "Has this ID expired?" }
     },
     proof_of_address: {
       fullName: { type: "string", description: "Name on the document" },
       address: { type: "string", description: "Full address shown" },
       documentDate: { type: "string", description: "Date of the document (YYYY-MM-DD)" },
-      utilityProvider: { type: "string", description: "Utility/service provider name" }
+      utilityProvider: { type: "string", description: "Utility/service provider name" },
+      isRecent: { type: "boolean", description: "Is the document dated within acceptable timeframe (3-6 months)?" }
     },
     employment_summary: {
       income: { type: "number", description: "Total annual income" },
       employer: { type: "string", description: "Employer name" },
       taxYear: { type: "string", description: "Tax year covered" },
       taxPaid: { type: "number", description: "Total tax paid" },
-      ppsNumber: { type: "string", description: "PPS number" }
+      ppsNumber: { type: "string", description: "PPS number" },
+      multipleEmployers: { type: "boolean", description: "Are multiple employers shown?" }
     },
     salary_cert: {
       income: { type: "number", description: "Annual salary confirmed" },
       employer: { type: "string", description: "Employer name" },
       employmentType: { type: "string", enum: ["permanent", "contract", "part-time", "temporary"] },
-      startDate: { type: "string", description: "Employment start date" }
+      startDate: { type: "string", description: "Employment start date" },
+      onProbation: { type: "boolean", description: "Is the employee on probation?" },
+      isSigned: { type: "boolean", description: "Is the certificate signed by employer?" }
     },
     loan_account_statements: {
       loanBalance: { type: "number", description: "Outstanding loan balance" },
       monthlyPayment: { type: "number", description: "Monthly repayment amount" },
       lender: { type: "string", description: "Lender name" },
       interestRate: { type: "number", description: "Interest rate" },
+      hasArrears: { type: "boolean", description: "Are there arrears or missed payments?" },
       dateRange: { 
         type: "object", 
         properties: { 
@@ -188,18 +475,55 @@ function getExtractionTool(documentType: string) {
       monthlyPayment: { type: "number", description: "Monthly mortgage payment" },
       lender: { type: "string", description: "Lender/bank name" },
       interestRate: { type: "number", description: "Current interest rate" },
-      address: { type: "string", description: "Property address" }
+      address: { type: "string", description: "Property address" },
+      hasArrears: { type: "boolean", description: "Are there any arrears?" },
+      hasPaymentHolidays: { type: "boolean", description: "Are there payment holidays shown?" }
     },
     tax_clearance: {
       taxYear: { type: "string", description: "Tax year" },
       ppsNumber: { type: "string", description: "PPS number" },
       totalIncome: { type: "number", description: "Total income declared" },
-      taxPaid: { type: "number", description: "Total tax paid" }
+      taxPaid: { type: "number", description: "Total tax paid" },
+      isExpired: { type: "boolean", description: "Has the certificate expired?" }
+    },
+    gift_letter: {
+      donorName: { type: "string", description: "Name of the gift donor" },
+      donorRelationship: { type: "string", description: "Relationship to applicant" },
+      giftAmount: { type: "number", description: "Amount of gift in EUR" },
+      isSigned: { type: "boolean", description: "Is the letter signed?" },
+      confirmsNonRepayable: { type: "boolean", description: "Does it confirm the gift is non-repayable?" }
     },
     self_employed_docs: {
       income: { type: "number", description: "Net profit/income" },
       taxYear: { type: "string", description: "Tax/accounting year" },
-      totalIncome: { type: "number", description: "Gross revenue/turnover" }
+      totalIncome: { type: "number", description: "Gross revenue/turnover" },
+      accountantSigned: { type: "boolean", description: "Are accounts signed by accountant?" },
+      clientSigned: { type: "boolean", description: "Are accounts signed by client?" },
+      profitTrend: { type: "string", enum: ["increasing", "stable", "declining"], description: "Profit trend over years" }
+    },
+    business_bank_statements: {
+      avgBalance: { type: "number", description: "Average balance" },
+      endingBalance: { type: "number", description: "Closing balance" },
+      healthyCashFlow: { type: "boolean", description: "Is cash flow healthy?" },
+      personalSpending: { type: "boolean", description: "Is there personal spending through business?" },
+      revenueArrearsIndicators: { type: "boolean", description: "Are there Revenue arrears indicators?" },
+      dateRange: { 
+        type: "object", 
+        properties: { 
+          from: { type: "string" }, 
+          to: { type: "string" } 
+        } 
+      }
+    },
+    ros_payment_charges: {
+      outstandingDebt: { type: "boolean", description: "Is there outstanding Revenue debt?" },
+      missedPayments: { type: "boolean", description: "Are there missed payments?" }
+    },
+    marriage_certificate: {
+      spouseName1: { type: "string", description: "First spouse name" },
+      spouseName2: { type: "string", description: "Second spouse name" },
+      marriageDate: { type: "string", description: "Date of marriage (YYYY-MM-DD)" },
+      namesMatchApplication: { type: "boolean", description: "Do names match the application?" }
     }
   };
 
@@ -212,12 +536,13 @@ function getExtractionTool(documentType: string) {
     type: "function",
     function: {
       name: "extract_document_data",
-      description: `Extract structured data from a ${documentType} document for mortgage application processing`,
+      description: `Extract structured data from a ${documentType} document for Irish mortgage application processing`,
       parameters: {
         type: "object",
         properties: {
           score: { type: "number", description: "Document quality score 0-100" },
-          analysis: { type: "string", description: "Brief analysis of the document" },
+          analysis: { type: "string", description: "Brief analysis of the document for broker" },
+          clientMessage: { type: "string", description: "Neutral, clear message for client about the document status" },
           extractedData: {
             type: "object",
             properties,
@@ -235,50 +560,62 @@ async function analyzeDocumentWithAI(imageBase64: string, mimeType: string, docu
   
   const expectedDocDescription = DOCUMENT_TYPE_DESCRIPTIONS[documentType] || "Unknown document type";
   
-  const systemPrompt = `You are an expert document OCR and data extraction system for mortgage applications. Your job is to:
+  const systemPrompt = `${DOCUMENT_KNOWLEDGE_BASE}
 
-1. VERIFY the document matches the expected type
-2. EXTRACT all relevant structured data from the document
-3. CHECK DOCUMENT QUALITY AND COMPLETENESS
-4. FLAG any issues and provide actionable comments
-
-EXPECTED DOCUMENT TYPE: "${documentType}"
-EXPECTED DOCUMENT DESCRIPTION: "${expectedDocDescription}"
+You are analyzing this document: "${documentType}"
+Expected: ${expectedDocDescription}
 
 DOCUMENT QUALITY CHECKS - Look for these issues:
 - BLURRY/UNREADABLE: Is the document blurry, pixelated, or hard to read?
-- EXPIRED: For IDs/passports, check if the expiry date has passed
+- EXPIRED: For IDs/passports/certificates, check if the expiry date has passed
 - INCOMPLETE/MISSING PAGES: Are pages missing? (e.g., "Page 1 of 3" but only page 1 provided)
 - CROPPED/CUT OFF: Is important information cut off at edges?
-- NAME MISMATCH: Does the name on document match applicant name if known?
-- DATE ISSUES: Are dates inconsistent or don't match other documents?
+- NAME MISMATCH: Does the name on document match expected applicant name?
+- DATE ISSUES: Are dates inconsistent or outside acceptable ranges?
 - MISSING SIGNATURE: For documents requiring signatures, is it signed?
-- OUTDATED: For payslips, check if older than 3 months. For bank statements, older than 6 months
+- OUTDATED: For payslips, check if older than 3 months. For bank statements, check for 6-month coverage.
 - WRONG FORMAT: Screenshot instead of original PDF, photo of screen, etc.
+
+CRITICAL FLAGS TO DETECT:
+🔴 HIGH SEVERITY:
+- Gambling transactions in bank statements
+- Undeclared loans/liabilities
+- Revenue non-compliance indicators
+- Misrepresentation of income
+- Missing mandatory documents
+- Expired ID documents
+
+🟡 MEDIUM SEVERITY:
+- Income volatility
+- Recent employment changes
+- On probation
+- Declining business profits
+
+🟢 LOW SEVERITY:
+- Minor formatting issues
+- Minor missing pages
 
 EXTRACTION RULES:
 - Extract ALL visible data fields relevant to mortgage applications
-- For financial figures, use EUR and convert if necessary
+- For financial figures, use EUR
 - For dates, use YYYY-MM-DD format
 - If a field is not visible or unclear, omit it (don't guess)
-- Flag any inconsistencies (e.g., dates don't match, amounts seem wrong)
+- Flag any inconsistencies
 
 AGENT COMMENT - CRITICAL:
-- If ANY quality issues are found, you MUST provide a specific, actionable "agentComment"
-- Be specific about what's wrong and what the client needs to do
+- Provide a specific, actionable comment for the client
+- Be neutral and clear, not alarming
 - Examples:
-  - "The uploaded bank statement is missing page 3. Please upload the complete document."
-  - "This passport has expired on 2023-05-15. Please upload a valid, non-expired passport."
-  - "The payslip is from January 2024 which is over 3 months old. Please upload your most recent payslips."
-  - "The document appears blurry and key information is unreadable. Please upload a clearer scan."
-  - "The bank statement appears to be cropped - the account holder name is cut off. Please upload the full document."
+  - "We need clarification on a large deposit shown in your bank statement so we can continue."
+  - "This passport has expired. Please upload a valid, non-expired passport."
+  - "The payslip is from over 3 months ago. Please upload your most recent payslips."
 
 SCORING GUIDE:
 - 0-10: Random image, meme, selfie, or completely unrelated content
 - 10-30: A real document but WRONG TYPE
-- 30-50: Correct document type but has quality issues (blurry, expired, incomplete)
-- 50-70: Correct document type, readable, minor issues
-- 70-90: Correct document type, good quality
+- 30-50: Correct document type but has serious quality issues or HIGH severity flags
+- 50-70: Correct document type, readable, MEDIUM severity issues
+- 70-90: Correct document type, good quality, LOW severity or minor issues only
 - 90-100: Perfect document - correct type, high quality, all details visible, no issues
 
 Use the extract_document_data function to return your analysis.`;
@@ -301,14 +638,19 @@ Use the extract_document_data function to return your analysis.`;
           content: [
             {
               type: 'text',
-              text: `Analyze this "${documentType}" document. Extract all structured data and verify authenticity.
+              text: `Analyze this "${documentType}" document for an Irish mortgage application. 
+
+Apply the Document Knowledge Base standards.
+Extract all structured data.
+Detect any flags (HIGH/MEDIUM/LOW severity).
+Provide clear client-facing message.
 
 Expected: ${expectedDocDescription}
 
 Use the extract_document_data function to return:
 1. A quality score (0-100)
-2. Brief analysis
-3. All extracted data fields relevant to this document type`
+2. Technical analysis for broker
+3. All extracted data fields with any risk flags detected`
             },
             {
               type: 'image_url',
@@ -497,6 +839,18 @@ Deno.serve(async (req) => {
 
     // Save extracted data to agent_document_analysis (using service role)
     if (application?.id) {
+      // Determine risk level based on flags
+      let riskLevel = 'low';
+      const extractedData = analysis.extractedData;
+      if (extractedData.flagSeverity === 'high' || 
+          extractedData.gamblingTransactions || 
+          extractedData.undeclaredLoans ||
+          analysis.score < 50) {
+        riskLevel = 'high';
+      } else if (extractedData.flagSeverity === 'medium' || analysis.score < 70) {
+        riskLevel = 'medium';
+      }
+
       const { error: analysisError } = await serviceClient
         .from('agent_document_analysis')
         .upsert({
@@ -504,12 +858,12 @@ Deno.serve(async (req) => {
           application_id: application.id,
           client_id: user.id,
           extracted_data: analysis.extractedData,
-          risk_level: analysis.score >= 70 ? 'low' : analysis.score >= 50 ? 'medium' : 'high',
-          risk_flags: analysis.extractedData.inconsistencies || [],
-          quality_issues: analysis.extractedData.qualityIssues || (analysis.score < 70 ? ['Document quality below threshold'] : []),
+          risk_level: riskLevel,
+          risk_flags: extractedData.riskFlags || extractedData.inconsistencies || [],
+          quality_issues: extractedData.qualityIssues || (analysis.score < 70 ? ['Document quality below threshold'] : []),
           completeness_score: analysis.score,
-          broker_commentary: analysis.extractedData.agentComment || `Auto-extracted: ${Object.keys(analysis.extractedData).filter(k => !['inconsistencies', 'missingPages', 'qualityIssues', 'agentComment'].includes(k)).join(', ')}`,
-          client_explanation: analysis.analysis
+          broker_commentary: extractedData.agentComment || analysis.analysis,
+          client_explanation: extractedData.agentComment || 'Document received and analyzed.'
         }, { onConflict: 'document_id' });
 
       if (analysisError) {
