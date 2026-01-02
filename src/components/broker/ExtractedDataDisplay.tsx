@@ -42,13 +42,19 @@ interface ExtractedData {
   bouncedTransactions?: number;
   gamblingTransactions?: boolean;
   
-  // ID fields
+  // ID fields - matching edge function extraction schema
   fullName?: string;
   dateOfBirth?: string;
   nationality?: string;
   documentNumber?: string;
+  idNumber?: string; // Legacy field name
   expiryDate?: string;
+  issueDate?: string;
   issuingAuthority?: string;
+  idType?: string;
+  isExpired?: boolean;
+  gender?: string;
+  address?: string;
   
   // Address proof fields
   addressLine1?: string;
@@ -151,9 +157,21 @@ const ExtractedDataDisplay = ({
       <DataItem icon={User} label="Full Name" value={extractedData.fullName} highlight />
       <DataItem icon={Calendar} label="Date of Birth" value={formatDate(extractedData.dateOfBirth)} />
       <DataItem icon={FileCheck} label="Nationality" value={extractedData.nationality} />
-      <DataItem icon={Database} label="Document No." value={extractedData.documentNumber} />
+      <DataItem icon={Database} label="Document No." value={extractedData.documentNumber || extractedData.idNumber} />
       <DataItem icon={Calendar} label="Expiry Date" value={formatDate(extractedData.expiryDate)} />
       <DataItem icon={Building2} label="Issuing Authority" value={extractedData.issuingAuthority} />
+      {extractedData.idType && (
+        <DataItem icon={FileCheck} label="ID Type" value={extractedData.idType} />
+      )}
+      {extractedData.gender && (
+        <DataItem icon={User} label="Gender" value={extractedData.gender} />
+      )}
+      {extractedData.issueDate && (
+        <DataItem icon={Calendar} label="Issue Date" value={formatDate(extractedData.issueDate)} />
+      )}
+      {extractedData.isExpired && (
+        <DataItem icon={AlertTriangle} label="Status" value="EXPIRED" warning />
+      )}
     </div>
   );
 
