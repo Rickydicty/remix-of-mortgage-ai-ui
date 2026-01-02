@@ -88,30 +88,29 @@ export const DocumentUpload = ({ onUploadComplete }: DocumentUploadProps) => {
         throw new Error(data.error || 'Upload failed');
       }
 
-      // Create admin approval record for the uploaded document
+      // Get the application for the current user
       const { data: application } = await supabase
         .from('applications')
         .select('id')
         .eq('user_id', session.user.id)
         .maybeSingle();
 
+      // AI Broker Agent auto-approves documents based on analysis score
+      // Score >= 70: Auto-approved, ready for broker review
+      // Score < 70: Flagged for broker attention (not admin)
+      const score = data.document.score || 0;
+      const autoApproved = score >= 70;
+      
+      // Update document approval status based on AI analysis
       await supabase
-        .from('admin_approvals')
-        .insert({
-          action_type: 'document_upload',
-          entity_id: data.document.id,
-          entity_table: 'documents',
-          client_id: session.user.id,
-          application_id: application?.id || null,
-          status: 'pending',
-          metadata: {
-            filename: file.name,
-            document_type: documentType,
-            score: data.document.score
-          }
-        });
+        .from('documents')
+        .update({ 
+          approval_status: autoApproved ? 'approved' : 'pending',
+          status: autoApproved ? 'approved' : 'waiting'
+        })
+        .eq('id', data.document.id);
 
-      // Trigger AI Broker Agent analysis for the document
+      // Trigger AI Broker Agent for deeper analysis (runs in background)
       if (application?.id) {
         fetch(
           `https://urdyzlulkpgffzrwefwj.supabase.co/functions/v1/broker-agent`,
@@ -127,16 +126,19 @@ export const DocumentUpload = ({ onUploadComplete }: DocumentUploadProps) => {
         ).catch(err => console.log("AI analysis triggered in background:", err));
       }
 
-      // Evaluate application state after upload (notifications handled by state changes, not uploads)
+      // Evaluate application state after upload
       if (application?.id) {
         supabase.functions.invoke('evaluate-application-state', {
           body: { application_id: application.id }
         }).catch(err => console.log("State evaluation triggered:", err));
       }
 
+      // Show appropriate message based on AI decision
       toast({
-        title: "Document uploaded successfully",
-        description: "Awaiting admin approval before broker can review.",
+        title: autoApproved ? "Document approved by AI" : "Document uploaded for review",
+        description: autoApproved 
+          ? `Score: ${score}/100. Ready for broker review.`
+          : `Score: ${score}/100. Flagged for broker attention.`,
       });
 
       setFile(null);
