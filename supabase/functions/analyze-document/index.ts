@@ -425,13 +425,17 @@ function getExtractionTool(documentType: string) {
       }
     },
     certified_id: {
-      fullName: { type: "string", description: "Full name as shown on ID" },
-      dateOfBirth: { type: "string", description: "Date of birth (YYYY-MM-DD)" },
-      idNumber: { type: "string", description: "ID/passport number" },
-      idType: { type: "string", enum: ["passport", "drivers_license", "national_id", "other"] },
-      expiryDate: { type: "string", description: "Expiry date if applicable (YYYY-MM-DD)" },
-      nationality: { type: "string", description: "Nationality/citizenship" },
-      isExpired: { type: "boolean", description: "Has this ID expired?" }
+      fullName: { type: "string", description: "Full legal name as shown on ID - MUST extract this" },
+      dateOfBirth: { type: "string", description: "Date of birth (YYYY-MM-DD format)" },
+      documentNumber: { type: "string", description: "ID/passport/CNIC number - MUST extract this" },
+      idType: { type: "string", enum: ["passport", "drivers_license", "national_id", "other"], description: "Type of ID document" },
+      expiryDate: { type: "string", description: "Expiry date if visible (YYYY-MM-DD)" },
+      issueDate: { type: "string", description: "Issue date if visible (YYYY-MM-DD)" },
+      nationality: { type: "string", description: "Nationality/citizenship/country of issue" },
+      issuingAuthority: { type: "string", description: "Issuing authority or country (e.g., Pakistan, Ireland, NADRA)" },
+      isExpired: { type: "boolean", description: "Has this ID expired based on expiry date?" },
+      gender: { type: "string", description: "Gender if shown on ID" },
+      address: { type: "string", description: "Address if shown on ID document" }
     },
     proof_of_address: {
       fullName: { type: "string", description: "Name on the document" },
@@ -595,12 +599,14 @@ CRITICAL FLAGS TO DETECT:
 - Minor formatting issues
 - Minor missing pages
 
-EXTRACTION RULES:
-- Extract ALL visible data fields relevant to mortgage applications
+EXTRACTION RULES - CRITICAL:
+- You MUST extract ALL visible data fields - do not leave fields empty if data is visible
+- For ID documents: ALWAYS extract fullName, dateOfBirth, documentNumber, nationality, expiryDate
 - For financial figures, use EUR
 - For dates, use YYYY-MM-DD format
-- If a field is not visible or unclear, omit it (don't guess)
-- Flag any inconsistencies
+- If a field IS visible on the document, you MUST extract it
+- Only omit fields that are genuinely not present on the document
+- For ID cards/passports: Read ALL text carefully including numbers, dates, names
 
 AGENT COMMENT - CRITICAL:
 - Provide a specific, actionable comment for the client
@@ -618,7 +624,8 @@ SCORING GUIDE:
 - 70-90: Correct document type, good quality, LOW severity or minor issues only
 - 90-100: Perfect document - correct type, high quality, all details visible, no issues
 
-Use the extract_document_data function to return your analysis.`;
+IMPORTANT: You MUST use the extract_document_data function and populate the extractedData object with all fields you can see on the document. Do not return empty extractedData.`;
+
 
   const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
     method: 'POST',
@@ -640,17 +647,23 @@ Use the extract_document_data function to return your analysis.`;
               type: 'text',
               text: `Analyze this "${documentType}" document for an Irish mortgage application. 
 
-Apply the Document Knowledge Base standards.
-Extract all structured data.
-Detect any flags (HIGH/MEDIUM/LOW severity).
-Provide clear client-facing message.
+CRITICAL INSTRUCTIONS:
+1. CAREFULLY READ ALL TEXT on the document including names, numbers, dates
+2. EXTRACT ALL VISIBLE DATA into the extractedData object
+3. For ID documents: You MUST extract fullName, dateOfBirth, documentNumber, nationality, expiryDate, issuingAuthority
+4. DO NOT return empty fields if data is visible on the document
+5. Apply the Document Knowledge Base standards
+6. Detect any flags (HIGH/MEDIUM/LOW severity)
 
-Expected: ${expectedDocDescription}
+Expected document type: ${expectedDocDescription}
 
 Use the extract_document_data function to return:
 1. A quality score (0-100)
 2. Technical analysis for broker
-3. All extracted data fields with any risk flags detected`
+3. ALL extracted data fields - populate every field you can see on the document
+4. Any risk flags detected
+
+Remember: Read the document carefully and extract ALL visible information.`
             },
             {
               type: 'image_url',
