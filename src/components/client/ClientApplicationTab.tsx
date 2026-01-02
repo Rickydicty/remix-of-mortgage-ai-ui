@@ -23,6 +23,16 @@ import { AIPDocumentsList } from "@/components/client/AIPDocumentsList";
 import { ESignaturesTab } from "@/components/client/ESignaturesTab";
 import { LoanOffersTab } from "@/components/client/LoanOffersTab";
 import { format, addDays } from "date-fns";
+import { 
+  FormFieldFlags, 
+  validatePersonalDetails, 
+  validateIncomeDetails, 
+  validateFinancialDetails, 
+  validateMortgageDetails, 
+  validatePropertyDetails,
+  validateSecurityDetails,
+  validateAlternativeDetails
+} from "@/components/client/FormFieldFlags";
 
 interface Application {
   id: string;
@@ -811,116 +821,123 @@ const ClientApplicationTab = ({ applicationId, application, brokerProfile, onRef
 
 // Personal Tab
 const PersonalTab = ({ formData, onChange }: { formData: FormData; onChange: (field: keyof FormData, value: any) => void }) => {
+  const flags = validatePersonalDetails(formData);
+  
   return (
-    <Card>
-      <CardContent className="pt-6">
-        <div className="space-y-4">
-          <h3 className="font-bold text-primary text-lg">Applicant</h3>
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="space-y-3">
-              <div className="flex items-center gap-4">
-                <Label className="w-40 text-muted-foreground">Title</Label>
-                <Select value={formData.app1_title} onValueChange={(v) => onChange('app1_title', v)}>
-                  <SelectTrigger className="flex-1">
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="mr">Mr</SelectItem>
-                    <SelectItem value="mrs">Mrs</SelectItem>
-                    <SelectItem value="ms">Ms</SelectItem>
-                    <SelectItem value="miss">Miss</SelectItem>
-                    <SelectItem value="dr">Dr</SelectItem>
-                  </SelectContent>
-                </Select>
+    <div className="space-y-4">
+      <FormFieldFlags flags={flags} />
+      <Card>
+        <CardContent className="pt-6">
+          <div className="space-y-4">
+            <h3 className="font-bold text-primary text-lg">Applicant</h3>
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="space-y-3">
+                <div className="flex items-center gap-4">
+                  <Label className="w-40 text-muted-foreground">Title</Label>
+                  <Select value={formData.app1_title} onValueChange={(v) => onChange('app1_title', v)}>
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="Select" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="mr">Mr</SelectItem>
+                      <SelectItem value="mrs">Mrs</SelectItem>
+                      <SelectItem value="ms">Ms</SelectItem>
+                      <SelectItem value="miss">Miss</SelectItem>
+                      <SelectItem value="dr">Dr</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-center gap-4">
+                  <Label className="w-40 text-muted-foreground">Forenames<span className="text-destructive">*</span></Label>
+                  <Input className="flex-1" value={formData.app1_forenames} onChange={(e) => onChange('app1_forenames', e.target.value)} />
+                </div>
+                <div className="flex items-center gap-4">
+                  <Label className="w-40 text-muted-foreground">Surname<span className="text-destructive">*</span></Label>
+                  <Input className="flex-1" value={formData.app1_surname} onChange={(e) => onChange('app1_surname', e.target.value)} />
+                </div>
+                <div className="flex items-center gap-4">
+                  <Label className="w-40 text-muted-foreground">Other/Previous Names</Label>
+                  <Input className="flex-1" value={formData.app1_other_names} onChange={(e) => onChange('app1_other_names', e.target.value)} />
+                </div>
+                <div className="flex items-center gap-4">
+                  <Label className="w-40 text-muted-foreground">Gender</Label>
+                  <Select value={formData.app1_gender} onValueChange={(v) => onChange('app1_gender', v)}>
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="Select" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="male">Male</SelectItem>
+                      <SelectItem value="female">Female</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-center gap-4">
+                  <Label className="w-40 text-muted-foreground">Date of Birth</Label>
+                  <Input className="flex-1" type="date" value={formData.app1_date_of_birth} onChange={(e) => onChange('app1_date_of_birth', e.target.value)} />
+                </div>
+                <div className="flex items-center gap-4">
+                  <Label className="w-40 text-muted-foreground">Nationality</Label>
+                  <Input className="flex-1" value={formData.app1_nationality} onChange={(e) => onChange('app1_nationality', e.target.value)} />
+                </div>
+                <div className="flex items-center gap-4">
+                  <Label className="w-40 text-muted-foreground">PPS Number</Label>
+                  <Input className="flex-1" value={formData.app1_pps_number} onChange={(e) => onChange('app1_pps_number', e.target.value)} />
+                </div>
               </div>
-              <div className="flex items-center gap-4">
-                <Label className="w-40 text-muted-foreground">Forenames<span className="text-destructive">*</span></Label>
-                <Input className="flex-1" value={formData.app1_forenames} onChange={(e) => onChange('app1_forenames', e.target.value)} />
-              </div>
-              <div className="flex items-center gap-4">
-                <Label className="w-40 text-muted-foreground">Surname<span className="text-destructive">*</span></Label>
-                <Input className="flex-1" value={formData.app1_surname} onChange={(e) => onChange('app1_surname', e.target.value)} />
-              </div>
-              <div className="flex items-center gap-4">
-                <Label className="w-40 text-muted-foreground">Other/Previous Names</Label>
-                <Input className="flex-1" value={formData.app1_other_names} onChange={(e) => onChange('app1_other_names', e.target.value)} />
-              </div>
-              <div className="flex items-center gap-4">
-                <Label className="w-40 text-muted-foreground">Gender</Label>
-                <Select value={formData.app1_gender} onValueChange={(v) => onChange('app1_gender', v)}>
-                  <SelectTrigger className="flex-1">
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="male">Male</SelectItem>
-                    <SelectItem value="female">Female</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex items-center gap-4">
-                <Label className="w-40 text-muted-foreground">Date of Birth</Label>
-                <Input className="flex-1" type="date" value={formData.app1_date_of_birth} onChange={(e) => onChange('app1_date_of_birth', e.target.value)} />
-              </div>
-              <div className="flex items-center gap-4">
-                <Label className="w-40 text-muted-foreground">Nationality</Label>
-                <Input className="flex-1" value={formData.app1_nationality} onChange={(e) => onChange('app1_nationality', e.target.value)} />
-              </div>
-              <div className="flex items-center gap-4">
-                <Label className="w-40 text-muted-foreground">PPS Number</Label>
-                <Input className="flex-1" value={formData.app1_pps_number} onChange={(e) => onChange('app1_pps_number', e.target.value)} />
-              </div>
-            </div>
-            <div className="space-y-3">
-              <div className="flex items-center gap-4">
-                <Label className="w-40 text-muted-foreground">Marital Status</Label>
-                <Select value={formData.app1_marital_status} onValueChange={(v) => onChange('app1_marital_status', v)}>
-                  <SelectTrigger className="flex-1">
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="single">Single</SelectItem>
-                    <SelectItem value="married">Married</SelectItem>
-                    <SelectItem value="divorced">Divorced</SelectItem>
-                    <SelectItem value="widowed">Widowed</SelectItem>
-                    <SelectItem value="separated">Separated</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex items-center gap-4">
-                <Label className="w-40 text-muted-foreground">No. of Children</Label>
-                <Input className="w-20" type="number" value={formData.app1_no_of_children || ''} onChange={(e) => onChange('app1_no_of_children', parseInt(e.target.value) || 0)} />
-              </div>
-              <div className="flex items-center gap-4">
-                <Label className="w-40 text-muted-foreground">Children's Ages</Label>
-                <Input className="flex-1" placeholder="e.g., 5, 8, 12" value={formData.app1_children_ages} onChange={(e) => onChange('app1_children_ages', e.target.value)} />
-              </div>
-              <div className="flex items-center gap-4">
-                <Label className="w-40 text-muted-foreground">Phone</Label>
-                <Input className="flex-1" value={formData.app1_phone} onChange={(e) => onChange('app1_phone', e.target.value)} />
-              </div>
-              <div className="flex items-center gap-4">
-                <Label className="w-40 text-muted-foreground">Email</Label>
-                <Input className="flex-1" type="email" value={formData.app1_email} onChange={(e) => onChange('app1_email', e.target.value)} />
-              </div>
-              <div className="flex items-center gap-4">
-                <Label className="w-40 text-muted-foreground">Address</Label>
-                <Textarea className="flex-1" value={formData.app1_address} onChange={(e) => onChange('app1_address', e.target.value)} rows={2} />
-              </div>
-              <div className="flex items-center gap-4">
-                <Label className="w-40 text-muted-foreground">Years at Address</Label>
-                <Input className="w-20" type="number" value={formData.app1_years_at_address || ''} onChange={(e) => onChange('app1_years_at_address', parseInt(e.target.value) || 0)} />
+              <div className="space-y-3">
+                <div className="flex items-center gap-4">
+                  <Label className="w-40 text-muted-foreground">Marital Status</Label>
+                  <Select value={formData.app1_marital_status} onValueChange={(v) => onChange('app1_marital_status', v)}>
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="Select" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="single">Single</SelectItem>
+                      <SelectItem value="married">Married</SelectItem>
+                      <SelectItem value="divorced">Divorced</SelectItem>
+                      <SelectItem value="widowed">Widowed</SelectItem>
+                      <SelectItem value="separated">Separated</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-center gap-4">
+                  <Label className="w-40 text-muted-foreground">No. of Children</Label>
+                  <Input className="w-20" type="number" value={formData.app1_no_of_children || ''} onChange={(e) => onChange('app1_no_of_children', parseInt(e.target.value) || 0)} />
+                </div>
+                <div className="flex items-center gap-4">
+                  <Label className="w-40 text-muted-foreground">Children's Ages</Label>
+                  <Input className="flex-1" placeholder="e.g., 5, 8, 12" value={formData.app1_children_ages} onChange={(e) => onChange('app1_children_ages', e.target.value)} />
+                </div>
+                <div className="flex items-center gap-4">
+                  <Label className="w-40 text-muted-foreground">Phone</Label>
+                  <Input className="flex-1" value={formData.app1_phone} onChange={(e) => onChange('app1_phone', e.target.value)} />
+                </div>
+                <div className="flex items-center gap-4">
+                  <Label className="w-40 text-muted-foreground">Email</Label>
+                  <Input className="flex-1" type="email" value={formData.app1_email} onChange={(e) => onChange('app1_email', e.target.value)} />
+                </div>
+                <div className="flex items-center gap-4">
+                  <Label className="w-40 text-muted-foreground">Address</Label>
+                  <Textarea className="flex-1" value={formData.app1_address} onChange={(e) => onChange('app1_address', e.target.value)} rows={2} />
+                </div>
+                <div className="flex items-center gap-4">
+                  <Label className="w-40 text-muted-foreground">Years at Address</Label>
+                  <Input className="w-20" type="number" value={formData.app1_years_at_address || ''} onChange={(e) => onChange('app1_years_at_address', parseInt(e.target.value) || 0)} />
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 
 // Income Tab
 const IncomeTab = ({ formData, onChange }: { formData: FormData; onChange: (field: keyof FormData, value: any) => void }) => {
+  const flags = validateIncomeDetails(formData);
+  
   const FrequencySelect = ({ value, field }: { value: string; field: keyof FormData }) => (
     <Select value={value} onValueChange={(v) => onChange(field, v)}>
       <SelectTrigger className="w-36">
@@ -935,384 +952,412 @@ const IncomeTab = ({ formData, onChange }: { formData: FormData; onChange: (fiel
   );
 
   return (
-    <Card>
-      <CardContent className="pt-6">
-        <div className="space-y-4">
-          <h3 className="font-bold text-primary text-lg">Applicant Income</h3>
-          <h4 className="font-semibold bg-primary/10 px-3 py-1">⊿ Current Income</h4>
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <Label className="w-56 text-sm text-muted-foreground">Gross basic wage/salary per annum</Label>
-                <span className="text-muted-foreground">€</span>
-                <Input className="w-28" type="number" value={formData.app1_gross_salary || ''} onChange={(e) => onChange('app1_gross_salary', parseFloat(e.target.value) || 0)} />
-                <FrequencySelect value={formData.app1_salary_frequency} field="app1_salary_frequency" />
+    <div className="space-y-4">
+      <FormFieldFlags flags={flags} />
+      <Card>
+        <CardContent className="pt-6">
+          <div className="space-y-4">
+            <h3 className="font-bold text-primary text-lg">Applicant Income</h3>
+            <h4 className="font-semibold bg-primary/10 px-3 py-1">⊿ Current Income</h4>
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Label className="w-56 text-sm text-muted-foreground">Gross basic wage/salary per annum</Label>
+                  <span className="text-muted-foreground">€</span>
+                  <Input className="w-28" type="number" value={formData.app1_gross_salary || ''} onChange={(e) => onChange('app1_gross_salary', parseFloat(e.target.value) || 0)} />
+                  <FrequencySelect value={formData.app1_salary_frequency} field="app1_salary_frequency" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Label className="w-56 text-sm text-muted-foreground">Overtime per annum</Label>
+                  <span className="text-muted-foreground">€</span>
+                  <Input className="w-28" type="number" value={formData.app1_overtime || ''} onChange={(e) => onChange('app1_overtime', parseFloat(e.target.value) || 0)} />
+                  <FrequencySelect value={formData.app1_overtime_frequency} field="app1_overtime_frequency" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Label className="w-56 text-sm text-muted-foreground">Bonuses per annum</Label>
+                  <span className="text-muted-foreground">€</span>
+                  <Input className="w-28" type="number" value={formData.app1_bonuses || ''} onChange={(e) => onChange('app1_bonuses', parseFloat(e.target.value) || 0)} />
+                  <FrequencySelect value={formData.app1_bonuses_frequency} field="app1_bonuses_frequency" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Label className="w-56 text-sm text-muted-foreground">Commissions per annum</Label>
+                  <span className="text-muted-foreground">€</span>
+                  <Input className="w-28" type="number" value={formData.app1_commissions || ''} onChange={(e) => onChange('app1_commissions', parseFloat(e.target.value) || 0)} />
+                  <FrequencySelect value={formData.app1_commissions_frequency} field="app1_commissions_frequency" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Label className="w-56 text-sm text-muted-foreground">Other income (non rental)</Label>
+                  <span className="text-muted-foreground">€</span>
+                  <Input className="w-28" type="number" value={formData.app1_other_income || ''} onChange={(e) => onChange('app1_other_income', parseFloat(e.target.value) || 0)} />
+                  <FrequencySelect value={formData.app1_other_income_frequency} field="app1_other_income_frequency" />
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Label className="w-56 text-sm text-muted-foreground">Overtime per annum</Label>
-                <span className="text-muted-foreground">€</span>
-                <Input className="w-28" type="number" value={formData.app1_overtime || ''} onChange={(e) => onChange('app1_overtime', parseFloat(e.target.value) || 0)} />
-                <FrequencySelect value={formData.app1_overtime_frequency} field="app1_overtime_frequency" />
-              </div>
-              <div className="flex items-center gap-2">
-                <Label className="w-56 text-sm text-muted-foreground">Bonuses per annum</Label>
-                <span className="text-muted-foreground">€</span>
-                <Input className="w-28" type="number" value={formData.app1_bonuses || ''} onChange={(e) => onChange('app1_bonuses', parseFloat(e.target.value) || 0)} />
-                <FrequencySelect value={formData.app1_bonuses_frequency} field="app1_bonuses_frequency" />
-              </div>
-              <div className="flex items-center gap-2">
-                <Label className="w-56 text-sm text-muted-foreground">Commissions per annum</Label>
-                <span className="text-muted-foreground">€</span>
-                <Input className="w-28" type="number" value={formData.app1_commissions || ''} onChange={(e) => onChange('app1_commissions', parseFloat(e.target.value) || 0)} />
-                <FrequencySelect value={formData.app1_commissions_frequency} field="app1_commissions_frequency" />
-              </div>
-              <div className="flex items-center gap-2">
-                <Label className="w-56 text-sm text-muted-foreground">Other income (non rental)</Label>
-                <span className="text-muted-foreground">€</span>
-                <Input className="w-28" type="number" value={formData.app1_other_income || ''} onChange={(e) => onChange('app1_other_income', parseFloat(e.target.value) || 0)} />
-                <FrequencySelect value={formData.app1_other_income_frequency} field="app1_other_income_frequency" />
-              </div>
-            </div>
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <Label className="w-56 text-sm text-muted-foreground">Other Income Details</Label>
-                <Input className="flex-1" value={formData.app1_other_income_details} onChange={(e) => onChange('app1_other_income_details', e.target.value)} />
-              </div>
-              <div className="flex items-center gap-2">
-                <Label className="w-56 text-sm text-muted-foreground">Lodger income per annum</Label>
-                <span className="text-muted-foreground">€</span>
-                <Input className="w-28" type="number" value={formData.app1_lodger_income || ''} onChange={(e) => onChange('app1_lodger_income', parseFloat(e.target.value) || 0)} />
-              </div>
-              <div className="flex items-center gap-2">
-                <Label className="w-56 text-sm text-muted-foreground">Residential investment income</Label>
-                <span className="text-muted-foreground">€</span>
-                <Input className="w-28" type="number" value={formData.app1_residential_investment_income || ''} onChange={(e) => onChange('app1_residential_investment_income', parseFloat(e.target.value) || 0)} />
-              </div>
-              <div className="flex items-center gap-2">
-                <Label className="w-56 text-sm text-muted-foreground">Other Household Income</Label>
-                <span className="text-muted-foreground">€</span>
-                <Input className="w-28" type="number" value={formData.app1_other_household_income || ''} onChange={(e) => onChange('app1_other_household_income', parseFloat(e.target.value) || 0)} />
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Label className="w-56 text-sm text-muted-foreground">Other Income Details</Label>
+                  <Input className="flex-1" value={formData.app1_other_income_details} onChange={(e) => onChange('app1_other_income_details', e.target.value)} />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Label className="w-56 text-sm text-muted-foreground">Lodger income per annum</Label>
+                  <span className="text-muted-foreground">€</span>
+                  <Input className="w-28" type="number" value={formData.app1_lodger_income || ''} onChange={(e) => onChange('app1_lodger_income', parseFloat(e.target.value) || 0)} />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Label className="w-56 text-sm text-muted-foreground">Residential investment income</Label>
+                  <span className="text-muted-foreground">€</span>
+                  <Input className="w-28" type="number" value={formData.app1_residential_investment_income || ''} onChange={(e) => onChange('app1_residential_investment_income', parseFloat(e.target.value) || 0)} />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Label className="w-56 text-sm text-muted-foreground">Other Household Income</Label>
+                  <span className="text-muted-foreground">€</span>
+                  <Input className="w-28" type="number" value={formData.app1_other_household_income || ''} onChange={(e) => onChange('app1_other_household_income', parseFloat(e.target.value) || 0)} />
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 
 // Financial Tab
 const FinancialTab = ({ formData, onChange }: { formData: FormData; onChange: (field: keyof FormData, value: any) => void }) => {
+  const flags = validateFinancialDetails(formData);
+  
   return (
-    <Card>
-      <CardContent className="pt-6 space-y-6">
-        <h3 className="font-bold text-primary text-lg">Financial & Credit History</h3>
-        
-        <div className="grid md:grid-cols-2 gap-6">
-          <div className="space-y-4">
-            <div className="flex items-center gap-4">
-              <Label className="w-48 text-muted-foreground">Monthly Commitments</Label>
-              <span className="text-muted-foreground">€</span>
-              <Input className="flex-1" type="number" value={formData.monthly_commitments || ''} onChange={(e) => onChange('monthly_commitments', parseFloat(e.target.value) || 0)} />
+    <div className="space-y-4">
+      <FormFieldFlags flags={flags} />
+      <Card>
+        <CardContent className="pt-6 space-y-6">
+          <h3 className="font-bold text-primary text-lg">Financial & Credit History</h3>
+          
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <Label className="w-48 text-muted-foreground">Monthly Commitments</Label>
+                <span className="text-muted-foreground">€</span>
+                <Input className="flex-1" type="number" value={formData.monthly_commitments || ''} onChange={(e) => onChange('monthly_commitments', parseFloat(e.target.value) || 0)} />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-48 text-muted-foreground">Existing Loans</Label>
+                <span className="text-muted-foreground">€</span>
+                <Input className="flex-1" type="number" value={formData.existing_loans || ''} onChange={(e) => onChange('existing_loans', parseFloat(e.target.value) || 0)} />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-48 text-muted-foreground">Credit Cards Outstanding</Label>
+                <span className="text-muted-foreground">€</span>
+                <Input className="flex-1" type="number" value={formData.credit_cards || ''} onChange={(e) => onChange('credit_cards', parseFloat(e.target.value) || 0)} />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-48 text-muted-foreground">Savings</Label>
+                <span className="text-muted-foreground">€</span>
+                <Input className="flex-1" type="number" value={formData.savings || ''} onChange={(e) => onChange('savings', parseFloat(e.target.value) || 0)} />
+              </div>
             </div>
-            <div className="flex items-center gap-4">
-              <Label className="w-48 text-muted-foreground">Existing Loans</Label>
-              <span className="text-muted-foreground">€</span>
-              <Input className="flex-1" type="number" value={formData.existing_loans || ''} onChange={(e) => onChange('existing_loans', parseFloat(e.target.value) || 0)} />
-            </div>
-            <div className="flex items-center gap-4">
-              <Label className="w-48 text-muted-foreground">Credit Cards Outstanding</Label>
-              <span className="text-muted-foreground">€</span>
-              <Input className="flex-1" type="number" value={formData.credit_cards || ''} onChange={(e) => onChange('credit_cards', parseFloat(e.target.value) || 0)} />
-            </div>
-            <div className="flex items-center gap-4">
-              <Label className="w-48 text-muted-foreground">Savings</Label>
-              <span className="text-muted-foreground">€</span>
-              <Input className="flex-1" type="number" value={formData.savings || ''} onChange={(e) => onChange('savings', parseFloat(e.target.value) || 0)} />
-            </div>
-          </div>
 
-          <div className="space-y-4">
-            <div className="flex items-center gap-4">
-              <Label className="w-48 text-muted-foreground">Credit History</Label>
-              <Select value={formData.credit_history} onValueChange={(v) => onChange('credit_history', v)}>
-                <SelectTrigger className="flex-1">
-                  <SelectValue placeholder="Select" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="excellent">Excellent</SelectItem>
-                  <SelectItem value="good">Good</SelectItem>
-                  <SelectItem value="fair">Fair</SelectItem>
-                  <SelectItem value="poor">Poor</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Checkbox checked={formData.has_ccj} onCheckedChange={(v) => onChange('has_ccj', v)} />
-                <Label className="text-muted-foreground">Any CCJs or defaults?</Label>
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <Label className="w-48 text-muted-foreground">Credit History</Label>
+                <Select value={formData.credit_history} onValueChange={(v) => onChange('credit_history', v)}>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="excellent">Excellent</SelectItem>
+                    <SelectItem value="good">Good</SelectItem>
+                    <SelectItem value="fair">Fair</SelectItem>
+                    <SelectItem value="poor">Poor</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-              {formData.has_ccj && (
-                <Textarea placeholder="Please provide details..." value={formData.ccj_details} onChange={(e) => onChange('ccj_details', e.target.value)} />
-              )}
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Checkbox checked={formData.has_arrears} onCheckedChange={(v) => onChange('has_arrears', v)} />
-                <Label className="text-muted-foreground">Any arrears on existing loans?</Label>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Checkbox checked={formData.has_ccj} onCheckedChange={(v) => onChange('has_ccj', v)} />
+                  <Label className="text-muted-foreground">Any CCJs or defaults?</Label>
+                </div>
+                {formData.has_ccj && (
+                  <Textarea placeholder="Please provide details..." value={formData.ccj_details} onChange={(e) => onChange('ccj_details', e.target.value)} />
+                )}
               </div>
-              {formData.has_arrears && (
-                <Textarea placeholder="Please provide details..." value={formData.arrears_details} onChange={(e) => onChange('arrears_details', e.target.value)} />
-              )}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Checkbox checked={formData.has_arrears} onCheckedChange={(v) => onChange('has_arrears', v)} />
+                  <Label className="text-muted-foreground">Any arrears on existing loans?</Label>
+                </div>
+                {formData.has_arrears && (
+                  <Textarea placeholder="Please provide details..." value={formData.arrears_details} onChange={(e) => onChange('arrears_details', e.target.value)} />
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 
 // Mortgage Tab
 const MortgageTab = ({ formData, onChange }: { formData: FormData; onChange: (field: keyof FormData, value: any) => void }) => {
+  const flags = validateMortgageDetails(formData);
+  
   return (
-    <Card>
-      <CardContent className="pt-6 space-y-6">
-        <h3 className="font-bold text-primary text-lg">Mortgage Details</h3>
-        
-        <div className="grid md:grid-cols-2 gap-6">
-          <div className="space-y-4">
-            <div className="flex items-center gap-4">
-              <Label className="w-48 text-muted-foreground">Property Value</Label>
-              <span className="text-muted-foreground">€</span>
-              <Input className="flex-1" type="number" value={formData.property_value || ''} onChange={(e) => onChange('property_value', parseFloat(e.target.value) || 0)} />
+    <div className="space-y-4">
+      <FormFieldFlags flags={flags} />
+      <Card>
+        <CardContent className="pt-6 space-y-6">
+          <h3 className="font-bold text-primary text-lg">Mortgage Details</h3>
+          
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <Label className="w-48 text-muted-foreground">Property Value</Label>
+                <span className="text-muted-foreground">€</span>
+                <Input className="flex-1" type="number" value={formData.property_value || ''} onChange={(e) => onChange('property_value', parseFloat(e.target.value) || 0)} />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-48 text-muted-foreground">Deposit Amount</Label>
+                <span className="text-muted-foreground">€</span>
+                <Input className="flex-1" type="number" value={formData.deposit_amount || ''} onChange={(e) => onChange('deposit_amount', parseFloat(e.target.value) || 0)} />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-48 text-muted-foreground">Loan Amount Required</Label>
+                <span className="text-muted-foreground">€</span>
+                <Input className="flex-1" type="number" value={formData.loan_amount || ''} onChange={(e) => onChange('loan_amount', parseFloat(e.target.value) || 0)} />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-48 text-muted-foreground">Mortgage Term (Years)</Label>
+                <Input className="w-24" type="number" value={formData.mortgage_term || ''} onChange={(e) => onChange('mortgage_term', parseInt(e.target.value) || 25)} />
+              </div>
             </div>
-            <div className="flex items-center gap-4">
-              <Label className="w-48 text-muted-foreground">Deposit Amount</Label>
-              <span className="text-muted-foreground">€</span>
-              <Input className="flex-1" type="number" value={formData.deposit_amount || ''} onChange={(e) => onChange('deposit_amount', parseFloat(e.target.value) || 0)} />
-            </div>
-            <div className="flex items-center gap-4">
-              <Label className="w-48 text-muted-foreground">Loan Amount Required</Label>
-              <span className="text-muted-foreground">€</span>
-              <Input className="flex-1" type="number" value={formData.loan_amount || ''} onChange={(e) => onChange('loan_amount', parseFloat(e.target.value) || 0)} />
-            </div>
-            <div className="flex items-center gap-4">
-              <Label className="w-48 text-muted-foreground">Mortgage Term (Years)</Label>
-              <Input className="w-24" type="number" value={formData.mortgage_term || ''} onChange={(e) => onChange('mortgage_term', parseInt(e.target.value) || 25)} />
-            </div>
-          </div>
 
-          <div className="space-y-4">
-            <div className="flex items-center gap-4">
-              <Label className="w-48 text-muted-foreground">Mortgage Type</Label>
-              <Select value={formData.mortgage_type} onValueChange={(v) => onChange('mortgage_type', v)}>
-                <SelectTrigger className="flex-1">
-                  <SelectValue placeholder="Select" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="first_time_buyer">First Time Buyer</SelectItem>
-                  <SelectItem value="mover">Mover</SelectItem>
-                  <SelectItem value="switcher">Switcher</SelectItem>
-                  <SelectItem value="remortgage">Remortgage</SelectItem>
-                  <SelectItem value="top_up">Top Up</SelectItem>
-                  <SelectItem value="buy_to_let">Buy to Let</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-center gap-2">
-              <Checkbox checked={formData.first_time_buyer} onCheckedChange={(v) => onChange('first_time_buyer', v)} />
-              <Label className="text-muted-foreground">First Time Buyer</Label>
-            </div>
-            <div className="flex items-center gap-2">
-              <Checkbox checked={formData.help_to_buy} onCheckedChange={(v) => onChange('help_to_buy', v)} />
-              <Label className="text-muted-foreground">Help to Buy Scheme</Label>
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <Label className="w-48 text-muted-foreground">Mortgage Type</Label>
+                <Select value={formData.mortgage_type} onValueChange={(v) => onChange('mortgage_type', v)}>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="first_time_buyer">First Time Buyer</SelectItem>
+                    <SelectItem value="mover">Mover</SelectItem>
+                    <SelectItem value="switcher">Switcher</SelectItem>
+                    <SelectItem value="remortgage">Remortgage</SelectItem>
+                    <SelectItem value="top_up">Top Up</SelectItem>
+                    <SelectItem value="buy_to_let">Buy to Let</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox checked={formData.first_time_buyer} onCheckedChange={(v) => onChange('first_time_buyer', v)} />
+                <Label className="text-muted-foreground">First Time Buyer</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox checked={formData.help_to_buy} onCheckedChange={(v) => onChange('help_to_buy', v)} />
+                <Label className="text-muted-foreground">Help to Buy Scheme</Label>
+              </div>
             </div>
           </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 
 // Property Tab
 const PropertyTab = ({ formData, onChange }: { formData: FormData; onChange: (field: keyof FormData, value: any) => void }) => {
+  const flags = validatePropertyDetails(formData);
+  
   return (
-    <Card>
-      <CardContent className="pt-6 space-y-6">
-        <h3 className="font-bold text-primary text-lg">Property Details</h3>
-        
-        <div className="grid md:grid-cols-2 gap-6">
-          <div className="space-y-4">
-            <div className="flex items-center gap-4">
-              <Label className="w-48 text-muted-foreground">Property Type</Label>
-              <Select value={formData.property_type} onValueChange={(v) => onChange('property_type', v)}>
-                <SelectTrigger className="flex-1">
-                  <SelectValue placeholder="Select" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="house">House</SelectItem>
-                  <SelectItem value="apartment">Apartment</SelectItem>
-                  <SelectItem value="bungalow">Bungalow</SelectItem>
-                  <SelectItem value="duplex">Duplex</SelectItem>
-                  <SelectItem value="townhouse">Townhouse</SelectItem>
-                </SelectContent>
-              </Select>
+    <div className="space-y-4">
+      <FormFieldFlags flags={flags} />
+      <Card>
+        <CardContent className="pt-6 space-y-6">
+          <h3 className="font-bold text-primary text-lg">Property Details</h3>
+          
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <Label className="w-48 text-muted-foreground">Property Type</Label>
+                <Select value={formData.property_type} onValueChange={(v) => onChange('property_type', v)}>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="house">House</SelectItem>
+                    <SelectItem value="apartment">Apartment</SelectItem>
+                    <SelectItem value="bungalow">Bungalow</SelectItem>
+                    <SelectItem value="duplex">Duplex</SelectItem>
+                    <SelectItem value="townhouse">Townhouse</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-48 text-muted-foreground">Property Address</Label>
+                <Textarea className="flex-1" value={formData.property_address} onChange={(e) => onChange('property_address', e.target.value)} rows={2} />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-48 text-muted-foreground">BER Rating</Label>
+                <Select value={formData.ber_rating} onValueChange={(v) => onChange('ber_rating', v)}>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="A1">A1</SelectItem>
+                    <SelectItem value="A2">A2</SelectItem>
+                    <SelectItem value="A3">A3</SelectItem>
+                    <SelectItem value="B1">B1</SelectItem>
+                    <SelectItem value="B2">B2</SelectItem>
+                    <SelectItem value="B3">B3</SelectItem>
+                    <SelectItem value="C1">C1</SelectItem>
+                    <SelectItem value="C2">C2</SelectItem>
+                    <SelectItem value="C3">C3</SelectItem>
+                    <SelectItem value="D1">D1</SelectItem>
+                    <SelectItem value="D2">D2</SelectItem>
+                    <SelectItem value="E1">E1</SelectItem>
+                    <SelectItem value="E2">E2</SelectItem>
+                    <SelectItem value="F">F</SelectItem>
+                    <SelectItem value="G">G</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            <div className="flex items-center gap-4">
-              <Label className="w-48 text-muted-foreground">Property Address</Label>
-              <Textarea className="flex-1" value={formData.property_address} onChange={(e) => onChange('property_address', e.target.value)} rows={2} />
-            </div>
-            <div className="flex items-center gap-4">
-              <Label className="w-48 text-muted-foreground">BER Rating</Label>
-              <Select value={formData.ber_rating} onValueChange={(v) => onChange('ber_rating', v)}>
-                <SelectTrigger className="flex-1">
-                  <SelectValue placeholder="Select" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="A1">A1</SelectItem>
-                  <SelectItem value="A2">A2</SelectItem>
-                  <SelectItem value="A3">A3</SelectItem>
-                  <SelectItem value="B1">B1</SelectItem>
-                  <SelectItem value="B2">B2</SelectItem>
-                  <SelectItem value="B3">B3</SelectItem>
-                  <SelectItem value="C1">C1</SelectItem>
-                  <SelectItem value="C2">C2</SelectItem>
-                  <SelectItem value="C3">C3</SelectItem>
-                  <SelectItem value="D1">D1</SelectItem>
-                  <SelectItem value="D2">D2</SelectItem>
-                  <SelectItem value="E1">E1</SelectItem>
-                  <SelectItem value="E2">E2</SelectItem>
-                  <SelectItem value="F">F</SelectItem>
-                  <SelectItem value="G">G</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
 
-          <div className="space-y-4">
-            <div className="flex items-center gap-4">
-              <Label className="w-48 text-muted-foreground">Year Built</Label>
-              <Input className="w-28" type="number" value={formData.year_built || ''} onChange={(e) => onChange('year_built', parseInt(e.target.value) || 0)} />
-            </div>
-            <div className="flex items-center gap-4">
-              <Label className="w-48 text-muted-foreground">New or Secondhand</Label>
-              <Select value={formData.property_new_or_secondhand} onValueChange={(v) => onChange('property_new_or_secondhand', v)}>
-                <SelectTrigger className="flex-1">
-                  <SelectValue placeholder="Select" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="new">New</SelectItem>
-                  <SelectItem value="secondhand">Secondhand</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-center gap-4">
-              <Label className="w-48 text-muted-foreground">Estimated Closing Date</Label>
-              <Input className="flex-1" type="date" value={formData.estimated_closing_date} onChange={(e) => onChange('estimated_closing_date', e.target.value)} />
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <Label className="w-48 text-muted-foreground">Year Built</Label>
+                <Input className="w-28" type="number" value={formData.year_built || ''} onChange={(e) => onChange('year_built', parseInt(e.target.value) || 0)} />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-48 text-muted-foreground">New or Secondhand</Label>
+                <Select value={formData.property_new_or_secondhand} onValueChange={(v) => onChange('property_new_or_secondhand', v)}>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="new">New</SelectItem>
+                    <SelectItem value="secondhand">Secondhand</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-48 text-muted-foreground">Estimated Closing Date</Label>
+                <Input className="flex-1" type="date" value={formData.estimated_closing_date} onChange={(e) => onChange('estimated_closing_date', e.target.value)} />
+              </div>
             </div>
           </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 
 // Security Tab
 const SecurityTab = ({ formData, onChange }: { formData: FormData; onChange: (field: keyof FormData, value: any) => void }) => {
+  const flags = validateSecurityDetails(formData);
+  
   return (
-    <Card>
-      <CardContent className="pt-6 space-y-6">
-        <h3 className="font-bold text-primary text-lg">Additional Security</h3>
-        <p className="text-sm text-muted-foreground">Properties to use as security for this mortgage application</p>
-        
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-muted/50">
-              <TableHead>Lending Institution</TableHead>
-              <TableHead>Market Value</TableHead>
-              <TableHead>Current Loan Balance</TableHead>
-              <TableHead>Monthly Repayment</TableHead>
-              <TableHead>Address</TableHead>
-              <TableHead>Type of Security</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            <TableRow>
-              <TableCell>
-                <Input value={formData.security_lending_institution} onChange={(e) => onChange('security_lending_institution', e.target.value)} />
-              </TableCell>
-              <TableCell>
-                <Input type="number" value={formData.security_market_value || ''} onChange={(e) => onChange('security_market_value', parseFloat(e.target.value) || 0)} />
-              </TableCell>
-              <TableCell>
-                <Input type="number" value={formData.security_current_loan_balance || ''} onChange={(e) => onChange('security_current_loan_balance', parseFloat(e.target.value) || 0)} />
-              </TableCell>
-              <TableCell>
-                <Input type="number" value={formData.security_monthly_repayment || ''} onChange={(e) => onChange('security_monthly_repayment', parseFloat(e.target.value) || 0)} />
-              </TableCell>
-              <TableCell>
-                <Input value={formData.security_address} onChange={(e) => onChange('security_address', e.target.value)} />
-              </TableCell>
-              <TableCell>
-                <Select value={formData.security_type} onValueChange={(v) => onChange('security_type', v)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="residential">Residential</SelectItem>
-                    <SelectItem value="commercial">Commercial</SelectItem>
-                    <SelectItem value="land">Land</SelectItem>
-                  </SelectContent>
-                </Select>
-              </TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
+    <div className="space-y-4">
+      <FormFieldFlags flags={flags} />
+      <Card>
+        <CardContent className="pt-6 space-y-6">
+          <h3 className="font-bold text-primary text-lg">Additional Security</h3>
+          <p className="text-sm text-muted-foreground">Properties to use as security for this mortgage application</p>
+          
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted/50">
+                <TableHead>Lending Institution</TableHead>
+                <TableHead>Market Value</TableHead>
+                <TableHead>Current Loan Balance</TableHead>
+                <TableHead>Monthly Repayment</TableHead>
+                <TableHead>Address</TableHead>
+                <TableHead>Type of Security</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow>
+                <TableCell>
+                  <Input value={formData.security_lending_institution} onChange={(e) => onChange('security_lending_institution', e.target.value)} />
+                </TableCell>
+                <TableCell>
+                  <Input type="number" value={formData.security_market_value || ''} onChange={(e) => onChange('security_market_value', parseFloat(e.target.value) || 0)} />
+                </TableCell>
+                <TableCell>
+                  <Input type="number" value={formData.security_current_loan_balance || ''} onChange={(e) => onChange('security_current_loan_balance', parseFloat(e.target.value) || 0)} />
+                </TableCell>
+                <TableCell>
+                  <Input type="number" value={formData.security_monthly_repayment || ''} onChange={(e) => onChange('security_monthly_repayment', parseFloat(e.target.value) || 0)} />
+                </TableCell>
+                <TableCell>
+                  <Input value={formData.security_address} onChange={(e) => onChange('security_address', e.target.value)} />
+                </TableCell>
+                <TableCell>
+                  <Select value={formData.security_type} onValueChange={(v) => onChange('security_type', v)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="residential">Residential</SelectItem>
+                      <SelectItem value="commercial">Commercial</SelectItem>
+                      <SelectItem value="land">Land</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 
 // Alternative Lending Tab
 const AlternativeTab = ({ formData, onChange }: { formData: FormData; onChange: (field: keyof FormData, value: any) => void }) => {
+  const flags = validateAlternativeDetails(formData);
+  
   return (
-    <Card>
-      <CardContent className="pt-6 space-y-6">
-        <h3 className="font-bold text-primary text-lg">Alternative Lending</h3>
-        
-        <div className="space-y-6">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <Checkbox checked={formData.has_other_mortgage} onCheckedChange={(v) => onChange('has_other_mortgage', v)} />
-              <Label>Do you have any other mortgage or secured loans?</Label>
+    <div className="space-y-4">
+      <FormFieldFlags flags={flags} />
+      <Card>
+        <CardContent className="pt-6 space-y-6">
+          <h3 className="font-bold text-primary text-lg">Alternative Lending</h3>
+          
+          <div className="space-y-6">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Checkbox checked={formData.has_other_mortgage} onCheckedChange={(v) => onChange('has_other_mortgage', v)} />
+                <Label>Do you have any other mortgage or secured loans?</Label>
+              </div>
+              {formData.has_other_mortgage && (
+                <Textarea placeholder="Please provide details..." value={formData.other_mortgage_details} onChange={(e) => onChange('other_mortgage_details', e.target.value)} />
+              )}
             </div>
-            {formData.has_other_mortgage && (
-              <Textarea placeholder="Please provide details..." value={formData.other_mortgage_details} onChange={(e) => onChange('other_mortgage_details', e.target.value)} />
-            )}
-          </div>
 
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <Checkbox checked={formData.has_missed_repayments} onCheckedChange={(v) => onChange('has_missed_repayments', v)} />
-              <Label>Have you ever missed any repayments on any loan, mortgage, credit card or HP agreement?</Label>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Checkbox checked={formData.has_missed_repayments} onCheckedChange={(v) => onChange('has_missed_repayments', v)} />
+                <Label>Have you ever missed any repayments on any loan, mortgage, credit card or HP agreement?</Label>
+              </div>
+              {formData.has_missed_repayments && (
+                <Textarea placeholder="Please provide details..." value={formData.missed_repayments_details} onChange={(e) => onChange('missed_repayments_details', e.target.value)} />
+              )}
             </div>
-            {formData.has_missed_repayments && (
-              <Textarea placeholder="Please provide details..." value={formData.missed_repayments_details} onChange={(e) => onChange('missed_repayments_details', e.target.value)} />
-            )}
-          </div>
 
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <Checkbox checked={formData.has_judgements} onCheckedChange={(v) => onChange('has_judgements', v)} />
-              <Label>Have you ever had any County Court Judgements, bankruptcies or IVAs?</Label>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Checkbox checked={formData.has_judgements} onCheckedChange={(v) => onChange('has_judgements', v)} />
+                <Label>Have you ever had any County Court Judgements, bankruptcies or IVAs?</Label>
+              </div>
+              {formData.has_judgements && (
+                <Textarea placeholder="Please provide details..." value={formData.judgements_details} onChange={(e) => onChange('judgements_details', e.target.value)} />
+              )}
             </div>
-            {formData.has_judgements && (
-              <Textarea placeholder="Please provide details..." value={formData.judgements_details} onChange={(e) => onChange('judgements_details', e.target.value)} />
-            )}
           </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 
