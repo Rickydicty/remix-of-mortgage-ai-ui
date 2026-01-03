@@ -392,20 +392,43 @@ export type Database = {
       application_form_data: {
         Row: {
           app1_address: string | null
+          app1_address_line1: string | null
+          app1_address_line2: string | null
+          app1_address_line3: string | null
+          app1_bankruptcy: boolean | null
+          app1_bankruptcy_details: string | null
           app1_bonuses: number | null
           app1_bonuses_frequency: string | null
           app1_children_ages: string | null
           app1_commissions: number | null
           app1_commissions_frequency: string | null
+          app1_correspondence_address: string | null
+          app1_correspondence_same: boolean | null
+          app1_country: string | null
+          app1_county: string | null
+          app1_court_order: boolean | null
+          app1_court_order_details: string | null
           app1_date_of_birth: string | null
           app1_email: string | null
+          app1_employer_address: string | null
+          app1_employer_name: string | null
+          app1_employer_phone: string | null
+          app1_employment_status: string | null
+          app1_employment_type: string | null
           app1_forenames: string | null
           app1_gender: string | null
           app1_gross_salary: number | null
+          app1_home_phone: string | null
           app1_lodger_income: number | null
           app1_marital_status: string | null
+          app1_months_with_employer: number | null
+          app1_mortgage_arrears_24m: boolean | null
+          app1_mortgage_arrears_details: string | null
           app1_nationality: string | null
+          app1_nature_of_business: string | null
+          app1_net_monthly_income: number | null
           app1_no_of_children: number | null
+          app1_occupation: string | null
           app1_other_household_income: number | null
           app1_other_income: number | null
           app1_other_income_details: string | null
@@ -415,28 +438,71 @@ export type Database = {
           app1_overtime_frequency: string | null
           app1_phone: string | null
           app1_pps_number: string | null
+          app1_previous_address: string | null
+          app1_previous_years: number | null
+          app1_refused_mortgage: boolean | null
+          app1_refused_mortgage_details: string | null
+          app1_rent_amount: number | null
+          app1_residence_status: string | null
           app1_residential_investment_income: number | null
           app1_salary_frequency: string | null
+          app1_se_accountant_address: string | null
+          app1_se_accountant_firm: string | null
+          app1_se_accountant_name: string | null
+          app1_se_accountant_phone: string | null
+          app1_se_audited_accounts: boolean | null
+          app1_se_average_profit: number | null
+          app1_se_company_address: string | null
+          app1_se_company_name: string | null
+          app1_se_nature_of_business: string | null
+          app1_se_shareholding_percent: number | null
+          app1_se_tax_affairs_uptodate: boolean | null
+          app1_se_years_established: number | null
           app1_surname: string | null
           app1_title: string | null
+          app1_work_phone: string | null
           app1_years_at_address: number | null
+          app1_years_with_employer: number | null
           app2_address: string | null
+          app2_address_line1: string | null
+          app2_address_line2: string | null
+          app2_address_line3: string | null
+          app2_bankruptcy: boolean | null
+          app2_bankruptcy_details: string | null
           app2_bonuses: number | null
           app2_bonuses_frequency: string | null
           app2_children_ages: string | null
           app2_commissions: number | null
           app2_commissions_frequency: string | null
+          app2_correspondence_address: string | null
+          app2_correspondence_same: boolean | null
+          app2_country: string | null
+          app2_county: string | null
+          app2_court_order: boolean | null
+          app2_court_order_details: string | null
           app2_date_of_birth: string | null
           app2_email: string | null
+          app2_employer_address: string | null
+          app2_employer_name: string | null
+          app2_employer_phone: string | null
+          app2_employment_status: string | null
+          app2_employment_type: string | null
           app2_enabled: boolean | null
           app2_forenames: string | null
           app2_gender: string | null
           app2_gross_salary: number | null
+          app2_home_phone: string | null
           app2_is_guarantor: boolean | null
           app2_lodger_income: number | null
           app2_marital_status: string | null
+          app2_months_with_employer: number | null
+          app2_mortgage_arrears_24m: boolean | null
+          app2_mortgage_arrears_details: string | null
           app2_nationality: string | null
+          app2_nature_of_business: string | null
+          app2_net_monthly_income: number | null
           app2_no_of_children: number | null
+          app2_occupation: string | null
           app2_other_income: number | null
           app2_other_income_details: string | null
           app2_other_income_frequency: string | null
@@ -445,17 +511,51 @@ export type Database = {
           app2_overtime_frequency: string | null
           app2_phone: string | null
           app2_pps_number: string | null
+          app2_previous_address: string | null
+          app2_previous_years: number | null
+          app2_refused_mortgage: boolean | null
+          app2_refused_mortgage_details: string | null
+          app2_rent_amount: number | null
+          app2_residence_status: string | null
           app2_residential_investment_income: number | null
           app2_salary_frequency: string | null
+          app2_se_accountant_address: string | null
+          app2_se_accountant_firm: string | null
+          app2_se_accountant_name: string | null
+          app2_se_accountant_phone: string | null
+          app2_se_audited_accounts: boolean | null
+          app2_se_average_profit: number | null
+          app2_se_company_address: string | null
+          app2_se_company_name: string | null
+          app2_se_nature_of_business: string | null
+          app2_se_shareholding_percent: number | null
+          app2_se_tax_affairs_uptodate: boolean | null
+          app2_se_years_established: number | null
           app2_surname: string | null
           app2_title: string | null
+          app2_work_phone: string | null
           app2_years_at_address: number | null
+          app2_years_with_employer: number | null
           application_id: string | null
           approval_status: string | null
           arrears_details: string | null
+          bank_account_number: string | null
+          bank_account_type: string | null
+          bank_address: string | null
+          bank_name: string | null
+          bank_sort_code: string | null
+          bank_years_held: number | null
           ber_rating: string | null
           broker_notes: string | null
           ccj_details: string | null
+          consent_consumer_credit: boolean | null
+          consent_contact_employer: boolean | null
+          consent_contact_home: boolean | null
+          consent_contact_work: boolean | null
+          consent_data_protection: boolean | null
+          consent_email: boolean | null
+          consent_leave_message: boolean | null
+          consent_sms: boolean | null
           cover_letter_additional_info: string | null
           cover_letter_bof_details: string | null
           cover_letter_client_background: string | null
@@ -469,10 +569,12 @@ export type Database = {
           created_at: string
           credit_cards: number | null
           credit_history: string | null
+          declarations_signed: boolean | null
           deposit_amount: number | null
           estimated_closing_date: string | null
           existing_loans: number | null
           first_time_buyer: boolean | null
+          fixed_rate_years: number | null
           has_arrears: boolean | null
           has_ccj: boolean | null
           has_judgements: boolean | null
@@ -480,17 +582,37 @@ export type Database = {
           has_other_mortgage: boolean | null
           help_to_buy: boolean | null
           id: string
+          joint_title: boolean | null
           judgements_details: string | null
           loan_amount: number | null
+          max_approval_required: boolean | null
           missed_repayments_details: string | null
           monthly_commitments: number | null
+          mortgage_purpose: string | null
           mortgage_term: number | null
           mortgage_type: string | null
           other_mortgage_details: string | null
           property_address: string | null
+          property_address_line1: string | null
+          property_address_line2: string | null
+          property_address_line3: string | null
+          property_construction_type: string | null
+          property_country: string | null
+          property_county: string | null
+          property_estimated_value: number | null
+          property_lease_years: number | null
           property_new_or_secondhand: string | null
+          property_num_bathrooms: number | null
+          property_num_bedrooms: number | null
+          property_num_dining_rooms: number | null
+          property_num_kitchens: number | null
+          property_num_living_rooms: number | null
+          property_tenure: string | null
           property_type: string | null
+          property_vacant_possession: boolean | null
           property_value: number | null
+          rate_type: string | null
+          repayment_method: string | null
           savings: number | null
           security_address: string | null
           security_current_loan_balance: number | null
@@ -498,26 +620,53 @@ export type Database = {
           security_market_value: number | null
           security_monthly_repayment: number | null
           security_type: string | null
+          solicitor_address: string | null
+          solicitor_email: string | null
+          solicitor_name: string | null
+          solicitor_phone: string | null
           updated_at: string
           user_id: string
           year_built: number | null
         }
         Insert: {
           app1_address?: string | null
+          app1_address_line1?: string | null
+          app1_address_line2?: string | null
+          app1_address_line3?: string | null
+          app1_bankruptcy?: boolean | null
+          app1_bankruptcy_details?: string | null
           app1_bonuses?: number | null
           app1_bonuses_frequency?: string | null
           app1_children_ages?: string | null
           app1_commissions?: number | null
           app1_commissions_frequency?: string | null
+          app1_correspondence_address?: string | null
+          app1_correspondence_same?: boolean | null
+          app1_country?: string | null
+          app1_county?: string | null
+          app1_court_order?: boolean | null
+          app1_court_order_details?: string | null
           app1_date_of_birth?: string | null
           app1_email?: string | null
+          app1_employer_address?: string | null
+          app1_employer_name?: string | null
+          app1_employer_phone?: string | null
+          app1_employment_status?: string | null
+          app1_employment_type?: string | null
           app1_forenames?: string | null
           app1_gender?: string | null
           app1_gross_salary?: number | null
+          app1_home_phone?: string | null
           app1_lodger_income?: number | null
           app1_marital_status?: string | null
+          app1_months_with_employer?: number | null
+          app1_mortgage_arrears_24m?: boolean | null
+          app1_mortgage_arrears_details?: string | null
           app1_nationality?: string | null
+          app1_nature_of_business?: string | null
+          app1_net_monthly_income?: number | null
           app1_no_of_children?: number | null
+          app1_occupation?: string | null
           app1_other_household_income?: number | null
           app1_other_income?: number | null
           app1_other_income_details?: string | null
@@ -527,28 +676,71 @@ export type Database = {
           app1_overtime_frequency?: string | null
           app1_phone?: string | null
           app1_pps_number?: string | null
+          app1_previous_address?: string | null
+          app1_previous_years?: number | null
+          app1_refused_mortgage?: boolean | null
+          app1_refused_mortgage_details?: string | null
+          app1_rent_amount?: number | null
+          app1_residence_status?: string | null
           app1_residential_investment_income?: number | null
           app1_salary_frequency?: string | null
+          app1_se_accountant_address?: string | null
+          app1_se_accountant_firm?: string | null
+          app1_se_accountant_name?: string | null
+          app1_se_accountant_phone?: string | null
+          app1_se_audited_accounts?: boolean | null
+          app1_se_average_profit?: number | null
+          app1_se_company_address?: string | null
+          app1_se_company_name?: string | null
+          app1_se_nature_of_business?: string | null
+          app1_se_shareholding_percent?: number | null
+          app1_se_tax_affairs_uptodate?: boolean | null
+          app1_se_years_established?: number | null
           app1_surname?: string | null
           app1_title?: string | null
+          app1_work_phone?: string | null
           app1_years_at_address?: number | null
+          app1_years_with_employer?: number | null
           app2_address?: string | null
+          app2_address_line1?: string | null
+          app2_address_line2?: string | null
+          app2_address_line3?: string | null
+          app2_bankruptcy?: boolean | null
+          app2_bankruptcy_details?: string | null
           app2_bonuses?: number | null
           app2_bonuses_frequency?: string | null
           app2_children_ages?: string | null
           app2_commissions?: number | null
           app2_commissions_frequency?: string | null
+          app2_correspondence_address?: string | null
+          app2_correspondence_same?: boolean | null
+          app2_country?: string | null
+          app2_county?: string | null
+          app2_court_order?: boolean | null
+          app2_court_order_details?: string | null
           app2_date_of_birth?: string | null
           app2_email?: string | null
+          app2_employer_address?: string | null
+          app2_employer_name?: string | null
+          app2_employer_phone?: string | null
+          app2_employment_status?: string | null
+          app2_employment_type?: string | null
           app2_enabled?: boolean | null
           app2_forenames?: string | null
           app2_gender?: string | null
           app2_gross_salary?: number | null
+          app2_home_phone?: string | null
           app2_is_guarantor?: boolean | null
           app2_lodger_income?: number | null
           app2_marital_status?: string | null
+          app2_months_with_employer?: number | null
+          app2_mortgage_arrears_24m?: boolean | null
+          app2_mortgage_arrears_details?: string | null
           app2_nationality?: string | null
+          app2_nature_of_business?: string | null
+          app2_net_monthly_income?: number | null
           app2_no_of_children?: number | null
+          app2_occupation?: string | null
           app2_other_income?: number | null
           app2_other_income_details?: string | null
           app2_other_income_frequency?: string | null
@@ -557,17 +749,51 @@ export type Database = {
           app2_overtime_frequency?: string | null
           app2_phone?: string | null
           app2_pps_number?: string | null
+          app2_previous_address?: string | null
+          app2_previous_years?: number | null
+          app2_refused_mortgage?: boolean | null
+          app2_refused_mortgage_details?: string | null
+          app2_rent_amount?: number | null
+          app2_residence_status?: string | null
           app2_residential_investment_income?: number | null
           app2_salary_frequency?: string | null
+          app2_se_accountant_address?: string | null
+          app2_se_accountant_firm?: string | null
+          app2_se_accountant_name?: string | null
+          app2_se_accountant_phone?: string | null
+          app2_se_audited_accounts?: boolean | null
+          app2_se_average_profit?: number | null
+          app2_se_company_address?: string | null
+          app2_se_company_name?: string | null
+          app2_se_nature_of_business?: string | null
+          app2_se_shareholding_percent?: number | null
+          app2_se_tax_affairs_uptodate?: boolean | null
+          app2_se_years_established?: number | null
           app2_surname?: string | null
           app2_title?: string | null
+          app2_work_phone?: string | null
           app2_years_at_address?: number | null
+          app2_years_with_employer?: number | null
           application_id?: string | null
           approval_status?: string | null
           arrears_details?: string | null
+          bank_account_number?: string | null
+          bank_account_type?: string | null
+          bank_address?: string | null
+          bank_name?: string | null
+          bank_sort_code?: string | null
+          bank_years_held?: number | null
           ber_rating?: string | null
           broker_notes?: string | null
           ccj_details?: string | null
+          consent_consumer_credit?: boolean | null
+          consent_contact_employer?: boolean | null
+          consent_contact_home?: boolean | null
+          consent_contact_work?: boolean | null
+          consent_data_protection?: boolean | null
+          consent_email?: boolean | null
+          consent_leave_message?: boolean | null
+          consent_sms?: boolean | null
           cover_letter_additional_info?: string | null
           cover_letter_bof_details?: string | null
           cover_letter_client_background?: string | null
@@ -581,10 +807,12 @@ export type Database = {
           created_at?: string
           credit_cards?: number | null
           credit_history?: string | null
+          declarations_signed?: boolean | null
           deposit_amount?: number | null
           estimated_closing_date?: string | null
           existing_loans?: number | null
           first_time_buyer?: boolean | null
+          fixed_rate_years?: number | null
           has_arrears?: boolean | null
           has_ccj?: boolean | null
           has_judgements?: boolean | null
@@ -592,17 +820,37 @@ export type Database = {
           has_other_mortgage?: boolean | null
           help_to_buy?: boolean | null
           id?: string
+          joint_title?: boolean | null
           judgements_details?: string | null
           loan_amount?: number | null
+          max_approval_required?: boolean | null
           missed_repayments_details?: string | null
           monthly_commitments?: number | null
+          mortgage_purpose?: string | null
           mortgage_term?: number | null
           mortgage_type?: string | null
           other_mortgage_details?: string | null
           property_address?: string | null
+          property_address_line1?: string | null
+          property_address_line2?: string | null
+          property_address_line3?: string | null
+          property_construction_type?: string | null
+          property_country?: string | null
+          property_county?: string | null
+          property_estimated_value?: number | null
+          property_lease_years?: number | null
           property_new_or_secondhand?: string | null
+          property_num_bathrooms?: number | null
+          property_num_bedrooms?: number | null
+          property_num_dining_rooms?: number | null
+          property_num_kitchens?: number | null
+          property_num_living_rooms?: number | null
+          property_tenure?: string | null
           property_type?: string | null
+          property_vacant_possession?: boolean | null
           property_value?: number | null
+          rate_type?: string | null
+          repayment_method?: string | null
           savings?: number | null
           security_address?: string | null
           security_current_loan_balance?: number | null
@@ -610,26 +858,53 @@ export type Database = {
           security_market_value?: number | null
           security_monthly_repayment?: number | null
           security_type?: string | null
+          solicitor_address?: string | null
+          solicitor_email?: string | null
+          solicitor_name?: string | null
+          solicitor_phone?: string | null
           updated_at?: string
           user_id: string
           year_built?: number | null
         }
         Update: {
           app1_address?: string | null
+          app1_address_line1?: string | null
+          app1_address_line2?: string | null
+          app1_address_line3?: string | null
+          app1_bankruptcy?: boolean | null
+          app1_bankruptcy_details?: string | null
           app1_bonuses?: number | null
           app1_bonuses_frequency?: string | null
           app1_children_ages?: string | null
           app1_commissions?: number | null
           app1_commissions_frequency?: string | null
+          app1_correspondence_address?: string | null
+          app1_correspondence_same?: boolean | null
+          app1_country?: string | null
+          app1_county?: string | null
+          app1_court_order?: boolean | null
+          app1_court_order_details?: string | null
           app1_date_of_birth?: string | null
           app1_email?: string | null
+          app1_employer_address?: string | null
+          app1_employer_name?: string | null
+          app1_employer_phone?: string | null
+          app1_employment_status?: string | null
+          app1_employment_type?: string | null
           app1_forenames?: string | null
           app1_gender?: string | null
           app1_gross_salary?: number | null
+          app1_home_phone?: string | null
           app1_lodger_income?: number | null
           app1_marital_status?: string | null
+          app1_months_with_employer?: number | null
+          app1_mortgage_arrears_24m?: boolean | null
+          app1_mortgage_arrears_details?: string | null
           app1_nationality?: string | null
+          app1_nature_of_business?: string | null
+          app1_net_monthly_income?: number | null
           app1_no_of_children?: number | null
+          app1_occupation?: string | null
           app1_other_household_income?: number | null
           app1_other_income?: number | null
           app1_other_income_details?: string | null
@@ -639,28 +914,71 @@ export type Database = {
           app1_overtime_frequency?: string | null
           app1_phone?: string | null
           app1_pps_number?: string | null
+          app1_previous_address?: string | null
+          app1_previous_years?: number | null
+          app1_refused_mortgage?: boolean | null
+          app1_refused_mortgage_details?: string | null
+          app1_rent_amount?: number | null
+          app1_residence_status?: string | null
           app1_residential_investment_income?: number | null
           app1_salary_frequency?: string | null
+          app1_se_accountant_address?: string | null
+          app1_se_accountant_firm?: string | null
+          app1_se_accountant_name?: string | null
+          app1_se_accountant_phone?: string | null
+          app1_se_audited_accounts?: boolean | null
+          app1_se_average_profit?: number | null
+          app1_se_company_address?: string | null
+          app1_se_company_name?: string | null
+          app1_se_nature_of_business?: string | null
+          app1_se_shareholding_percent?: number | null
+          app1_se_tax_affairs_uptodate?: boolean | null
+          app1_se_years_established?: number | null
           app1_surname?: string | null
           app1_title?: string | null
+          app1_work_phone?: string | null
           app1_years_at_address?: number | null
+          app1_years_with_employer?: number | null
           app2_address?: string | null
+          app2_address_line1?: string | null
+          app2_address_line2?: string | null
+          app2_address_line3?: string | null
+          app2_bankruptcy?: boolean | null
+          app2_bankruptcy_details?: string | null
           app2_bonuses?: number | null
           app2_bonuses_frequency?: string | null
           app2_children_ages?: string | null
           app2_commissions?: number | null
           app2_commissions_frequency?: string | null
+          app2_correspondence_address?: string | null
+          app2_correspondence_same?: boolean | null
+          app2_country?: string | null
+          app2_county?: string | null
+          app2_court_order?: boolean | null
+          app2_court_order_details?: string | null
           app2_date_of_birth?: string | null
           app2_email?: string | null
+          app2_employer_address?: string | null
+          app2_employer_name?: string | null
+          app2_employer_phone?: string | null
+          app2_employment_status?: string | null
+          app2_employment_type?: string | null
           app2_enabled?: boolean | null
           app2_forenames?: string | null
           app2_gender?: string | null
           app2_gross_salary?: number | null
+          app2_home_phone?: string | null
           app2_is_guarantor?: boolean | null
           app2_lodger_income?: number | null
           app2_marital_status?: string | null
+          app2_months_with_employer?: number | null
+          app2_mortgage_arrears_24m?: boolean | null
+          app2_mortgage_arrears_details?: string | null
           app2_nationality?: string | null
+          app2_nature_of_business?: string | null
+          app2_net_monthly_income?: number | null
           app2_no_of_children?: number | null
+          app2_occupation?: string | null
           app2_other_income?: number | null
           app2_other_income_details?: string | null
           app2_other_income_frequency?: string | null
@@ -669,17 +987,51 @@ export type Database = {
           app2_overtime_frequency?: string | null
           app2_phone?: string | null
           app2_pps_number?: string | null
+          app2_previous_address?: string | null
+          app2_previous_years?: number | null
+          app2_refused_mortgage?: boolean | null
+          app2_refused_mortgage_details?: string | null
+          app2_rent_amount?: number | null
+          app2_residence_status?: string | null
           app2_residential_investment_income?: number | null
           app2_salary_frequency?: string | null
+          app2_se_accountant_address?: string | null
+          app2_se_accountant_firm?: string | null
+          app2_se_accountant_name?: string | null
+          app2_se_accountant_phone?: string | null
+          app2_se_audited_accounts?: boolean | null
+          app2_se_average_profit?: number | null
+          app2_se_company_address?: string | null
+          app2_se_company_name?: string | null
+          app2_se_nature_of_business?: string | null
+          app2_se_shareholding_percent?: number | null
+          app2_se_tax_affairs_uptodate?: boolean | null
+          app2_se_years_established?: number | null
           app2_surname?: string | null
           app2_title?: string | null
+          app2_work_phone?: string | null
           app2_years_at_address?: number | null
+          app2_years_with_employer?: number | null
           application_id?: string | null
           approval_status?: string | null
           arrears_details?: string | null
+          bank_account_number?: string | null
+          bank_account_type?: string | null
+          bank_address?: string | null
+          bank_name?: string | null
+          bank_sort_code?: string | null
+          bank_years_held?: number | null
           ber_rating?: string | null
           broker_notes?: string | null
           ccj_details?: string | null
+          consent_consumer_credit?: boolean | null
+          consent_contact_employer?: boolean | null
+          consent_contact_home?: boolean | null
+          consent_contact_work?: boolean | null
+          consent_data_protection?: boolean | null
+          consent_email?: boolean | null
+          consent_leave_message?: boolean | null
+          consent_sms?: boolean | null
           cover_letter_additional_info?: string | null
           cover_letter_bof_details?: string | null
           cover_letter_client_background?: string | null
@@ -693,10 +1045,12 @@ export type Database = {
           created_at?: string
           credit_cards?: number | null
           credit_history?: string | null
+          declarations_signed?: boolean | null
           deposit_amount?: number | null
           estimated_closing_date?: string | null
           existing_loans?: number | null
           first_time_buyer?: boolean | null
+          fixed_rate_years?: number | null
           has_arrears?: boolean | null
           has_ccj?: boolean | null
           has_judgements?: boolean | null
@@ -704,17 +1058,37 @@ export type Database = {
           has_other_mortgage?: boolean | null
           help_to_buy?: boolean | null
           id?: string
+          joint_title?: boolean | null
           judgements_details?: string | null
           loan_amount?: number | null
+          max_approval_required?: boolean | null
           missed_repayments_details?: string | null
           monthly_commitments?: number | null
+          mortgage_purpose?: string | null
           mortgage_term?: number | null
           mortgage_type?: string | null
           other_mortgage_details?: string | null
           property_address?: string | null
+          property_address_line1?: string | null
+          property_address_line2?: string | null
+          property_address_line3?: string | null
+          property_construction_type?: string | null
+          property_country?: string | null
+          property_county?: string | null
+          property_estimated_value?: number | null
+          property_lease_years?: number | null
           property_new_or_secondhand?: string | null
+          property_num_bathrooms?: number | null
+          property_num_bedrooms?: number | null
+          property_num_dining_rooms?: number | null
+          property_num_kitchens?: number | null
+          property_num_living_rooms?: number | null
+          property_tenure?: string | null
           property_type?: string | null
+          property_vacant_possession?: boolean | null
           property_value?: number | null
+          rate_type?: string | null
+          repayment_method?: string | null
           savings?: number | null
           security_address?: string | null
           security_current_loan_balance?: number | null
@@ -722,6 +1096,10 @@ export type Database = {
           security_market_value?: number | null
           security_monthly_repayment?: number | null
           security_type?: string | null
+          solicitor_address?: string | null
+          solicitor_email?: string | null
+          solicitor_name?: string | null
+          solicitor_phone?: string | null
           updated_at?: string
           user_id?: string
           year_built?: number | null
