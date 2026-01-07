@@ -4,6 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
+import { FormFieldFlags, validateDeclarationsDetails } from "@/components/client/FormFieldFlags";
 
 interface DeclarationsFormProps {
   formData: any;
@@ -11,10 +12,15 @@ interface DeclarationsFormProps {
 }
 
 export const DeclarationsForm = ({ formData, onChange }: DeclarationsFormProps) => {
+  const flags = validateDeclarationsDetails(formData);
+
   return (
-    <Card>
-      <CardContent className="pt-6">
-        <h3 className="font-bold text-lg mb-4">Section G – Declarations</h3>
+    <div className="space-y-4">
+      <FormFieldFlags flags={flags} />
+      
+      <Card>
+        <CardContent className="pt-6">
+          <h3 className="font-bold text-lg mb-4">Section G – Declarations</h3>
         
         {/* Comments & Declarations */}
         <h4 className="font-semibold text-primary bg-primary/10 px-3 py-2 rounded mb-4">Comments & Declarations</h4>
@@ -105,8 +111,9 @@ export const DeclarationsForm = ({ formData, onChange }: DeclarationsFormProps) 
               onChange={(e) => onChange('broker_notes', e.target.value)} 
             />
           </div>
-        </div>
-      </CardContent>
-    </Card>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
