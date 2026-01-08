@@ -815,91 +815,141 @@ const IncomeTab = ({ preEligibility, formData }: { preEligibility: PreEligibilit
 
 // Financial Tab Component
 const FinancialTab = ({ preEligibility, formData }: { preEligibility: PreEligibilityData | null; formData: any }) => {
+  const isJoint = formData?.app2_enabled || preEligibility?.applicant_type === 'joint';
+
+  const CreditHistorySection = ({ prefix, title }: { prefix: 'app1' | 'app2'; title: string }) => (
+    <div className="space-y-3">
+      <h5 className="font-medium text-sm">{title}</h5>
+      <div className="grid gap-2 text-sm">
+        <div className="flex items-center gap-2">
+          <Checkbox checked={formData?.[`${prefix}_refused_mortgage`] || false} disabled />
+          <span>Refused mortgage: {formData?.[`${prefix}_refused_mortgage`] ? 'Yes' : 'No'}</span>
+        </div>
+        {formData?.[`${prefix}_refused_mortgage`] && formData?.[`${prefix}_refused_mortgage_details`] && (
+          <p className="ml-6 text-muted-foreground">{formData[`${prefix}_refused_mortgage_details`]}</p>
+        )}
+        <div className="flex items-center gap-2">
+          <Checkbox checked={formData?.[`${prefix}_court_order`] || false} disabled />
+          <span>Court order: {formData?.[`${prefix}_court_order`] ? 'Yes' : 'No'}</span>
+        </div>
+        {formData?.[`${prefix}_court_order`] && formData?.[`${prefix}_court_order_details`] && (
+          <p className="ml-6 text-muted-foreground">{formData[`${prefix}_court_order_details`]}</p>
+        )}
+        <div className="flex items-center gap-2">
+          <Checkbox checked={formData?.[`${prefix}_bankruptcy`] || false} disabled />
+          <span>Bankruptcy/Insolvency: {formData?.[`${prefix}_bankruptcy`] ? 'Yes' : 'No'}</span>
+        </div>
+        {formData?.[`${prefix}_bankruptcy`] && formData?.[`${prefix}_bankruptcy_details`] && (
+          <p className="ml-6 text-muted-foreground">{formData[`${prefix}_bankruptcy_details`]}</p>
+        )}
+        <div className="flex items-center gap-2">
+          <Checkbox checked={formData?.[`${prefix}_mortgage_arrears_24m`] || false} disabled />
+          <span>Mortgage arrears (24m): {formData?.[`${prefix}_mortgage_arrears_24m`] ? 'Yes' : 'No'}</span>
+        </div>
+        {formData?.[`${prefix}_mortgage_arrears_24m`] && formData?.[`${prefix}_mortgage_arrears_details`] && (
+          <p className="ml-6 text-muted-foreground">{formData[`${prefix}_mortgage_arrears_details`]}</p>
+        )}
+      </div>
+    </div>
+  );
+
   return (
     <Card>
       <CardContent className="pt-6">
         <div className="space-y-4">
-          <h3 className="font-bold text-primary text-lg">Applicant Financial Details</h3>
+          <h3 className="font-bold text-primary text-lg">Bank Details</h3>
           <div className="grid md:grid-cols-2 gap-6">
             <div className="space-y-3">
               <div className="flex items-center gap-4">
-                <Label className="w-48 text-muted-foreground">Current Bank/Building Society</Label>
-                <Input className="flex-1" />
+                <Label className="w-48 text-muted-foreground">Bank Name</Label>
+                <Input className="flex-1" defaultValue={formData?.bank_name || ''} readOnly />
               </div>
               <div className="flex items-center gap-4">
-                <Label className="w-48 text-muted-foreground">Address Line 1</Label>
-                <Input className="flex-1" />
+                <Label className="w-48 text-muted-foreground">Bank Address</Label>
+                <Input className="flex-1" defaultValue={formData?.bank_address || ''} readOnly />
               </div>
               <div className="flex items-center gap-4">
-                <Label className="w-48 text-muted-foreground">Address Line 2</Label>
-                <Input className="flex-1" />
-              </div>
-              <div className="flex items-center gap-4">
-                <Label className="w-48 text-muted-foreground">County</Label>
-                <Select>
-                  <SelectTrigger className="flex-1">
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="dublin">Dublin</SelectItem>
-                    <SelectItem value="cork">Cork</SelectItem>
-                    <SelectItem value="galway">Galway</SelectItem>
-                    <SelectItem value="limerick">Limerick</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex items-center gap-4">
-                <Label className="w-48 text-muted-foreground">Country</Label>
-                <Input className="flex-1" defaultValue="Ireland" />
+                <Label className="w-48 text-muted-foreground">Account Type</Label>
+                <Input className="flex-1" defaultValue={formData?.bank_account_type || ''} readOnly />
               </div>
             </div>
             <div className="space-y-3">
               <div className="flex items-center gap-4">
-                <Label className="w-48 text-muted-foreground">Account Type</Label>
-                <Input className="flex-1" />
-              </div>
-              <div className="flex items-center gap-4">
                 <Label className="w-48 text-muted-foreground">Account Number</Label>
-                <Input className="flex-1" />
+                <Input className="flex-1" defaultValue={formData?.bank_account_number || ''} readOnly />
               </div>
               <div className="flex items-center gap-4">
-                <Label className="w-48 text-muted-foreground">Sort Code</Label>
-                <Input className="flex-1" />
+                <Label className="w-48 text-muted-foreground">Sort Code / IBAN</Label>
+                <Input className="flex-1" defaultValue={formData?.bank_sort_code || ''} readOnly />
               </div>
               <div className="flex items-center gap-4">
-                <Label className="w-48 text-muted-foreground">Account Duration</Label>
-                <Input className="w-16" type="number" placeholder="" />
-                <span className="text-sm text-muted-foreground">years,</span>
-                <Input className="w-16" type="number" placeholder="" />
-                <span className="text-sm text-muted-foreground">months</span>
+                <Label className="w-48 text-muted-foreground">Years Held</Label>
+                <Input className="flex-1" defaultValue={formData?.bank_years_held || ''} readOnly />
               </div>
             </div>
           </div>
         </div>
 
-        {/* Saving Account Information */}
+        {/* Financial Commitments */}
         <div className="mt-6">
-          <h4 className="font-semibold text-primary bg-primary/10 px-3 py-1 mb-2">⊿ Saving Account Information</h4>
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-muted/50">
-                <TableHead>Financial Institution</TableHead>
-                <TableHead>A/C Number</TableHead>
-                <TableHead>Date Opened</TableHead>
-                <TableHead>Monthly Savings (€)</TableHead>
-                <TableHead>Balance (€)</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              <TableRow>
-                <TableCell></TableCell>
-                <TableCell></TableCell>
-                <TableCell></TableCell>
-                <TableCell></TableCell>
-                <TableCell></TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
+          <h4 className="font-semibold text-primary bg-primary/10 px-3 py-1 mb-4">Financial Commitments</h4>
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="space-y-3">
+              <div className="flex items-center gap-4">
+                <Label className="w-48 text-muted-foreground">Monthly Commitments</Label>
+                <span className="text-muted-foreground">€</span>
+                <Input className="flex-1" defaultValue={formData?.monthly_commitments || preEligibility?.monthly_commitments || ''} readOnly />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-48 text-muted-foreground">Existing Loans</Label>
+                <span className="text-muted-foreground">€</span>
+                <Input className="flex-1" defaultValue={formData?.existing_loans || ''} readOnly />
+              </div>
+            </div>
+            <div className="space-y-3">
+              <div className="flex items-center gap-4">
+                <Label className="w-48 text-muted-foreground">Credit Cards</Label>
+                <span className="text-muted-foreground">€</span>
+                <Input className="flex-1" defaultValue={formData?.credit_cards || ''} readOnly />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-48 text-muted-foreground">Savings</Label>
+                <span className="text-muted-foreground">€</span>
+                <Input className="flex-1" defaultValue={formData?.savings || ''} readOnly />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Credit History */}
+        <div className="mt-6">
+          <h4 className="font-semibold text-primary bg-primary/10 px-3 py-1 mb-4">Credit History</h4>
+          <div className="mb-4">
+            <div className="flex items-center gap-4">
+              <Label className="w-48 text-muted-foreground">Credit History Rating</Label>
+              <Input className="w-32" defaultValue={formData?.credit_history || preEligibility?.credit_history || ''} readOnly />
+            </div>
+          </div>
+          <div className="grid md:grid-cols-2 gap-6">
+            <CreditHistorySection prefix="app1" title="Applicant 1" />
+            {isJoint && <CreditHistorySection prefix="app2" title="Applicant 2" />}
+          </div>
+          <div className="mt-4 space-y-2">
+            <div className="flex items-center gap-2">
+              <Checkbox checked={formData?.has_ccj || false} disabled />
+              <span>CCJs/Defaults: {formData?.has_ccj ? 'Yes' : 'No'}</span>
+            </div>
+            {formData?.has_ccj && formData?.ccj_details && (
+              <p className="ml-6 text-sm text-muted-foreground">{formData.ccj_details}</p>
+            )}
+            <div className="flex items-center gap-2">
+              <Checkbox checked={formData?.has_arrears || false} disabled />
+              <span>Arrears on existing loans: {formData?.has_arrears ? 'Yes' : 'No'}</span>
+            </div>
+            {formData?.has_arrears && formData?.arrears_details && (
+              <p className="ml-6 text-sm text-muted-foreground">{formData.arrears_details}</p>
+            )}
+          </div>
         </div>
 
         {/* Action Buttons */}
@@ -917,96 +967,131 @@ const FinancialTab = ({ preEligibility, formData }: { preEligibility: PreEligibi
 
 // Mortgage Tab Component
 const MortgageTab = ({ preEligibility, formData }: { preEligibility: PreEligibilityData | null; formData: any }) => {
+  const loanAmount = formData?.loan_amount || (preEligibility ? preEligibility.property_value - preEligibility.deposit_amount : 0);
+  const propertyValue = formData?.property_value || preEligibility?.property_value || 0;
+  const ltv = propertyValue > 0 ? ((loanAmount / propertyValue) * 100).toFixed(1) : 0;
+
   return (
     <Card>
       <CardContent className="pt-6">
-        <p className="text-destructive text-center mb-4">Fill all the required fields</p>
-        <div className="grid md:grid-cols-2 gap-x-12 gap-y-4">
-          <div className="flex items-center gap-4">
-            <Label className="w-48 text-muted-foreground">Customer Type<span className="text-destructive">*</span></Label>
-            <Select>
-              <SelectTrigger className="flex-1 bg-yellow-50 border-yellow-300">
-                <SelectValue placeholder="Select" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ftb">First Time Buyer</SelectItem>
-                <SelectItem value="mover">Mover</SelectItem>
-                <SelectItem value="remortgage">Remortgage</SelectItem>
-                <SelectItem value="investor">Investor</SelectItem>
-              </SelectContent>
-            </Select>
+        {/* Customer Type */}
+        <h4 className="font-semibold text-primary bg-primary/10 px-3 py-1 mb-4">Customer Type</h4>
+        <div className="grid md:grid-cols-2 gap-6">
+          <div className="space-y-3">
+            <div className="flex items-center gap-4">
+              <Label className="w-48 text-muted-foreground">Mortgage Purpose</Label>
+              <Input className="flex-1" defaultValue={formData?.mortgage_purpose || ''} readOnly />
+            </div>
+            <div className="flex items-center gap-2">
+              <Checkbox checked={formData?.first_time_buyer || preEligibility?.first_time_buyer || false} disabled />
+              <span>First Time Buyer</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Checkbox checked={formData?.max_approval_required || false} disabled />
+              <span>Max Approval Required</span>
+            </div>
           </div>
-          <div className="flex items-center gap-4">
-            <Label className="w-48 text-muted-foreground">Max approval required<span className="text-destructive">*</span></Label>
-            <Checkbox />
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Checkbox checked={formData?.joint_title !== false} disabled />
+              <span>Joint Title</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Checkbox checked={formData?.help_to_buy || false} disabled />
+              <span>Help to Buy Scheme</span>
+            </div>
           </div>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-x-12 gap-y-4 mt-4">
-          <div className="space-y-2">
-            <div className="flex items-center gap-4">
-              <Label className="w-48 text-muted-foreground">First Time Buyer</Label>
+        {/* Purchase Section */}
+        <div className="mt-6">
+          <h4 className="font-semibold text-primary bg-primary/10 px-3 py-1 mb-4">Purchase Details</h4>
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="space-y-3">
               <div className="flex items-center gap-4">
-                <div className="flex items-center gap-1">
-                  <input type="radio" name="ftb1" id="ftb1yes" defaultChecked={preEligibility?.first_time_buyer} />
-                  <Label htmlFor="ftb1yes">Yes</Label>
-                </div>
-                <div className="flex items-center gap-1">
-                  <input type="radio" name="ftb1" id="ftb1no" defaultChecked={!preEligibility?.first_time_buyer} />
-                  <Label htmlFor="ftb1no">No</Label>
+                <Label className="w-48 text-muted-foreground">Property Value</Label>
+                <span className="text-muted-foreground">€</span>
+                <Input className="flex-1" defaultValue={propertyValue?.toLocaleString() || ''} readOnly />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-48 text-muted-foreground">Deposit Amount</Label>
+                <span className="text-muted-foreground">€</span>
+                <Input className="flex-1" defaultValue={formData?.deposit_amount || preEligibility?.deposit_amount || ''} readOnly />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-48 text-muted-foreground">Loan Amount</Label>
+                <span className="text-muted-foreground">€</span>
+                <Input className="flex-1" defaultValue={loanAmount?.toLocaleString() || ''} readOnly />
+              </div>
+            </div>
+            <div className="space-y-3">
+              <div className="flex items-center gap-4">
+                <Label className="w-48 text-muted-foreground">Savings</Label>
+                <span className="text-muted-foreground">€</span>
+                <Input className="flex-1" defaultValue={formData?.savings || ''} readOnly />
+              </div>
+              <div className="p-3 bg-muted/50 rounded-lg">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">LTV Ratio:</span>
+                  <span className="font-semibold">{ltv}%</span>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-4 mt-4">
-          <Label className="w-48 text-muted-foreground">Purpose of Loan<span className="text-destructive">*</span></Label>
-          <Select>
-            <SelectTrigger className="w-64 bg-yellow-50 border-yellow-300">
-              <SelectValue placeholder="Select" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="purchase">Purchase</SelectItem>
-              <SelectItem value="remortgage">Remortgage</SelectItem>
-              <SelectItem value="equity">Equity Release</SelectItem>
-            </SelectContent>
-          </Select>
+        {/* Mortgage Terms */}
+        <div className="mt-6">
+          <h4 className="font-semibold text-primary bg-primary/10 px-3 py-1 mb-4">Mortgage Terms</h4>
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="space-y-3">
+              <div className="flex items-center gap-4">
+                <Label className="w-48 text-muted-foreground">Mortgage Term (Years)</Label>
+                <Input className="w-24" defaultValue={formData?.mortgage_term || preEligibility?.desired_term || ''} readOnly />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-48 text-muted-foreground">Repayment Method</Label>
+                <Input className="flex-1" defaultValue={formData?.repayment_method || ''} readOnly />
+              </div>
+            </div>
+            <div className="space-y-3">
+              <div className="flex items-center gap-4">
+                <Label className="w-48 text-muted-foreground">Rate Type</Label>
+                <Input className="flex-1" defaultValue={formData?.rate_type || ''} readOnly />
+              </div>
+              {formData?.rate_type === 'fixed' && (
+                <div className="flex items-center gap-4">
+                  <Label className="w-48 text-muted-foreground">Fixed for (Years)</Label>
+                  <Input className="w-24" defaultValue={formData?.fixed_rate_years || ''} readOnly />
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
-        {/* Section One (Purchase Only) */}
+        {/* Solicitor Details */}
         <div className="mt-6">
-          <h4 className="font-semibold bg-primary/10 px-3 py-1 mb-4">⊿ Section One (Purchase Only)</h4>
-          <div className="grid md:grid-cols-2 gap-x-12 gap-y-4">
-            <div className="flex items-center gap-4">
-              <Label className="w-48 text-muted-foreground">Purchase price/cost of Building</Label>
-              <span className="text-muted-foreground">€</span>
-              <Input className="flex-1 bg-yellow-50 border-yellow-300" type="number" defaultValue={preEligibility?.property_value || ''} />
+          <h4 className="font-semibold text-primary bg-primary/10 px-3 py-1 mb-4">Solicitor Details</h4>
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="space-y-3">
+              <div className="flex items-center gap-4">
+                <Label className="w-40 text-muted-foreground">Solicitor Name</Label>
+                <Input className="flex-1" defaultValue={formData?.solicitor_name || ''} readOnly />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-40 text-muted-foreground">Address</Label>
+                <Input className="flex-1" defaultValue={formData?.solicitor_address || ''} readOnly />
+              </div>
             </div>
-            <div className="flex items-center gap-4">
-              <Label className="w-48 text-muted-foreground">Savings*</Label>
-              <span className="text-muted-foreground">€</span>
-              <Input className="flex-1" type="number" defaultValue={preEligibility?.deposit_amount || ''} />
-            </div>
-            <div className="flex items-center gap-4">
-              <Label className="w-48 text-muted-foreground">Site Price (if applicable)</Label>
-              <span className="text-muted-foreground">€</span>
-              <Input className="flex-1" type="number" />
-            </div>
-            <div className="flex items-center gap-4">
-              <Label className="w-48 text-muted-foreground">Grant</Label>
-              <span className="text-muted-foreground">€</span>
-              <Input className="flex-1" type="number" />
-            </div>
-            <div className="flex items-center gap-4">
-              <Label className="w-48 text-muted-foreground">Legal & stamp duty (if applicable)</Label>
-              <span className="text-muted-foreground">€</span>
-              <Input className="flex-1" type="number" />
-            </div>
-            <div className="flex items-center gap-4">
-              <Label className="w-48 text-muted-foreground">Gifts</Label>
-              <span className="text-muted-foreground">€</span>
-              <Input className="flex-1" type="number" />
+            <div className="space-y-3">
+              <div className="flex items-center gap-4">
+                <Label className="w-40 text-muted-foreground">Phone</Label>
+                <Input className="flex-1" defaultValue={formData?.solicitor_phone || ''} readOnly />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-40 text-muted-foreground">Email</Label>
+                <Input className="flex-1" defaultValue={formData?.solicitor_email || ''} readOnly />
+              </div>
             </div>
           </div>
         </div>
@@ -1029,152 +1114,124 @@ const PropertyTab = ({ preEligibility, formData }: { preEligibility: PreEligibil
   return (
     <Card>
       <CardContent className="pt-6">
-        <h4 className="font-semibold text-primary bg-primary/10 px-3 py-1 mb-4">⊿ Property</h4>
-        <div className="grid md:grid-cols-2 gap-x-12 gap-y-4">
-          <div className="space-y-4">
+        <h4 className="font-semibold text-primary bg-primary/10 px-3 py-1 mb-4">Property Details</h4>
+        
+        {/* Property Values */}
+        <div className="grid md:grid-cols-2 gap-6">
+          <div className="space-y-3">
             <div className="flex items-center gap-4">
-              <Label className="w-32 text-muted-foreground">Purchase Price</Label>
-              <Input className="flex-1" type="number" defaultValue={preEligibility?.property_value || ''} />
+              <Label className="w-48 text-muted-foreground">Property Type</Label>
+              <Input className="flex-1" defaultValue={formData?.property_type || ''} readOnly />
             </div>
             <div className="flex items-center gap-4">
-              <Label className="w-32 text-muted-foreground">Proposed Rent</Label>
-              <Input className="flex-1" type="number" />
+              <Label className="w-48 text-muted-foreground">New or Secondhand</Label>
+              <Input className="flex-1" defaultValue={formData?.property_new_or_secondhand || ''} readOnly />
+            </div>
+            <div className="flex items-center gap-4">
+              <Label className="w-48 text-muted-foreground">Construction Type</Label>
+              <Input className="flex-1" defaultValue={formData?.property_construction_type || ''} readOnly />
+            </div>
+            <div className="flex items-center gap-4">
+              <Label className="w-48 text-muted-foreground">BER Rating</Label>
+              <Input className="flex-1" defaultValue={formData?.ber_rating || ''} readOnly />
             </div>
           </div>
-          <div className="space-y-4">
+          <div className="space-y-3">
             <div className="flex items-center gap-4">
-              <Label className="w-56 text-muted-foreground">Loan Amount For this Property</Label>
-              <Input className="flex-1" type="number" defaultValue={preEligibility ? preEligibility.property_value - preEligibility.deposit_amount : ''} />
+              <Label className="w-48 text-muted-foreground">Estimated Value</Label>
+              <span className="text-muted-foreground">€</span>
+              <Input className="flex-1" defaultValue={formData?.property_estimated_value || formData?.property_value || preEligibility?.property_value || ''} readOnly />
             </div>
             <div className="flex items-center gap-4">
-              <Label className="w-56 text-muted-foreground">Will this property be used as security on this loan?</Label>
-              <Checkbox />
+              <Label className="w-48 text-muted-foreground">Year Built</Label>
+              <Input className="flex-1" defaultValue={formData?.year_built || ''} readOnly />
             </div>
             <div className="flex items-center gap-4">
-              <Label className="w-56 text-muted-foreground">Security Strength</Label>
-              <Select>
-                <SelectTrigger className="flex-1">
-                  <SelectValue placeholder="Select" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="strong">Strong</SelectItem>
-                  <SelectItem value="average">Average</SelectItem>
-                  <SelectItem value="weak">Weak</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label className="w-48 text-muted-foreground">Tenure</Label>
+              <Input className="flex-1" defaultValue={formData?.property_tenure || ''} readOnly />
             </div>
+            {formData?.property_tenure === 'leasehold' && (
+              <div className="flex items-center gap-4">
+                <Label className="w-48 text-muted-foreground">Lease Years Remaining</Label>
+                <Input className="flex-1" defaultValue={formData?.property_lease_years || ''} readOnly />
+              </div>
+            )}
           </div>
         </div>
 
         {/* Address */}
-        <div className="grid md:grid-cols-2 gap-x-12 gap-y-4 mt-6">
-          <div className="space-y-4">
-            <div className="flex items-center gap-4">
-              <Label className="w-32 text-muted-foreground text-right">Address Line 1</Label>
-              <Input className="flex-1" />
+        <div className="mt-6">
+          <h4 className="font-semibold text-primary bg-primary/10 px-3 py-1 mb-4">Property Address</h4>
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="space-y-3">
+              <div className="flex items-center gap-4">
+                <Label className="w-40 text-muted-foreground">Address Line 1</Label>
+                <Input className="flex-1" defaultValue={formData?.property_address_line1 || ''} readOnly />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-40 text-muted-foreground">Address Line 2</Label>
+                <Input className="flex-1" defaultValue={formData?.property_address_line2 || ''} readOnly />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-40 text-muted-foreground">Address Line 3</Label>
+                <Input className="flex-1" defaultValue={formData?.property_address_line3 || ''} readOnly />
+              </div>
             </div>
-            <div className="flex items-center gap-4">
-              <Label className="w-32 text-muted-foreground text-right">Address Line 2</Label>
-              <Input className="flex-1" />
-            </div>
-            <div className="flex items-center gap-4">
-              <Label className="w-32 text-muted-foreground text-right">Address Line 3</Label>
-              <Input className="flex-1" />
-            </div>
-            <div className="flex items-center gap-4">
-              <Label className="w-32 text-muted-foreground text-right">County</Label>
-              <Select>
-                <SelectTrigger className="flex-1">
-                  <SelectValue placeholder="Select" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="dublin">Dublin</SelectItem>
-                  <SelectItem value="cork">Cork</SelectItem>
-                  <SelectItem value="galway">Galway</SelectItem>
-                  <SelectItem value="limerick">Limerick</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-center gap-4">
-              <Label className="w-32 text-muted-foreground text-right">Country</Label>
-              <Input className="flex-1" defaultValue="Ireland" />
-            </div>
-          </div>
-          <div className="space-y-4">
-            <div className="flex items-center gap-4">
-              <Label className="w-56 text-muted-foreground">Type of Property<span className="text-destructive">*</span></Label>
-              <Select>
-                <SelectTrigger className="flex-1">
-                  <SelectValue placeholder="Select" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="detached">Detached House</SelectItem>
-                  <SelectItem value="semi-detached">Semi-Detached House</SelectItem>
-                  <SelectItem value="terraced">Terraced House</SelectItem>
-                  <SelectItem value="apartment">Apartment</SelectItem>
-                  <SelectItem value="bungalow">Bungalow</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-center gap-4">
-              <Label className="w-56 text-muted-foreground">Estimated completion/closing date</Label>
-              <Input className="flex-1" type="date" />
-            </div>
-            <div className="flex items-center gap-4">
-              <Label className="w-56 text-muted-foreground">New Property</Label>
-              <Checkbox />
-            </div>
-            <div className="flex items-center gap-4">
-              <Label className="w-56 text-muted-foreground">Number of floors in block</Label>
-              <Input className="w-20" type="number" />
-            </div>
-            <div className="flex items-center gap-4">
-              <Label className="w-56 text-muted-foreground">Estimated Value</Label>
-              <span className="text-muted-foreground">€</span>
-              <Input className="flex-1" type="number" defaultValue={preEligibility?.property_value || ''} />
+            <div className="space-y-3">
+              <div className="flex items-center gap-4">
+                <Label className="w-40 text-muted-foreground">County</Label>
+                <Input className="flex-1" defaultValue={formData?.property_county || ''} readOnly />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-40 text-muted-foreground">Country</Label>
+                <Input className="flex-1" defaultValue={formData?.property_country || 'Ireland'} readOnly />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-40 text-muted-foreground">Closing Date</Label>
+                <Input className="flex-1" defaultValue={formData?.estimated_closing_date || ''} readOnly />
+              </div>
             </div>
           </div>
         </div>
 
         {/* Number of Rooms */}
         <div className="mt-6">
-          <h4 className="font-semibold text-primary bg-primary/10 px-3 py-1 mb-4">⊿ Number of Rooms</h4>
-          <div className="grid md:grid-cols-2 gap-x-12 gap-y-4">
-            <div className="flex items-center gap-4">
-              <Label className="w-32 text-muted-foreground">Living rooms</Label>
-              <Input className="w-20" type="number" />
+          <h4 className="font-semibold text-primary bg-primary/10 px-3 py-1 mb-4">Number of Rooms</h4>
+          <div className="grid md:grid-cols-4 gap-4">
+            <div className="flex items-center gap-2">
+              <Label className="text-muted-foreground">Living Rooms:</Label>
+              <span className="font-medium">{formData?.property_num_living_rooms || 0}</span>
             </div>
-            <div className="flex items-center gap-4">
-              <Label className="w-32 text-muted-foreground">Dining rooms</Label>
-              <Input className="w-20" type="number" />
+            <div className="flex items-center gap-2">
+              <Label className="text-muted-foreground">Dining Rooms:</Label>
+              <span className="font-medium">{formData?.property_num_dining_rooms || 0}</span>
             </div>
-            <div className="flex items-center gap-4">
-              <Label className="w-32 text-muted-foreground">Bedrooms</Label>
-              <Input className="w-20" type="number" />
+            <div className="flex items-center gap-2">
+              <Label className="text-muted-foreground">Bedrooms:</Label>
+              <span className="font-medium">{formData?.property_num_bedrooms || 0}</span>
             </div>
-            <div className="flex items-center gap-4">
-              <Label className="w-32 text-muted-foreground">Bathrooms</Label>
-              <Input className="w-20" type="number" />
+            <div className="flex items-center gap-2">
+              <Label className="text-muted-foreground">Bathrooms:</Label>
+              <span className="font-medium">{formData?.property_num_bathrooms || 0}</span>
             </div>
+            <div className="flex items-center gap-2">
+              <Label className="text-muted-foreground">Kitchens:</Label>
+              <span className="font-medium">{formData?.property_num_kitchens || 0}</span>
+            </div>
+          </div>
+          <div className="mt-4 flex items-center gap-2">
+            <Checkbox checked={formData?.property_vacant_possession || false} disabled />
+            <span>Vacant Possession</span>
           </div>
         </div>
 
-        {/* Pagination and Actions */}
-        <div className="flex items-center justify-between mt-6 border-t pt-4">
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm">|&lt;</Button>
-            <Button variant="outline" size="sm">&lt;</Button>
-            <span className="text-sm">1 of 1</span>
-            <Button variant="outline" size="sm">&gt;</Button>
-            <Button variant="outline" size="sm">&gt;|</Button>
-            <Button variant="outline" size="sm">+</Button>
-            <Button variant="outline" size="sm">×</Button>
-            <Button variant="outline">Save</Button>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm">Previous</Button>
-            <Button variant="outline" size="sm">Next</Button>
-          </div>
+        {/* Action Buttons */}
+        <div className="flex justify-center gap-4 pt-6 border-t mt-6">
+          <Button variant="outline">Save</Button>
+        </div>
+        <div className="flex justify-end gap-2 mt-4">
+          <Button variant="outline" size="sm">Previous</Button>
+          <Button variant="outline" size="sm">Next</Button>
         </div>
       </CardContent>
     </Card>
