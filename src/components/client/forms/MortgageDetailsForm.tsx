@@ -181,23 +181,11 @@ export const MortgageDetailsForm = ({ formData, onChange }: MortgageDetailsFormP
                 <Input className="flex-1" value={formData.solicitor_name || ''} onChange={(e) => onChange('solicitor_name', e.target.value)} />
               </div>
               <div className="flex items-center gap-4">
-                <Label className="w-40 text-sm text-muted-foreground">Address Line 1</Label>
-                <Input className="flex-1" value={formData.solicitor_address_line1 || ''} onChange={(e) => onChange('solicitor_address_line1', e.target.value)} />
-              </div>
-              <div className="flex items-center gap-4">
-                <Label className="w-40 text-sm text-muted-foreground">Address Line 2</Label>
-                <Input className="flex-1" value={formData.solicitor_address_line2 || ''} onChange={(e) => onChange('solicitor_address_line2', e.target.value)} />
-              </div>
-              <div className="flex items-center gap-4">
-                <Label className="w-40 text-sm text-muted-foreground">Address Line 3</Label>
-                <Input className="flex-1" value={formData.solicitor_address_line3 || ''} onChange={(e) => onChange('solicitor_address_line3', e.target.value)} />
+                <Label className="w-40 text-sm text-muted-foreground">Address</Label>
+                <Input className="flex-1" value={formData.solicitor_address || ''} onChange={(e) => onChange('solicitor_address', e.target.value)} placeholder="Full address" />
               </div>
             </div>
             <div className="space-y-3">
-              <div className="flex items-center gap-4">
-                <Label className="w-40 text-sm text-muted-foreground">County</Label>
-                <Input className="flex-1" value={formData.solicitor_county || ''} onChange={(e) => onChange('solicitor_county', e.target.value)} />
-              </div>
               <div className="flex items-center gap-4">
                 <Label className="w-40 text-sm text-muted-foreground">Phone</Label>
                 <Input className="flex-1" value={formData.solicitor_phone || ''} onChange={(e) => onChange('solicitor_phone', e.target.value)} />

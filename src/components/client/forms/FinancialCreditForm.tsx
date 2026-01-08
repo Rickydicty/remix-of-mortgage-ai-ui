@@ -111,20 +111,8 @@ export const FinancialCreditForm = ({ formData, onChange }: FinancialCreditFormP
                 <Input className="flex-1" value={formData.bank_name || ''} onChange={(e) => onChange('bank_name', e.target.value)} />
               </div>
               <div className="flex items-center gap-4">
-                <Label className="w-40 text-sm text-muted-foreground">Address Line 1</Label>
-                <Input className="flex-1" value={formData.bank_address_line1 || ''} onChange={(e) => onChange('bank_address_line1', e.target.value)} />
-              </div>
-              <div className="flex items-center gap-4">
-                <Label className="w-40 text-sm text-muted-foreground">Address Line 2</Label>
-                <Input className="flex-1" value={formData.bank_address_line2 || ''} onChange={(e) => onChange('bank_address_line2', e.target.value)} />
-              </div>
-              <div className="flex items-center gap-4">
-                <Label className="w-40 text-sm text-muted-foreground">County</Label>
-                <Input className="flex-1" value={formData.bank_county || ''} onChange={(e) => onChange('bank_county', e.target.value)} />
-              </div>
-              <div className="flex items-center gap-4">
-                <Label className="w-40 text-sm text-muted-foreground">Country</Label>
-                <Input className="flex-1" value={formData.bank_country || 'Ireland'} onChange={(e) => onChange('bank_country', e.target.value)} />
+                <Label className="w-40 text-sm text-muted-foreground">Address</Label>
+                <Input className="flex-1" value={formData.bank_address || ''} onChange={(e) => onChange('bank_address', e.target.value)} placeholder="Full address" />
               </div>
             </div>
             <div className="space-y-3">
