@@ -460,7 +460,7 @@ const SummaryTab = ({ application, profile, preEligibility, formData }: { applic
                 <TableCell>{formData?.app1_phone || profile?.phone || preEligibility?.phone || ''}</TableCell>
                 <TableCell>{formData?.app1_date_of_birth || ''}</TableCell>
               </TableRow>
-              {(formData?.app2_enabled || preEligibility?.applicant_type === 'joint') && (
+              {(formData?.app2_enabled === true || formData?.app2_enabled === 'true' || preEligibility?.applicant_type === 'joint') && (
                 <TableRow>
                   <TableCell className="font-medium">
                     Applicant 2
@@ -524,7 +524,7 @@ const SummaryTab = ({ application, profile, preEligibility, formData }: { applic
 
 // Personal Tab Component
 const PersonalTab = ({ profile, preEligibility, formData }: { profile: any; preEligibility: PreEligibilityData | null; formData: any }) => {
-  const isJoint = formData?.app2_enabled || preEligibility?.applicant_type === 'joint';
+  const isJoint = formData?.app2_enabled === true || formData?.app2_enabled === 'true' || preEligibility?.applicant_type === 'joint';
 
   const ApplicantSection = ({ prefix, title }: { prefix: 'app1' | 'app2'; title: string }) => (
     <div className="space-y-4">
@@ -657,7 +657,7 @@ const PersonalTab = ({ profile, preEligibility, formData }: { profile: any; preE
 
 // Income Tab Component
 const IncomeTab = ({ preEligibility, formData }: { preEligibility: PreEligibilityData | null; formData: any }) => {
-  const isJoint = formData?.app2_enabled || preEligibility?.applicant_type === 'joint';
+  const isJoint = formData?.app2_enabled === true || formData?.app2_enabled === 'true' || preEligibility?.applicant_type === 'joint';
 
   const IncomeSection = ({ prefix, title, defaultIncome }: { prefix: 'app1' | 'app2'; title: string; defaultIncome?: number }) => (
     <div className="space-y-4">
@@ -815,7 +815,7 @@ const IncomeTab = ({ preEligibility, formData }: { preEligibility: PreEligibilit
 
 // Financial Tab Component
 const FinancialTab = ({ preEligibility, formData }: { preEligibility: PreEligibilityData | null; formData: any }) => {
-  const isJoint = formData?.app2_enabled || preEligibility?.applicant_type === 'joint';
+  const isJoint = formData?.app2_enabled === true || formData?.app2_enabled === 'true' || preEligibility?.applicant_type === 'joint';
 
   const CreditHistorySection = ({ prefix, title }: { prefix: 'app1' | 'app2'; title: string }) => (
     <div className="space-y-3">
