@@ -441,6 +441,7 @@ const SummaryTab = ({ application, profile, preEligibility, formData }: { applic
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/50">
+                <TableHead></TableHead>
                 <TableHead>Title</TableHead>
                 <TableHead>First Name</TableHead>
                 <TableHead>Surname</TableHead>
@@ -451,21 +452,26 @@ const SummaryTab = ({ application, profile, preEligibility, formData }: { applic
             </TableHeader>
             <TableBody>
               <TableRow>
-                <TableCell></TableCell>
-                <TableCell>{profile?.full_name?.split(' ')[0] || ''}</TableCell>
-                <TableCell>{profile?.full_name?.split(' ').slice(1).join(' ') || ''}</TableCell>
-                <TableCell></TableCell>
-                <TableCell>{profile?.phone || preEligibility?.phone || ''}</TableCell>
-                <TableCell></TableCell>
+                <TableCell className="font-medium">Applicant 1</TableCell>
+                <TableCell>{formData?.app1_title || ''}</TableCell>
+                <TableCell>{formData?.app1_forenames || profile?.full_name?.split(' ')[0] || ''}</TableCell>
+                <TableCell>{formData?.app1_surname || profile?.full_name?.split(' ').slice(1).join(' ') || ''}</TableCell>
+                <TableCell>{formData?.app1_home_phone || ''}</TableCell>
+                <TableCell>{formData?.app1_phone || profile?.phone || preEligibility?.phone || ''}</TableCell>
+                <TableCell>{formData?.app1_date_of_birth || ''}</TableCell>
               </TableRow>
-              {preEligibility?.applicant_type === 'joint' && (
+              {(formData?.app2_enabled || preEligibility?.applicant_type === 'joint') && (
                 <TableRow>
-                  <TableCell></TableCell>
-                  <TableCell></TableCell>
-                  <TableCell></TableCell>
-                  <TableCell></TableCell>
-                  <TableCell></TableCell>
-                  <TableCell></TableCell>
+                  <TableCell className="font-medium">
+                    Applicant 2
+                    {formData?.app2_is_guarantor && <Badge variant="outline" className="ml-2 text-xs">Guarantor</Badge>}
+                  </TableCell>
+                  <TableCell>{formData?.app2_title || ''}</TableCell>
+                  <TableCell>{formData?.app2_forenames || ''}</TableCell>
+                  <TableCell>{formData?.app2_surname || ''}</TableCell>
+                  <TableCell>{formData?.app2_home_phone || ''}</TableCell>
+                  <TableCell>{formData?.app2_phone || ''}</TableCell>
+                  <TableCell>{formData?.app2_date_of_birth || ''}</TableCell>
                 </TableRow>
               )}
             </TableBody>
@@ -520,93 +526,121 @@ const SummaryTab = ({ application, profile, preEligibility, formData }: { applic
 const PersonalTab = ({ profile, preEligibility, formData }: { profile: any; preEligibility: PreEligibilityData | null; formData: any }) => {
   const isJoint = formData?.app2_enabled || preEligibility?.applicant_type === 'joint';
 
-  return (
-    <Card>
-      <CardContent className="pt-6">
-        <div className="space-y-4">
-          <h3 className="font-bold text-primary text-lg">Applicant</h3>
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="space-y-3">
-              <div className="flex items-center gap-4">
-                <Label className="w-40 text-muted-foreground">Forenames<span className="text-destructive">*</span></Label>
-                <Input className="flex-1" defaultValue={profile?.full_name?.split(' ')[0] || ''} />
-              </div>
-              <div className="flex items-center gap-4">
-                <Label className="w-40 text-muted-foreground">Surname<span className="text-destructive">*</span></Label>
-                <Input className="flex-1" defaultValue={profile?.full_name?.split(' ').slice(1).join(' ') || ''} />
-              </div>
-              <div className="flex items-center gap-4">
-                <Label className="w-40 text-muted-foreground">Other/Previous Names</Label>
-                <Input className="flex-1" />
-              </div>
-              <div className="flex items-center gap-4">
-                <Label className="w-40 text-muted-foreground">Gender</Label>
-                <Select>
-                  <SelectTrigger className="flex-1">
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="male">Male</SelectItem>
-                    <SelectItem value="female">Female</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex items-center gap-4">
-                <Label className="w-40 text-muted-foreground">Title</Label>
-                <Select>
-                  <SelectTrigger className="flex-1">
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="mr">Mr</SelectItem>
-                    <SelectItem value="mrs">Mrs</SelectItem>
-                    <SelectItem value="ms">Ms</SelectItem>
-                    <SelectItem value="miss">Miss</SelectItem>
-                    <SelectItem value="dr">Dr</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex items-center gap-4">
-                <Label className="w-40 text-muted-foreground">Date of Birth (dd/mm/yyyy)</Label>
-                <Input className="flex-1" type="date" />
-              </div>
-            </div>
-            <div className="space-y-3">
-              <div className="flex items-center gap-4">
-                <Label className="w-40 text-muted-foreground">Nationality</Label>
-                <Input className="flex-1" defaultValue="Irish" />
-              </div>
-              <div className="flex items-center gap-4">
-                <Label className="w-40 text-muted-foreground">PPS Number</Label>
-                <Input className="flex-1" />
-              </div>
-              <div className="flex items-center gap-4">
-                <Label className="w-40 text-muted-foreground">Marital Status</Label>
-                <Select>
-                  <SelectTrigger className="flex-1">
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="single">Single</SelectItem>
-                    <SelectItem value="married">Married</SelectItem>
-                    <SelectItem value="divorced">Divorced</SelectItem>
-                    <SelectItem value="widowed">Widowed</SelectItem>
-                    <SelectItem value="separated">Separated</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex items-center gap-4">
-                <Label className="w-40 text-muted-foreground">No. of Children</Label>
-                <Input className="w-20" type="number" />
-              </div>
-              <div className="flex items-center gap-4">
-                <Label className="w-40 text-muted-foreground">Children's Ages</Label>
-                <Input className="flex-1" placeholder="e.g., 5, 8, 12" />
-              </div>
-            </div>
+  const ApplicantSection = ({ prefix, title }: { prefix: 'app1' | 'app2'; title: string }) => (
+    <div className="space-y-4">
+      <h3 className="font-bold text-primary text-lg">{title}</h3>
+      <div className="grid md:grid-cols-2 gap-6">
+        <div className="space-y-3">
+          <div className="flex items-center gap-4">
+            <Label className="w-40 text-muted-foreground">Title</Label>
+            <Input className="flex-1" defaultValue={formData?.[`${prefix}_title`] || ''} readOnly />
+          </div>
+          <div className="flex items-center gap-4">
+            <Label className="w-40 text-muted-foreground">Forenames<span className="text-destructive">*</span></Label>
+            <Input className="flex-1" defaultValue={formData?.[`${prefix}_forenames`] || (prefix === 'app1' ? profile?.full_name?.split(' ')[0] : '')} readOnly />
+          </div>
+          <div className="flex items-center gap-4">
+            <Label className="w-40 text-muted-foreground">Surname<span className="text-destructive">*</span></Label>
+            <Input className="flex-1" defaultValue={formData?.[`${prefix}_surname`] || (prefix === 'app1' ? profile?.full_name?.split(' ').slice(1).join(' ') : '')} readOnly />
+          </div>
+          <div className="flex items-center gap-4">
+            <Label className="w-40 text-muted-foreground">Other/Previous Names</Label>
+            <Input className="flex-1" defaultValue={formData?.[`${prefix}_other_names`] || ''} readOnly />
+          </div>
+          <div className="flex items-center gap-4">
+            <Label className="w-40 text-muted-foreground">Gender</Label>
+            <Input className="flex-1" defaultValue={formData?.[`${prefix}_gender`] || ''} readOnly />
+          </div>
+          <div className="flex items-center gap-4">
+            <Label className="w-40 text-muted-foreground">Date of Birth</Label>
+            <Input className="flex-1" defaultValue={formData?.[`${prefix}_date_of_birth`] || ''} readOnly />
           </div>
         </div>
+        <div className="space-y-3">
+          <div className="flex items-center gap-4">
+            <Label className="w-40 text-muted-foreground">Nationality</Label>
+            <Input className="flex-1" defaultValue={formData?.[`${prefix}_nationality`] || 'Irish'} readOnly />
+          </div>
+          <div className="flex items-center gap-4">
+            <Label className="w-40 text-muted-foreground">PPS Number</Label>
+            <Input className="flex-1" defaultValue={formData?.[`${prefix}_pps_number`] || ''} readOnly />
+          </div>
+          <div className="flex items-center gap-4">
+            <Label className="w-40 text-muted-foreground">Marital Status</Label>
+            <Input className="flex-1" defaultValue={formData?.[`${prefix}_marital_status`] || ''} readOnly />
+          </div>
+          <div className="flex items-center gap-4">
+            <Label className="w-40 text-muted-foreground">No. of Children</Label>
+            <Input className="flex-1" defaultValue={formData?.[`${prefix}_no_of_children`] || ''} readOnly />
+          </div>
+          <div className="flex items-center gap-4">
+            <Label className="w-40 text-muted-foreground">Children's Ages</Label>
+            <Input className="flex-1" defaultValue={formData?.[`${prefix}_children_ages`] || ''} readOnly />
+          </div>
+          <div className="flex items-center gap-4">
+            <Label className="w-40 text-muted-foreground">Phone</Label>
+            <Input className="flex-1" defaultValue={formData?.[`${prefix}_phone`] || (prefix === 'app1' ? profile?.phone : '')} readOnly />
+          </div>
+          <div className="flex items-center gap-4">
+            <Label className="w-40 text-muted-foreground">Email</Label>
+            <Input className="flex-1" defaultValue={formData?.[`${prefix}_email`] || (prefix === 'app1' ? profile?.email : '')} readOnly />
+          </div>
+        </div>
+      </div>
+
+      {/* Address Section */}
+      <h4 className="font-semibold bg-primary/10 px-3 py-1 mt-4">Current Address</h4>
+      <div className="grid md:grid-cols-2 gap-6">
+        <div className="space-y-3">
+          <div className="flex items-center gap-4">
+            <Label className="w-40 text-muted-foreground">Address Line 1</Label>
+            <Input className="flex-1" defaultValue={formData?.[`${prefix}_address_line1`] || ''} readOnly />
+          </div>
+          <div className="flex items-center gap-4">
+            <Label className="w-40 text-muted-foreground">Address Line 2</Label>
+            <Input className="flex-1" defaultValue={formData?.[`${prefix}_address_line2`] || ''} readOnly />
+          </div>
+          <div className="flex items-center gap-4">
+            <Label className="w-40 text-muted-foreground">Address Line 3</Label>
+            <Input className="flex-1" defaultValue={formData?.[`${prefix}_address_line3`] || ''} readOnly />
+          </div>
+        </div>
+        <div className="space-y-3">
+          <div className="flex items-center gap-4">
+            <Label className="w-40 text-muted-foreground">County</Label>
+            <Input className="flex-1" defaultValue={formData?.[`${prefix}_county`] || ''} readOnly />
+          </div>
+          <div className="flex items-center gap-4">
+            <Label className="w-40 text-muted-foreground">Country</Label>
+            <Input className="flex-1" defaultValue={formData?.[`${prefix}_country`] || 'Ireland'} readOnly />
+          </div>
+          <div className="flex items-center gap-4">
+            <Label className="w-40 text-muted-foreground">Years at Address</Label>
+            <Input className="flex-1" defaultValue={formData?.[`${prefix}_years_at_address`] || ''} readOnly />
+          </div>
+          <div className="flex items-center gap-4">
+            <Label className="w-40 text-muted-foreground">Residence Status</Label>
+            <Input className="flex-1" defaultValue={formData?.[`${prefix}_residence_status`] || ''} readOnly />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <Card>
+      <CardContent className="pt-6 space-y-8">
+        <ApplicantSection prefix="app1" title="Applicant 1 - Personal Details" />
+        
+        {isJoint && (
+          <>
+            <div className="border-t pt-6" />
+            <ApplicantSection prefix="app2" title="Applicant 2 - Personal Details" />
+            {formData?.app2_is_guarantor && (
+              <Badge variant="outline" className="bg-warning/10 text-warning border-warning/30">Guarantor</Badge>
+            )}
+          </>
+        )}
 
         {/* Action Buttons */}
         <div className="flex justify-center gap-4 pt-6 border-t mt-6">
@@ -623,113 +657,148 @@ const PersonalTab = ({ profile, preEligibility, formData }: { profile: any; preE
 
 // Income Tab Component
 const IncomeTab = ({ preEligibility, formData }: { preEligibility: PreEligibilityData | null; formData: any }) => {
-  return (
-    <Card>
-      <CardContent className="pt-6">
-        <div className="space-y-4">
-          <h3 className="font-bold text-primary text-lg">Applicant Income</h3>
-          <h4 className="font-semibold bg-primary/10 px-3 py-1">⊿ Current Income</h4>
+  const isJoint = formData?.app2_enabled || preEligibility?.applicant_type === 'joint';
+
+  const IncomeSection = ({ prefix, title, defaultIncome }: { prefix: 'app1' | 'app2'; title: string; defaultIncome?: number }) => (
+    <div className="space-y-4">
+      <h3 className="font-bold text-primary text-lg">{title}</h3>
+      
+      {/* Employment Details */}
+      <h4 className="font-semibold bg-primary/10 px-3 py-1">Employment Details</h4>
+      <div className="grid md:grid-cols-2 gap-6">
+        <div className="space-y-3">
+          <div className="flex items-center gap-4">
+            <Label className="w-48 text-muted-foreground">Employment Status</Label>
+            <Input className="flex-1" defaultValue={formData?.[`${prefix}_employment_status`] || ''} readOnly />
+          </div>
+          <div className="flex items-center gap-4">
+            <Label className="w-48 text-muted-foreground">Occupation</Label>
+            <Input className="flex-1" defaultValue={formData?.[`${prefix}_occupation`] || ''} readOnly />
+          </div>
+          <div className="flex items-center gap-4">
+            <Label className="w-48 text-muted-foreground">Employer Name</Label>
+            <Input className="flex-1" defaultValue={formData?.[`${prefix}_employer_name`] || ''} readOnly />
+          </div>
+          <div className="flex items-center gap-4">
+            <Label className="w-48 text-muted-foreground">Employer Address</Label>
+            <Input className="flex-1" defaultValue={formData?.[`${prefix}_employer_address`] || ''} readOnly />
+          </div>
+        </div>
+        <div className="space-y-3">
+          <div className="flex items-center gap-4">
+            <Label className="w-48 text-muted-foreground">Years with Employer</Label>
+            <Input className="flex-1" defaultValue={formData?.[`${prefix}_years_with_employer`] || ''} readOnly />
+          </div>
+          <div className="flex items-center gap-4">
+            <Label className="w-48 text-muted-foreground">Employment Type</Label>
+            <Input className="flex-1" defaultValue={formData?.[`${prefix}_employment_type`] || ''} readOnly />
+          </div>
+          <div className="flex items-center gap-4">
+            <Label className="w-48 text-muted-foreground">Nature of Business</Label>
+            <Input className="flex-1" defaultValue={formData?.[`${prefix}_nature_of_business`] || ''} readOnly />
+          </div>
+        </div>
+      </div>
+
+      {/* Income Details */}
+      <h4 className="font-semibold bg-primary/10 px-3 py-1">Current Income</h4>
+      <div className="grid md:grid-cols-2 gap-6">
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <Label className="w-56 text-sm text-muted-foreground">Gross basic salary per annum</Label>
+            <span className="text-muted-foreground">€</span>
+            <Input className="w-28" type="number" defaultValue={formData?.[`${prefix}_gross_salary`] || defaultIncome || ''} readOnly />
+          </div>
+          <div className="flex items-center gap-2">
+            <Label className="w-56 text-sm text-muted-foreground">Overtime per annum</Label>
+            <span className="text-muted-foreground">€</span>
+            <Input className="w-28" type="number" defaultValue={formData?.[`${prefix}_overtime`] || ''} readOnly />
+          </div>
+          <div className="flex items-center gap-2">
+            <Label className="w-56 text-sm text-muted-foreground">Bonuses per annum</Label>
+            <span className="text-muted-foreground">€</span>
+            <Input className="w-28" type="number" defaultValue={formData?.[`${prefix}_bonuses`] || ''} readOnly />
+          </div>
+          <div className="flex items-center gap-2">
+            <Label className="w-56 text-sm text-muted-foreground">Commissions per annum</Label>
+            <span className="text-muted-foreground">€</span>
+            <Input className="w-28" type="number" defaultValue={formData?.[`${prefix}_commissions`] || ''} readOnly />
+          </div>
+        </div>
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <Label className="w-56 text-sm text-muted-foreground">Other income</Label>
+            <span className="text-muted-foreground">€</span>
+            <Input className="w-28" type="number" defaultValue={formData?.[`${prefix}_other_income`] || ''} readOnly />
+          </div>
+          <div className="flex items-center gap-2">
+            <Label className="w-56 text-sm text-muted-foreground">Lodger income per annum</Label>
+            <span className="text-muted-foreground">€</span>
+            <Input className="w-28" type="number" defaultValue={formData?.[`${prefix}_lodger_income`] || ''} readOnly />
+          </div>
+          <div className="flex items-center gap-2">
+            <Label className="w-56 text-sm text-muted-foreground">Residential investment income</Label>
+            <span className="text-muted-foreground">€</span>
+            <Input className="w-28" type="number" defaultValue={formData?.[`${prefix}_residential_investment_income`] || ''} readOnly />
+          </div>
+          <div className="flex items-center gap-2">
+            <Label className="w-56 text-sm text-muted-foreground">Net Monthly Income</Label>
+            <span className="text-muted-foreground">€</span>
+            <Input className="w-28" type="number" defaultValue={formData?.[`${prefix}_net_monthly_income`] || ''} readOnly />
+          </div>
+        </div>
+      </div>
+
+      {/* Self-Employed Section if applicable */}
+      {formData?.[`${prefix}_employment_status`] === 'self_employed' && (
+        <>
+          <h4 className="font-semibold bg-primary/10 px-3 py-1">Self-Employment Details</h4>
           <div className="grid md:grid-cols-2 gap-6">
             <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <Label className="w-56 text-sm text-muted-foreground">Gross basic wage/salary per annum</Label>
-                <span className="text-muted-foreground">€</span>
-                <Input className="w-28" type="number" defaultValue={preEligibility?.income_1 || ''} />
-                <Select>
-                  <SelectTrigger className="w-36">
-                    <SelectValue placeholder="Frequency" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="annual">Annual</SelectItem>
-                    <SelectItem value="monthly">Monthly</SelectItem>
-                    <SelectItem value="weekly">Weekly</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="flex items-center gap-4">
+                <Label className="w-48 text-muted-foreground">Company Name</Label>
+                <Input className="flex-1" defaultValue={formData?.[`${prefix}_se_company_name`] || ''} readOnly />
               </div>
-              <div className="flex items-center gap-2">
-                <Label className="w-56 text-sm text-muted-foreground">Overtime per annum</Label>
-                <span className="text-muted-foreground">€</span>
-                <Input className="w-28" type="number" />
-                <Select>
-                  <SelectTrigger className="w-36">
-                    <SelectValue placeholder="Frequency" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="annual">Annual</SelectItem>
-                    <SelectItem value="monthly">Monthly</SelectItem>
-                    <SelectItem value="weekly">Weekly</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="flex items-center gap-4">
+                <Label className="w-48 text-muted-foreground">Years Established</Label>
+                <Input className="flex-1" defaultValue={formData?.[`${prefix}_se_years_established`] || ''} readOnly />
               </div>
-              <div className="flex items-center gap-2">
-                <Label className="w-56 text-sm text-muted-foreground">Bonuses per annum</Label>
-                <span className="text-muted-foreground">€</span>
-                <Input className="w-28" type="number" />
-                <Select>
-                  <SelectTrigger className="w-36">
-                    <SelectValue placeholder="Frequency" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="annual">Annual</SelectItem>
-                    <SelectItem value="monthly">Monthly</SelectItem>
-                    <SelectItem value="weekly">Weekly</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex items-center gap-2">
-                <Label className="w-56 text-sm text-muted-foreground">Commissions per annum</Label>
-                <span className="text-muted-foreground">€</span>
-                <Input className="w-28" type="number" />
-                <Select>
-                  <SelectTrigger className="w-36">
-                    <SelectValue placeholder="Frequency" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="annual">Annual</SelectItem>
-                    <SelectItem value="monthly">Monthly</SelectItem>
-                    <SelectItem value="weekly">Weekly</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex items-center gap-2">
-                <Label className="w-56 text-sm text-muted-foreground">Other income (non rental)</Label>
-                <span className="text-muted-foreground">€</span>
-                <Input className="w-28" type="number" />
-                <Select>
-                  <SelectTrigger className="w-36">
-                    <SelectValue placeholder="Frequency" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="annual">Annual</SelectItem>
-                    <SelectItem value="monthly">Monthly</SelectItem>
-                    <SelectItem value="weekly">Weekly</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="flex items-center gap-4">
+                <Label className="w-48 text-muted-foreground">Average Profit</Label>
+                <Input className="flex-1" defaultValue={formData?.[`${prefix}_se_average_profit`] || ''} readOnly />
               </div>
             </div>
             <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <Label className="w-56 text-sm text-muted-foreground">Other Income Details</Label>
-                <Input className="flex-1" />
+              <div className="flex items-center gap-4">
+                <Label className="w-48 text-muted-foreground">Shareholding %</Label>
+                <Input className="flex-1" defaultValue={formData?.[`${prefix}_se_shareholding_percent`] || ''} readOnly />
               </div>
-              <div className="flex items-center gap-2">
-                <Label className="w-56 text-sm text-muted-foreground">Lodger income per annum</Label>
-                <span className="text-muted-foreground">€</span>
-                <Input className="w-28" type="number" />
+              <div className="flex items-center gap-4">
+                <Label className="w-48 text-muted-foreground">Accountant Name</Label>
+                <Input className="flex-1" defaultValue={formData?.[`${prefix}_se_accountant_name`] || ''} readOnly />
               </div>
-              <div className="flex items-center gap-2">
-                <Label className="w-56 text-sm text-muted-foreground">Residential investment income</Label>
-                <span className="text-muted-foreground">€</span>
-                <Input className="w-28" type="number" />
-              </div>
-              <div className="flex items-center gap-2">
-                <Label className="w-56 text-sm text-muted-foreground">Other Household Income</Label>
-                <span className="text-muted-foreground">€</span>
-                <Input className="w-28" type="number" />
+              <div className="flex items-center gap-4">
+                <Label className="w-48 text-muted-foreground">Accountant Firm</Label>
+                <Input className="flex-1" defaultValue={formData?.[`${prefix}_se_accountant_firm`] || ''} readOnly />
               </div>
             </div>
           </div>
-        </div>
+        </>
+      )}
+    </div>
+  );
+
+  return (
+    <Card>
+      <CardContent className="pt-6 space-y-8">
+        <IncomeSection prefix="app1" title="Applicant 1 - Income & Employment" defaultIncome={preEligibility?.income_1} />
+        
+        {isJoint && (
+          <>
+            <div className="border-t pt-6" />
+            <IncomeSection prefix="app2" title="Applicant 2 - Income & Employment" defaultIncome={preEligibility?.income_2 || undefined} />
+          </>
+        )}
 
         {/* Action Buttons */}
         <div className="flex justify-center gap-4 pt-6 border-t mt-6">
