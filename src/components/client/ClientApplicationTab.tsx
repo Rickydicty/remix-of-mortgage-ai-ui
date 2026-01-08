@@ -208,10 +208,6 @@ const defaultFormData: FormData = {
   // Bank Details
   bank_name: '',
   bank_address: '',
-  bank_address_line1: '',
-  bank_address_line2: '',
-  bank_county: '',
-  bank_country: 'Ireland',
   bank_account_type: '',
   bank_account_number: '',
   bank_sort_code: '',
@@ -264,10 +260,6 @@ const defaultFormData: FormData = {
   // Solicitor
   solicitor_name: '',
   solicitor_address: '',
-  solicitor_address_line1: '',
-  solicitor_address_line2: '',
-  solicitor_address_line3: '',
-  solicitor_county: '',
   solicitor_phone: '',
   solicitor_email: '',
   
