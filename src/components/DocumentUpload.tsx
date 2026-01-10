@@ -4,9 +4,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Upload, Loader2 } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Upload, Loader2, MessageSquare, HelpCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const DOCUMENT_TYPES = [
   { value: "certified_id", label: "Certified ID", required: true },
@@ -34,6 +41,7 @@ interface DocumentUploadProps {
 export const DocumentUpload = ({ onUploadComplete }: DocumentUploadProps) => {
   const [file, setFile] = useState<File | null>(null);
   const [documentType, setDocumentType] = useState<string>("");
+  const [justification, setJustification] = useState<string>("");
   const [uploading, setUploading] = useState(false);
   const { toast } = useToast();
 
@@ -70,6 +78,9 @@ export const DocumentUpload = ({ onUploadComplete }: DocumentUploadProps) => {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('documentType', documentType);
+      if (justification.trim()) {
+        formData.append('clientJustification', justification.trim());
+      }
 
       const response = await fetch(
         `https://urdyzlulkpgffzrwefwj.supabase.co/functions/v1/analyze-document`,
@@ -102,11 +113,14 @@ export const DocumentUpload = ({ onUploadComplete }: DocumentUploadProps) => {
       const autoApproved = score >= 70;
       
       // Update document approval status based on AI analysis
+      // Also save the client justification if provided
       await supabase
         .from('documents')
         .update({ 
           approval_status: autoApproved ? 'approved' : 'pending',
-          status: autoApproved ? 'approved' : 'waiting'
+          status: autoApproved ? 'approved' : 'waiting',
+          client_justification: justification.trim() || null,
+          confidence_score: score
         })
         .eq('id', data.document.id);
 
@@ -143,6 +157,7 @@ export const DocumentUpload = ({ onUploadComplete }: DocumentUploadProps) => {
 
       setFile(null);
       setDocumentType("");
+      setJustification("");
       if (onUploadComplete) onUploadComplete();
       
     } catch (error) {
@@ -196,6 +211,42 @@ export const DocumentUpload = ({ onUploadComplete }: DocumentUploadProps) => {
               Selected: {file.name}
             </p>
           )}
+        </div>
+
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <Label htmlFor="justification" className="flex items-center gap-1">
+              <MessageSquare className="h-4 w-4" />
+              Justification / Notes (Optional)
+            </Label>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs">
+                  <p>Add any explanation for this document. For example:</p>
+                  <ul className="list-disc pl-4 mt-1 text-xs">
+                    <li>"Only 2 months available as I recently switched banks"</li>
+                    <li>"Previous employer - recently changed jobs"</li>
+                    <li>"Digital statement from online bank"</li>
+                  </ul>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+          <Textarea
+            id="justification"
+            placeholder="Explain any special circumstances about this document..."
+            value={justification}
+            onChange={(e) => setJustification(e.target.value)}
+            rows={3}
+            disabled={uploading}
+            className="resize-none"
+          />
+          <p className="text-xs text-muted-foreground">
+            This helps the broker understand context when reviewing your documents.
+          </p>
         </div>
 
         <Button

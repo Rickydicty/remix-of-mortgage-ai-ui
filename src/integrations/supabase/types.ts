@@ -1335,11 +1335,17 @@ export type Database = {
         Row: {
           analysis_text: string | null
           approval_status: string | null
+          client_justification: string | null
+          confidence_score: number | null
           created_at: string | null
           document_type: string
           file_path: string
           filename: string
+          flag_reason: string | null
           id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          reviewer_justification: string | null
           score: number | null
           status: string
           updated_at: string | null
@@ -1348,11 +1354,17 @@ export type Database = {
         Insert: {
           analysis_text?: string | null
           approval_status?: string | null
+          client_justification?: string | null
+          confidence_score?: number | null
           created_at?: string | null
           document_type: string
           file_path: string
           filename: string
+          flag_reason?: string | null
           id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          reviewer_justification?: string | null
           score?: number | null
           status: string
           updated_at?: string | null
@@ -1361,11 +1373,17 @@ export type Database = {
         Update: {
           analysis_text?: string | null
           approval_status?: string | null
+          client_justification?: string | null
+          confidence_score?: number | null
           created_at?: string | null
           document_type?: string
           file_path?: string
           filename?: string
+          flag_reason?: string | null
           id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          reviewer_justification?: string | null
           score?: number | null
           status?: string
           updated_at?: string | null

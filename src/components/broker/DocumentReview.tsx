@@ -3,7 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { FileText, CheckCircle, XCircle, Clock, ChevronDown, ChevronUp, ArrowRight, Download } from "lucide-react";
+import { FileText, CheckCircle, XCircle, Clock, ChevronDown, ChevronUp, ArrowRight, Download, MessageSquare, UserCheck, AlertTriangle } from "lucide-react";
+import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -29,6 +30,12 @@ interface Document {
   analysis_text: string | null;
   created_at: string;
   file_path: string;
+  client_justification: string | null;
+  flag_reason: string | null;
+  reviewer_justification: string | null;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  confidence_score: number | null;
 }
 
 interface DocumentAnalysis {
@@ -181,9 +188,19 @@ const DocumentReview = ({ clientId, clientName, applicationId, onUpdate }: Docum
   };
 
   const handleStatusChange = async () => {
+    // Get current user for reviewer tracking
+    const { data: userData } = await supabase.auth.getUser();
+    const reviewerId = userData.user?.id;
+
+    // Update document with status and reviewer justification
     const { error } = await supabase
       .from('documents')
-      .update({ status: statusChangeDialog.newStatus })
+      .update({ 
+        status: statusChangeDialog.newStatus,
+        reviewer_justification: statusMessage.trim() || null,
+        reviewed_by: reviewerId,
+        reviewed_at: new Date().toISOString()
+      })
       .eq('id', statusChangeDialog.documentId);
 
     if (error) {
@@ -193,11 +210,11 @@ const DocumentReview = ({ clientId, clientName, applicationId, onUpdate }: Docum
     }
 
     // Send message to client if there's a message
-    if (statusMessage.trim()) {
+    if (statusMessage.trim() && reviewerId) {
       const { error: msgError } = await supabase
         .from('messages')
         .insert({
-          sender_id: (await supabase.auth.getUser()).data.user?.id,
+          sender_id: reviewerId,
           receiver_id: clientId,
           message: `Document "${statusChangeDialog.documentName}" status updated to ${statusChangeDialog.newStatus}:\n\n${statusMessage.trim()}`
         });
@@ -435,6 +452,32 @@ const DocumentReview = ({ clientId, clientName, applicationId, onUpdate }: Docum
                           </div>
                         )}
 
+                        {/* Client Justification - Important for flexible approval */}
+                        {doc.client_justification && (
+                          <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded p-3 mt-2 mb-3">
+                            <p className="text-xs font-semibold text-blue-700 dark:text-blue-300 mb-2 flex items-center gap-1">
+                              <MessageSquare className="h-3 w-3" />
+                              Client Justification
+                            </p>
+                            <p className="text-sm text-blue-900 dark:text-blue-100">
+                              {doc.client_justification}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Flag reason if document was flagged */}
+                        {doc.flag_reason && (
+                          <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded p-3 mt-2 mb-3">
+                            <p className="text-xs font-semibold text-amber-700 dark:text-amber-300 mb-2 flex items-center gap-1">
+                              <AlertTriangle className="h-3 w-3" />
+                              Flag Reason
+                            </p>
+                            <p className="text-sm text-amber-900 dark:text-amber-100">
+                              {doc.flag_reason}
+                            </p>
+                          </div>
+                        )}
+
                         {/* Full AI Analysis for Broker */}
                         {doc.analysis_text && (
                           <div className="bg-primary/5 border border-primary/20 rounded p-3 mt-2 mb-3">
@@ -543,6 +586,37 @@ const DocumentReview = ({ clientId, clientName, applicationId, onUpdate }: Docum
                             />
                           </div>
                         )}
+
+                        {/* Client Justification */}
+                        {doc.client_justification && (
+                          <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded p-3 mt-2 mb-3">
+                            <p className="text-xs font-semibold text-blue-700 dark:text-blue-300 mb-2 flex items-center gap-1">
+                              <MessageSquare className="h-3 w-3" />
+                              Client Justification
+                            </p>
+                            <p className="text-sm text-blue-900 dark:text-blue-100">
+                              {doc.client_justification}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Reviewer Justification */}
+                        {doc.reviewer_justification && (
+                          <div className="bg-success/10 border border-success/30 rounded p-3 mt-2 mb-3">
+                            <p className="text-xs font-semibold text-success mb-2 flex items-center gap-1">
+                              <UserCheck className="h-3 w-3" />
+                              Reviewer Justification
+                              {doc.reviewed_at && (
+                                <span className="ml-auto font-normal text-muted-foreground">
+                                  {new Date(doc.reviewed_at).toLocaleDateString()}
+                                </span>
+                              )}
+                            </p>
+                            <p className="text-sm text-foreground">
+                              {doc.reviewer_justification}
+                            </p>
+                          </div>
+                        )}
                         
                         {/* Full AI Analysis for Broker */}
                         {doc.analysis_text && (
@@ -637,6 +711,37 @@ const DocumentReview = ({ clientId, clientName, applicationId, onUpdate }: Docum
                           </div>
                         )}
 
+                        {/* Client Justification */}
+                        {doc.client_justification && (
+                          <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded p-3 mt-2 mb-3">
+                            <p className="text-xs font-semibold text-blue-700 dark:text-blue-300 mb-2 flex items-center gap-1">
+                              <MessageSquare className="h-3 w-3" />
+                              Client Justification
+                            </p>
+                            <p className="text-sm text-blue-900 dark:text-blue-100">
+                              {doc.client_justification}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Reviewer Justification */}
+                        {doc.reviewer_justification && (
+                          <div className="bg-destructive/10 border border-destructive/30 rounded p-3 mt-2 mb-3">
+                            <p className="text-xs font-semibold text-destructive mb-2 flex items-center gap-1">
+                              <UserCheck className="h-3 w-3" />
+                              Reviewer Justification
+                              {doc.reviewed_at && (
+                                <span className="ml-auto font-normal text-muted-foreground">
+                                  {new Date(doc.reviewed_at).toLocaleDateString()}
+                                </span>
+                              )}
+                            </p>
+                            <p className="text-sm text-foreground">
+                              {doc.reviewer_justification}
+                            </p>
+                          </div>
+                        )}
+
                         {/* Full AI Analysis for Broker */}
                         {doc.analysis_text && (
                           <div className="bg-primary/5 border border-primary/20 rounded p-3 mt-2 mb-3">
@@ -691,28 +796,71 @@ const DocumentReview = ({ clientId, clientName, applicationId, onUpdate }: Docum
         setStatusChangeDialog({ ...statusChangeDialog, open });
         if (!open) setStatusMessage("");
       }}>
-        <AlertDialogContent>
+        <AlertDialogContent className="max-w-lg">
           <AlertDialogHeader>
-            <AlertDialogTitle>Change Document Status</AlertDialogTitle>
+            <AlertDialogTitle className="flex items-center gap-2">
+              {statusChangeDialog.newStatus === 'approved' ? (
+                <CheckCircle className="h-5 w-5 text-success" />
+              ) : (
+                <XCircle className="h-5 w-5 text-destructive" />
+              )}
+              {statusChangeDialog.newStatus === 'approved' ? 'Approve' : 'Disapprove'} Document
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              Change "{statusChangeDialog.documentName}" to <strong>{statusChangeDialog.newStatus}</strong>
+              {statusChangeDialog.newStatus === 'approved' 
+                ? `Approve "${statusChangeDialog.documentName}" for this application.`
+                : `Disapprove "${statusChangeDialog.documentName}" - a justification is required.`
+              }
             </AlertDialogDescription>
           </AlertDialogHeader>
           
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Message to Client (Optional)</label>
-            <Textarea
-              placeholder="Add a message explaining the status change..."
-              value={statusMessage}
-              onChange={(e) => setStatusMessage(e.target.value)}
-              rows={4}
-            />
+          <div className="space-y-3">
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <UserCheck className="h-4 w-4" />
+                Reviewer Justification 
+                {statusChangeDialog.newStatus === 'disapproved' && (
+                  <span className="text-destructive">*</span>
+                )}
+              </Label>
+              <Textarea
+                placeholder={statusChangeDialog.newStatus === 'approved' 
+                  ? "Optional: Add notes about why this document is acceptable..."
+                  : "Required: Explain why this document is being rejected..."
+                }
+                value={statusMessage}
+                onChange={(e) => setStatusMessage(e.target.value)}
+                rows={4}
+              />
+              {statusChangeDialog.newStatus === 'approved' && (
+                <p className="text-xs text-muted-foreground">
+                  Consider the client's justification when approving documents that may not meet standard requirements.
+                </p>
+              )}
+              {statusChangeDialog.newStatus === 'disapproved' && (
+                <p className="text-xs text-muted-foreground">
+                  This justification will be saved for audit purposes and sent to the client.
+                </p>
+              )}
+            </div>
           </div>
 
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleStatusChange}>
-              Confirm Change
+            <AlertDialogAction 
+              onClick={() => {
+                if (statusChangeDialog.newStatus === 'disapproved' && !statusMessage.trim()) {
+                  toast.error("Justification is required when disapproving a document");
+                  return;
+                }
+                handleStatusChange();
+              }}
+              className={statusChangeDialog.newStatus === 'approved' 
+                ? "bg-success hover:bg-success/90" 
+                : "bg-destructive hover:bg-destructive/90"
+              }
+            >
+              {statusChangeDialog.newStatus === 'approved' ? 'Approve Document' : 'Disapprove Document'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
