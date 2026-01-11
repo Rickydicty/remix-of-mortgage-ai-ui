@@ -10,6 +10,8 @@ import { toast } from "sonner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import AgentInsightsPanel from "@/components/broker/AgentInsightsPanel";
 import ExtractedDataDisplay from "@/components/broker/ExtractedDataDisplay";
+import DocumentFieldMapper from "@/components/broker/DocumentFieldMapper";
+import { getMappableFields, ExtractedData } from "@/lib/documentFormMapping";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -61,6 +63,7 @@ const DocumentReview = ({ clientId, clientName, applicationId, onUpdate }: Docum
   const [loading, setLoading] = useState(true);
   const [expandedDocs, setExpandedDocs] = useState<Set<string>>(new Set());
   const [application, setApplication] = useState<any>(null);
+  const [formData, setFormData] = useState<Record<string, any> | null>(null);
   const [statusChangeDialog, setStatusChangeDialog] = useState<{
     open: boolean;
     documentId: string;
@@ -74,6 +77,7 @@ const DocumentReview = ({ clientId, clientName, applicationId, onUpdate }: Docum
   useEffect(() => {
     fetchDocuments();
     fetchDocumentAnalyses();
+    fetchFormData();
     if (applicationId) fetchApplication();
   }, [clientId, applicationId]);
 
@@ -139,6 +143,21 @@ const DocumentReview = ({ clientId, clientName, applicationId, onUpdate }: Docum
       });
     });
     setDocumentAnalyses(analysisMap);
+  };
+
+  const fetchFormData = async () => {
+    const { data, error } = await supabase
+      .from('application_form_data')
+      .select('*')
+      .eq('user_id', clientId)
+      .maybeSingle();
+    
+    if (error) {
+      console.error('Error fetching form data:', error);
+      return;
+    }
+    
+    setFormData(data);
   };
 
   const getStatusIcon = (status: string) => {
@@ -586,6 +605,29 @@ const DocumentReview = ({ clientId, clientName, applicationId, onUpdate }: Docum
                             />
                           </div>
                         )}
+
+                        {/* Auto-Fill Form from Approved Document */}
+                        {applicationId && documentAnalyses.has(doc.id) && (() => {
+                          const mappedFields = getMappableFields(
+                            doc.document_type,
+                            documentAnalyses.get(doc.id)!.extracted_data as ExtractedData,
+                            formData || {}
+                          );
+                          return mappedFields.length > 0 ? (
+                            <div className="mb-3">
+                              <DocumentFieldMapper
+                                mappedFields={mappedFields}
+                                applicationId={applicationId}
+                                userId={clientId}
+                                documentType={doc.document_type}
+                                onMappingComplete={() => {
+                                  fetchFormData();
+                                  onUpdate?.();
+                                }}
+                              />
+                            </div>
+                          ) : null;
+                        })()}
 
                         {/* Client Justification */}
                         {doc.client_justification && (
