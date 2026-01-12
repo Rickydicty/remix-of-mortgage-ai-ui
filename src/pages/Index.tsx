@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { 
   Building2, 
@@ -93,31 +94,88 @@ const Index = () => {
       </header>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-secondary/5" />
-        <div className="container mx-auto px-4 py-20 md:py-32 relative">
-          <div className="max-w-4xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-medium mb-6">
-              <Sparkles className="h-4 w-4" />
-              AI-Powered Mortgage Platform
-            </div>
-            <h1 className="text-4xl md:text-6xl font-bold text-foreground mb-6 leading-tight">
-              Let's Get You <span className="text-primary">Home</span>
-            </h1>
-            <p className="text-lg md:text-xl text-muted-foreground mb-10 max-w-2xl mx-auto leading-relaxed">
-              From eligibility check to keys in hand. Smart document processing, 
-              real-time updates, and expert broker support—all in one place.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="text-lg px-8 py-6" onClick={() => navigate("/pre-eligibility")}>
-                <Calculator className="mr-2 h-5 w-5" />
-                Check Eligibility
-              </Button>
-              <Button size="lg" variant="outline" className="text-lg px-8 py-6" onClick={() => navigate("/login")}>
-                Continue Application
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-            </div>
+      <section className="relative overflow-hidden pt-20 pb-16 md:pt-32 md:pb-24">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-secondary/5 -z-10" />
+        
+        <div className="container mx-auto px-4">
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="text-center md:text-left"
+            >
+              <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-medium mb-6">
+                <Sparkles className="h-4 w-4" />
+                AI-Powered Mortgage Platform
+              </div>
+              <h1 className="text-4xl md:text-6xl font-bold text-foreground mb-6 leading-tight">
+                Let's Get You <span className="text-primary">Home</span>
+              </h1>
+              <p className="text-lg md:text-xl text-muted-foreground mb-10 leading-relaxed">
+                From eligibility check to keys in hand. Smart document processing, 
+                real-time updates, and expert broker support—all in one place.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
+                <Button size="lg" className="text-lg px-8 py-6 shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-shadow" onClick={() => navigate("/pre-eligibility")}>
+                  <Calculator className="mr-2 h-5 w-5" />
+                  Check Eligibility
+                </Button>
+                <Button size="lg" variant="outline" className="text-lg px-8 py-6" onClick={() => navigate("/login")}>
+                  Continue Application
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+              className="relative"
+            >
+              <div className="relative z-10 rounded-2xl overflow-hidden shadow-2xl border border-border/50">
+                <img 
+                  src="/bg-img.png" 
+                  alt="Modern Mortgage Experience" 
+                  className="w-full h-auto object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-background/20 to-transparent pointer-events-none" />
+              </div>
+              
+              {/* Floating Elements Animation */}
+              <motion.div 
+                animate={{ y: [0, -10, 0] }}
+                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                className="absolute -top-6 -right-6 bg-card p-4 rounded-xl shadow-xl border border-border/50 hidden md:block z-20"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="bg-success/10 p-2 rounded-lg">
+                    <CheckCircle className="h-6 w-6 text-success" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">Pre-Approved</p>
+                    <p className="text-xs text-muted-foreground">Just now</p>
+                  </div>
+                </div>
+              </motion.div>
+
+              <motion.div 
+                animate={{ y: [0, 10, 0] }}
+                transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+                className="absolute -bottom-8 -left-8 bg-card p-4 rounded-xl shadow-xl border border-border/50 hidden md:block z-20"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="bg-primary/10 p-2 rounded-lg">
+                    <TrendingUp className="h-6 w-6 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">Best Rates</p>
+                    <p className="text-xs text-muted-foreground">Updated daily</p>
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
           </div>
         </div>
       </section>
@@ -186,16 +244,24 @@ const Index = () => {
             </p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-            {features.map((feature) => (
-              <Card key={feature.title} className="border-border/50 bg-card hover:shadow-lg transition-shadow">
-                <CardContent className="p-6">
-                  <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
-                    <feature.icon className="h-6 w-6 text-primary" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-foreground mb-2">{feature.title}</h3>
-                  <p className="text-muted-foreground text-sm leading-relaxed">{feature.description}</p>
-                </CardContent>
-              </Card>
+            {features.map((feature, index) => (
+              <motion.div
+                key={feature.title}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+                viewport={{ once: true }}
+              >
+                <Card className="border-border/50 bg-card hover:shadow-lg transition-all hover:-translate-y-1 h-full">
+                  <CardContent className="p-6">
+                    <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                      <feature.icon className="h-6 w-6 text-primary" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-foreground mb-2">{feature.title}</h3>
+                    <p className="text-muted-foreground text-sm leading-relaxed">{feature.description}</p>
+                  </CardContent>
+                </Card>
+              </motion.div>
             ))}
           </div>
         </div>
@@ -294,7 +360,7 @@ const Index = () => {
             <Button 
               size="lg" 
               variant="outline" 
-              className="text-lg px-8 py-6 border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10"
+              className="text-lg px-8 py-6 bg-transparent border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10"
               onClick={() => navigate("/signup")}
             >
               Create Account
@@ -314,7 +380,7 @@ const Index = () => {
               <span className="text-lg font-bold text-foreground">HomePath</span>
             </div>
             <p className="text-sm text-muted-foreground">
-              © 2024 HomePath. AI-Powered Mortgage Platform for Ireland.
+              © 2026 HomePath. AI-Powered Mortgage Platform for Ireland.
             </p>
             <div className="flex gap-6 text-sm text-muted-foreground">
               <a href="#" className="hover:text-foreground transition-colors">Privacy</a>
