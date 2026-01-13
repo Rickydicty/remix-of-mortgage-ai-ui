@@ -9,14 +9,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { Save, Upload, FileText, MessageSquare, FileCheck, Download, Home } from "lucide-react";
+import { Save, Upload, FileText, FileCheck, Download, Home } from "lucide-react";
 import { PropertyValuationSubmit } from "@/components/client/PropertyValuationSubmit";
 import { cn } from "@/lib/utils";
 import { DocumentUpload } from "@/components/DocumentUpload";
 import { DocumentList } from "@/components/DocumentList";
-import ClientMessaging from "@/components/broker/ClientMessaging";
-import AIAssistantChat from "@/components/client/AIAssistantChat";
-import AgentChat from "@/components/client/AgentChat";
+import UnifiedChatBot from "@/components/client/UnifiedChatBot";
 import { AIPDocumentsList } from "@/components/client/AIPDocumentsList";
 import { ESignaturesTab } from "@/components/client/ESignaturesTab";
 import { LoanOffersTab } from "@/components/client/LoanOffersTab";
@@ -761,42 +759,13 @@ const ClientApplicationTab = ({ applicationId, application, brokerProfile, onRef
             </Card>
           )}
 
-          {/* AI Broker Agent Chat */}
-          {application?.id && (
-            <AgentChat applicationId={application.id} />
-          )}
-
-          {/* AI Assistant Chat */}
-          <AIAssistantChat 
-            onEscalate={() => {
-              const messagingSection = document.querySelector('[data-broker-messaging]');
-              messagingSection?.scrollIntoView({ behavior: 'smooth' });
-            }}
-          />
-
-          {/* Messages with Broker */}
-          {application?.assigned_broker_id ? (
-            <div data-broker-messaging>
-              <ClientMessaging 
-                clientId={application.assigned_broker_id} 
-                clientName={brokerProfile?.full_name || brokerProfile?.email || 'Broker'} 
-                applicationId={application.id}
-              />
-            </div>
-          ) : (
-            <Card data-broker-messaging>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <MessageSquare className="h-5 w-5 text-success" />
-                  Support Chat
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-64 border border-border rounded-lg p-4 overflow-y-auto bg-muted/30 flex items-center justify-center">
-                  <p className="text-muted-foreground text-sm">A broker will be assigned to your application soon</p>
-                </div>
-              </CardContent>
-            </Card>
+          {/* Unified Chat Bot - Floating popup */}
+          {user && (
+            <UnifiedChatBot
+              applicationId={application?.id || null}
+              userId={user.id}
+              brokerId={application?.assigned_broker_id}
+            />
           )}
         </div>
       )}
