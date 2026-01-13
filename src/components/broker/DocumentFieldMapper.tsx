@@ -43,6 +43,10 @@ const DocumentFieldMapper = ({
   };
 
   const handleApplyMapping = async () => {
+    console.log('handleApplyMapping called');
+    console.log('selectedFields:', Array.from(selectedFields));
+    console.log('mappedFields:', mappedFields);
+    
     if (selectedFields.size === 0) {
       toast.error("No fields selected to apply");
       return;
@@ -51,32 +55,46 @@ const DocumentFieldMapper = ({
     setApplying(true);
     try {
       // Get current form data
+      console.log('Fetching form data for userId:', userId);
       const { data: currentData, error: fetchError } = await supabase
         .from('application_form_data')
         .select('*')
         .eq('user_id', userId)
         .maybeSingle();
 
-      if (fetchError) throw fetchError;
+      console.log('Current form data:', currentData);
+      if (fetchError) {
+        console.error('Fetch error:', fetchError);
+        throw fetchError;
+      }
 
       // Build update object with only selected fields
       const updates: Record<string, any> = {};
       for (const field of mappedFields) {
         if (selectedFields.has(field.formField)) {
           updates[field.formField] = field.value;
+          console.log(`Adding field ${field.formField} = ${field.value}`);
         }
       }
+      
+      console.log('Updates to apply:', updates);
 
       if (currentData) {
         // Update existing record
+        console.log('Updating existing record with id:', currentData.id);
         const { error: updateError } = await supabase
           .from('application_form_data')
           .update(updates)
           .eq('id', currentData.id);
 
-        if (updateError) throw updateError;
+        if (updateError) {
+          console.error('Update error:', updateError);
+          throw updateError;
+        }
+        console.log('Update successful');
       } else {
         // Insert new record
+        console.log('Inserting new record');
         const { error: insertError } = await supabase
           .from('application_form_data')
           .insert({
@@ -85,7 +103,11 @@ const DocumentFieldMapper = ({
             ...updates,
           });
 
-        if (insertError) throw insertError;
+        if (insertError) {
+          console.error('Insert error:', insertError);
+          throw insertError;
+        }
+        console.log('Insert successful');
       }
 
       toast.success(`Applied ${selectedFields.size} field(s) from ${documentType.replace(/_/g, ' ')} to application form`);
