@@ -12,6 +12,7 @@ import AgentInsightsPanel from "@/components/broker/AgentInsightsPanel";
 import ExtractedDataDisplay from "@/components/broker/ExtractedDataDisplay";
 import DocumentFieldMapper from "@/components/broker/DocumentFieldMapper";
 import { getMappableFields, ExtractedData } from "@/lib/documentFormMapping";
+import { autoPopulateFormFromDocument } from "@/lib/autoPopulateFormData";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -211,6 +212,9 @@ const DocumentReview = ({ clientId, clientName, applicationId, onUpdate }: Docum
     const { data: userData } = await supabase.auth.getUser();
     const reviewerId = userData.user?.id;
 
+    // Find the document being changed
+    const changedDoc = documents.find(d => d.id === statusChangeDialog.documentId);
+
     // Update document with status and reviewer justification
     const { error } = await supabase
       .from('documents')
@@ -226,6 +230,20 @@ const DocumentReview = ({ clientId, clientName, applicationId, onUpdate }: Docum
       console.error('Error updating document status:', error);
       toast.error("Failed to update document status");
       return;
+    }
+
+    // Auto-populate form fields when broker approves a document
+    if (statusChangeDialog.newStatus === 'approved' && applicationId && changedDoc) {
+      const populateResult = await autoPopulateFormFromDocument(
+        statusChangeDialog.documentId,
+        changedDoc.document_type,
+        clientId,
+        applicationId
+      );
+      
+      if (populateResult.fieldsApplied > 0) {
+        toast.success(`Auto-populated ${populateResult.fieldsApplied} field(s) to client's application form`);
+      }
     }
 
     // Send message to client if there's a message
@@ -247,6 +265,7 @@ const DocumentReview = ({ clientId, clientName, applicationId, onUpdate }: Docum
     setStatusChangeDialog({ open: false, documentId: "", newStatus: "", documentName: "" });
     setStatusMessage("");
     fetchDocuments();
+    fetchFormData();
     if (applicationId) fetchApplication();
     onUpdate?.();
   };

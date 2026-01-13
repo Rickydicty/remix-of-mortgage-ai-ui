@@ -2,7 +2,7 @@
 // Maps extracted data from approved documents to application_form_data fields
 
 export interface ExtractedData {
-  // Payslip/Employment fields
+  // Payslip/Employment fields - multiple field name variations
   income?: number;
   employer?: string;
   employerName?: string;
@@ -12,16 +12,34 @@ export interface ExtractedData {
   payPeriod?: string;
   startDate?: string;
   ppsNumber?: string;
+  taxDeducted?: number;
+  basicAnnualSalary?: number; // Alternative field from AI
+  declaredGrossSalary?: number; // Alternative field from AI
+  mostRecentGrossPay?: number; // Alternative field from AI
   
-  // Bank statement fields
+  // Bank statement fields - with AI variations
   bankName?: string;
+  bank?: string; // Alternative from AI
   avgBalance?: number;
+  endingBalance?: number;
+  currentBalance?: number; // Alternative from AI
+  closingBalance?: number; // Alternative from AI
   accountType?: string;
+  totalDeposits?: number;
+  totalWithdrawals?: number;
   
-  // ID fields
+  // ID fields - matching edge function extraction schema
   fullName?: string;
   dateOfBirth?: string;
   nationality?: string;
+  documentNumber?: string;
+  idNumber?: string;
+  idType?: string;
+  expiryDate?: string;
+  issueDate?: string;
+  issuingAuthority?: string;
+  isExpired?: boolean;
+  gender?: string;
   
   // Address fields
   address?: string;
@@ -30,26 +48,50 @@ export interface ExtractedData {
   city?: string;
   county?: string;
   eircode?: string;
+  documentDate?: string;
+  utilityProvider?: string;
+  isRecent?: boolean;
   
   // Tax/Self-employed fields
   taxYear?: string;
   totalIncome?: number;
+  taxPaid?: number;
   netProfit?: number;
   grossRevenue?: number;
+  accountantSigned?: boolean;
+  
+  // Gift letter fields
+  giftAmount?: number;
+  donorName?: string;
+  donorRelationship?: string;
+  isSigned?: boolean;
+  
+  // Quality/Risk fields from AI analysis
+  qualityIssues?: string[];
+  riskFlags?: string[];
+  flagSeverity?: 'high' | 'medium' | 'low';
+  agentComment?: string;
+  missingPages?: boolean;
+  inconsistencies?: string[];
+  
+  // Allow any other fields AI might extract
+  [key: string]: any;
 }
 
 export interface FormFieldMapping {
   formField: string;
-  extractedField: keyof ExtractedData;
+  extractedField: string; // Changed to string to allow dynamic field access
   transform?: (value: any) => any;
   label: string;
 }
 
-// Mapping configuration for each document type
+// Mapping configuration for each document type - includes AI field variations
 export const documentFieldMappings: Record<string, FormFieldMapping[]> = {
   payslips: [
     { formField: 'app1_gross_salary', extractedField: 'income', label: 'Gross Annual Salary' },
-    { formField: 'app1_gross_salary', extractedField: 'grossPay', transform: (v) => v * 12, label: 'Gross Salary (monthly × 12)' },
+    { formField: 'app1_gross_salary', extractedField: 'basicAnnualSalary', label: 'Basic Annual Salary' },
+    { formField: 'app1_gross_salary', extractedField: 'declaredGrossSalary', label: 'Declared Gross Salary' },
+    { formField: 'app1_gross_salary', extractedField: 'grossPay', transform: (v) => v ? v * 12 : null, label: 'Gross Salary (monthly × 12)' },
     { formField: 'app1_employer_name', extractedField: 'employer', label: 'Employer Name' },
     { formField: 'app1_employer_name', extractedField: 'employerName', label: 'Employer Name' },
     { formField: 'app1_employment_type', extractedField: 'employmentType', label: 'Employment Type' },
@@ -58,6 +100,7 @@ export const documentFieldMappings: Record<string, FormFieldMapping[]> = {
   ],
   salary_cert: [
     { formField: 'app1_gross_salary', extractedField: 'income', label: 'Gross Annual Salary' },
+    { formField: 'app1_gross_salary', extractedField: 'basicAnnualSalary', label: 'Basic Annual Salary' },
     { formField: 'app1_employer_name', extractedField: 'employer', label: 'Employer Name' },
     { formField: 'app1_employer_name', extractedField: 'employerName', label: 'Employer Name' },
     { formField: 'app1_employment_type', extractedField: 'employmentType', label: 'Employment Type' },
@@ -65,34 +108,52 @@ export const documentFieldMappings: Record<string, FormFieldMapping[]> = {
   employment_summary: [
     { formField: 'app1_gross_salary', extractedField: 'income', label: 'Gross Annual Income' },
     { formField: 'app1_gross_salary', extractedField: 'totalIncome', label: 'Total Income' },
+    { formField: 'app1_gross_salary', extractedField: 'basicAnnualSalary', label: 'Basic Annual Salary' },
     { formField: 'app1_employer_name', extractedField: 'employer', label: 'Employer Name' },
+    { formField: 'app1_employer_name', extractedField: 'employerName', label: 'Employer Name' },
     { formField: 'app1_pps_number', extractedField: 'ppsNumber', label: 'PPS Number' },
   ],
   certified_id: [
-    { formField: 'app1_forenames', extractedField: 'fullName', transform: (v) => v?.split(' ').slice(0, -1).join(' '), label: 'First Name(s)' },
+    { formField: 'app1_forenames', extractedField: 'fullName', transform: (v) => v?.split(' ').slice(0, -1).join(' ') || v, label: 'First Name(s)' },
     { formField: 'app1_surname', extractedField: 'fullName', transform: (v) => v?.split(' ').slice(-1)[0], label: 'Surname' },
     { formField: 'app1_date_of_birth', extractedField: 'dateOfBirth', label: 'Date of Birth' },
     { formField: 'app1_nationality', extractedField: 'nationality', label: 'Nationality' },
+    { formField: 'app1_gender', extractedField: 'gender', label: 'Gender' },
   ],
   proof_of_address: [
     { formField: 'app1_address_line1', extractedField: 'addressLine1', label: 'Address Line 1' },
     { formField: 'app1_address_line2', extractedField: 'addressLine2', label: 'Address Line 2' },
     { formField: 'app1_address', extractedField: 'address', label: 'Full Address' },
     { formField: 'app1_county', extractedField: 'county', label: 'County' },
+    { formField: 'app1_address_line3', extractedField: 'city', label: 'City' },
   ],
   current_account_statements: [
     { formField: 'bank_name', extractedField: 'bankName', label: 'Bank Name' },
+    { formField: 'bank_name', extractedField: 'bank', label: 'Bank Name' },
+    { formField: 'savings', extractedField: 'endingBalance', label: 'Account Balance' },
+    { formField: 'savings', extractedField: 'closingBalance', label: 'Closing Balance' },
   ],
   savings_account_statements: [
     { formField: 'savings', extractedField: 'avgBalance', label: 'Savings Balance' },
+    { formField: 'savings', extractedField: 'endingBalance', label: 'Savings Balance' },
+    { formField: 'savings', extractedField: 'currentBalance', label: 'Current Balance' },
+    { formField: 'bank_name', extractedField: 'bankName', label: 'Bank Name' },
+    { formField: 'bank_name', extractedField: 'bank', label: 'Bank Name' },
   ],
   form_11: [
     { formField: 'app1_se_average_profit', extractedField: 'netProfit', label: 'Net Profit' },
     { formField: 'app1_gross_salary', extractedField: 'totalIncome', label: 'Total Income' },
+    { formField: 'app1_pps_number', extractedField: 'ppsNumber', label: 'PPS Number' },
   ],
   self_employed_docs: [
     { formField: 'app1_se_average_profit', extractedField: 'netProfit', label: 'Net Profit' },
     { formField: 'app1_gross_salary', extractedField: 'grossRevenue', label: 'Gross Revenue' },
+  ],
+  tax_clearance: [
+    { formField: 'app1_pps_number', extractedField: 'ppsNumber', label: 'PPS Number' },
+  ],
+  gift_letter: [
+    { formField: 'deposit_amount', extractedField: 'giftAmount', label: 'Gift Amount' },
   ],
 };
 
