@@ -13,24 +13,35 @@ export interface ExtractedData {
   startDate?: string;
   ppsNumber?: string;
   taxDeducted?: number;
-  basicAnnualSalary?: number; // Alternative field from AI
-  declaredGrossSalary?: number; // Alternative field from AI
-  mostRecentGrossPay?: number; // Alternative field from AI
+  basicAnnualSalary?: number;
+  declaredGrossSalary?: number;
+  mostRecentGrossPay?: number;
+  // Additional AI extraction variations
+  annualSalaryGBP_estimated_at_40hr_week?: number;
+  annualSalaryGBP_estimated_at_30hr_week?: number;
+  monthlySalaryGBP?: number;
+  hourlyRateGBP?: number;
+  jobTitle?: string;
+  employmentStartDate?: string;
   
   // Bank statement fields - with AI variations
   bankName?: string;
-  bank?: string; // Alternative from AI
+  bank?: string;
   avgBalance?: number;
   endingBalance?: number;
-  currentBalance?: number; // Alternative from AI
-  closingBalance?: number; // Alternative from AI
+  currentBalance?: number;
+  closingBalance?: number;
   accountType?: string;
   totalDeposits?: number;
   totalWithdrawals?: number;
   
   // ID fields - matching edge function extraction schema
   fullName?: string;
+  name?: string;
+  firstName?: string;
+  lastName?: string;
   dateOfBirth?: string;
+  dob?: string;
   nationality?: string;
   documentNumber?: string;
   idNumber?: string;
@@ -40,6 +51,7 @@ export interface ExtractedData {
   issuingAuthority?: string;
   isExpired?: boolean;
   gender?: string;
+  sex?: string;
   
   // Address fields
   address?: string;
@@ -51,6 +63,8 @@ export interface ExtractedData {
   documentDate?: string;
   utilityProvider?: string;
   isRecent?: boolean;
+  clientAddress?: string;
+  clientName?: string;
   
   // Tax/Self-employed fields
   taxYear?: string;
@@ -92,38 +106,55 @@ export const documentFieldMappings: Record<string, FormFieldMapping[]> = {
     { formField: 'app1_gross_salary', extractedField: 'basicAnnualSalary', label: 'Basic Annual Salary' },
     { formField: 'app1_gross_salary', extractedField: 'declaredGrossSalary', label: 'Declared Gross Salary' },
     { formField: 'app1_gross_salary', extractedField: 'grossPay', transform: (v) => v ? v * 12 : null, label: 'Gross Salary (monthly × 12)' },
+    { formField: 'app1_gross_salary', extractedField: 'annualSalaryGBP_estimated_at_40hr_week', label: 'Annual Salary (40hr/week)' },
+    { formField: 'app1_gross_salary', extractedField: 'annualSalaryGBP_estimated_at_30hr_week', label: 'Annual Salary (30hr/week)' },
+    { formField: 'app1_gross_salary', extractedField: 'monthlySalaryGBP', transform: (v) => v ? v * 12 : null, label: 'Monthly Salary × 12' },
     { formField: 'app1_employer_name', extractedField: 'employer', label: 'Employer Name' },
     { formField: 'app1_employer_name', extractedField: 'employerName', label: 'Employer Name' },
     { formField: 'app1_employment_type', extractedField: 'employmentType', label: 'Employment Type' },
+    { formField: 'app1_occupation', extractedField: 'jobTitle', label: 'Job Title/Occupation' },
     { formField: 'app1_net_monthly_income', extractedField: 'netPay', label: 'Net Monthly Income' },
     { formField: 'app1_pps_number', extractedField: 'ppsNumber', label: 'PPS Number' },
   ],
   salary_cert: [
     { formField: 'app1_gross_salary', extractedField: 'income', label: 'Gross Annual Salary' },
     { formField: 'app1_gross_salary', extractedField: 'basicAnnualSalary', label: 'Basic Annual Salary' },
+    { formField: 'app1_gross_salary', extractedField: 'annualSalaryGBP_estimated_at_40hr_week', label: 'Annual Salary (40hr/week)' },
+    { formField: 'app1_gross_salary', extractedField: 'monthlySalaryGBP', transform: (v) => v ? v * 12 : null, label: 'Monthly Salary × 12' },
     { formField: 'app1_employer_name', extractedField: 'employer', label: 'Employer Name' },
     { formField: 'app1_employer_name', extractedField: 'employerName', label: 'Employer Name' },
     { formField: 'app1_employment_type', extractedField: 'employmentType', label: 'Employment Type' },
+    { formField: 'app1_occupation', extractedField: 'jobTitle', label: 'Job Title/Occupation' },
   ],
   employment_summary: [
     { formField: 'app1_gross_salary', extractedField: 'income', label: 'Gross Annual Income' },
     { formField: 'app1_gross_salary', extractedField: 'totalIncome', label: 'Total Income' },
     { formField: 'app1_gross_salary', extractedField: 'basicAnnualSalary', label: 'Basic Annual Salary' },
+    { formField: 'app1_gross_salary', extractedField: 'annualSalaryGBP_estimated_at_40hr_week', label: 'Annual Salary (40hr/week)' },
+    { formField: 'app1_gross_salary', extractedField: 'monthlySalaryGBP', transform: (v) => v ? v * 12 : null, label: 'Monthly Salary × 12' },
     { formField: 'app1_employer_name', extractedField: 'employer', label: 'Employer Name' },
     { formField: 'app1_employer_name', extractedField: 'employerName', label: 'Employer Name' },
+    { formField: 'app1_occupation', extractedField: 'jobTitle', label: 'Job Title/Occupation' },
     { formField: 'app1_pps_number', extractedField: 'ppsNumber', label: 'PPS Number' },
   ],
   certified_id: [
     { formField: 'app1_forenames', extractedField: 'fullName', transform: (v) => v?.split(' ').slice(0, -1).join(' ') || v, label: 'First Name(s)' },
+    { formField: 'app1_forenames', extractedField: 'name', transform: (v) => v?.split(' ').slice(0, -1).join(' ') || v, label: 'First Name(s)' },
+    { formField: 'app1_forenames', extractedField: 'firstName', label: 'First Name' },
     { formField: 'app1_surname', extractedField: 'fullName', transform: (v) => v?.split(' ').slice(-1)[0], label: 'Surname' },
+    { formField: 'app1_surname', extractedField: 'name', transform: (v) => v?.split(' ').slice(-1)[0], label: 'Surname' },
+    { formField: 'app1_surname', extractedField: 'lastName', label: 'Surname' },
     { formField: 'app1_date_of_birth', extractedField: 'dateOfBirth', label: 'Date of Birth' },
+    { formField: 'app1_date_of_birth', extractedField: 'dob', label: 'Date of Birth' },
     { formField: 'app1_nationality', extractedField: 'nationality', label: 'Nationality' },
     { formField: 'app1_gender', extractedField: 'gender', label: 'Gender' },
+    { formField: 'app1_gender', extractedField: 'sex', label: 'Gender' },
   ],
   proof_of_address: [
     { formField: 'app1_address_line1', extractedField: 'addressLine1', label: 'Address Line 1' },
     { formField: 'app1_address_line2', extractedField: 'addressLine2', label: 'Address Line 2' },
     { formField: 'app1_address', extractedField: 'address', label: 'Full Address' },
+    { formField: 'app1_address', extractedField: 'clientAddress', label: 'Client Address' },
     { formField: 'app1_county', extractedField: 'county', label: 'County' },
     { formField: 'app1_address_line3', extractedField: 'city', label: 'City' },
   ],
