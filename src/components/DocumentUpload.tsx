@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Upload, Loader2, MessageSquare, HelpCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { autoPopulateFormFromDocument } from "@/lib/autoPopulateFormData";
 import {
   Tooltip,
   TooltipContent,
@@ -123,6 +124,20 @@ export const DocumentUpload = ({ onUploadComplete }: DocumentUploadProps) => {
           confidence_score: score
         })
         .eq('id', data.document.id);
+
+      // Auto-populate form fields from approved documents
+      if (autoApproved && application?.id) {
+        const populateResult = await autoPopulateFormFromDocument(
+          data.document.id,
+          documentType,
+          session.user.id,
+          application.id
+        );
+        
+        if (populateResult.fieldsApplied > 0) {
+          console.log(`Auto-populated ${populateResult.fieldsApplied} fields from ${documentType}`);
+        }
+      }
 
       // Trigger AI Broker Agent for deeper analysis (runs in background)
       if (application?.id) {
