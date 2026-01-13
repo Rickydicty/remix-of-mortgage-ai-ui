@@ -445,12 +445,19 @@ const AgentInsightsPanel = ({ applicationId, clientId, onRefresh }: AgentInsight
                       Risk Flags ({appAnalysis.aggregated_flags.length})
                     </h4>
                     <ul className="space-y-2">
-                      {appAnalysis.aggregated_flags.map((flag: string, i: number) => (
-                        <li key={i} className="text-sm flex items-start gap-2">
-                          <AlertCircle className="h-4 w-4 text-warning shrink-0 mt-0.5" />
-                          {flag}
-                        </li>
-                      ))}
+                      {appAnalysis.aggregated_flags.map((flagItem: { flag: string; severity: string } | string, i: number) => {
+                        const flagText = typeof flagItem === 'string' ? flagItem : flagItem.flag;
+                        const severity = typeof flagItem === 'string' ? 'warning' : flagItem.severity;
+                        return (
+                          <li key={i} className="text-sm flex items-start gap-2">
+                            <AlertCircle className={`h-4 w-4 shrink-0 mt-0.5 ${
+                              severity === 'critical' ? 'text-destructive' : 
+                              severity === 'warning' ? 'text-warning' : 'text-muted-foreground'
+                            }`} />
+                            {flagText}
+                          </li>
+                        );
+                      })}
                     </ul>
                   </Card>
                 )}
