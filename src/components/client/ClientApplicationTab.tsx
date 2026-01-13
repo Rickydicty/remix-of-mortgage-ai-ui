@@ -13,6 +13,7 @@ import { Save, Upload, FileText, FileCheck, Download, Home } from "lucide-react"
 import { PropertyValuationSubmit } from "@/components/client/PropertyValuationSubmit";
 import { cn } from "@/lib/utils";
 import { DocumentUpload } from "@/components/DocumentUpload";
+import { BatchDocumentUpload } from "@/components/BatchDocumentUpload";
 import { DocumentList } from "@/components/DocumentList";
 import UnifiedChatBot from "@/components/client/UnifiedChatBot";
 import { AIPDocumentsList } from "@/components/client/AIPDocumentsList";
@@ -588,7 +589,12 @@ const ClientApplicationTab = ({ applicationId, application, brokerProfile, onRef
       {/* Documents Tab */}
       {activeTab === "documents" && (
         <div className="space-y-8">
+          {/* Batch Upload - Upload all at once */}
+          <BatchDocumentUpload onUploadComplete={handleUploadComplete} />
+          
+          {/* Single Upload - For individual documents */}
           <DocumentUpload onUploadComplete={handleUploadComplete} />
+          
           <DocumentList refreshTrigger={refreshTrigger} employmentType={eligibilityData.employmentType} />
 
           {/* AIP Letter Section */}
