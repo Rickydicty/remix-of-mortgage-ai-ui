@@ -520,12 +520,18 @@ const AIPManagementTab = ({ applicationId }: AIPManagementTabProps) => {
                     Risk Flags
                   </h4>
                   <div className="space-y-2">
-                    {application.aip_risk_flags.map((flag: any, idx: number) => (
-                      <div key={idx} className="flex items-start gap-2 text-sm">
-                        <AlertTriangle className="h-4 w-4 text-warning mt-0.5" />
-                        <span>{flag.description || flag}</span>
-                      </div>
-                    ))}
+                    {application.aip_risk_flags.map((flag: any, idx: number) => {
+                      const flagText =
+                        typeof flag === "string"
+                          ? flag
+                          : flag?.description ?? flag?.flag ?? JSON.stringify(flag);
+                      return (
+                        <div key={idx} className="flex items-start gap-2 text-sm">
+                          <AlertTriangle className="h-4 w-4 text-warning mt-0.5" />
+                          <span>{flagText}</span>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}

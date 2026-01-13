@@ -280,9 +280,13 @@ const ExtractedDataDisplay = ({
               Inconsistencies Detected
             </p>
             <ul className="text-xs text-muted-foreground space-y-1">
-              {extractedData.inconsistencies.map((issue, idx) => (
-                <li key={idx}>• {issue}</li>
-              ))}
+              {extractedData.inconsistencies.map((issue, idx) => {
+                const issueText =
+                  typeof issue === "string"
+                    ? issue
+                    : (issue as any)?.description ?? (issue as any)?.flag ?? JSON.stringify(issue);
+                return <li key={idx}>• {issueText}</li>;
+              })}
             </ul>
           </div>
         )}

@@ -614,11 +614,17 @@ const AgentInsightsPanel = ({ applicationId, clientId, onRefresh }: AgentInsight
                               <div>
                                 <p className="text-xs font-medium text-warning mb-1">Quality Issues</p>
                                 <ul className="space-y-1">
-                                  {analysis.quality_issues.map((issue, i) => (
-                                    <li key={i} className="text-sm flex items-center gap-1">
-                                      <span className="text-warning">•</span> {issue}
-                                    </li>
-                                  ))}
+                                  {analysis.quality_issues.map((issue, i) => {
+                                    const issueText =
+                                      typeof issue === "string"
+                                        ? issue
+                                        : (issue as any)?.description ?? (issue as any)?.flag ?? JSON.stringify(issue);
+                                    return (
+                                      <li key={i} className="text-sm flex items-center gap-1">
+                                        <span className="text-warning">•</span> {issueText}
+                                      </li>
+                                    );
+                                  })}
                                 </ul>
                               </div>
                             </div>
@@ -634,11 +640,21 @@ const AgentInsightsPanel = ({ applicationId, clientId, onRefresh }: AgentInsight
 
                         {analysis?.risk_flags?.length ? (
                           <div className="flex flex-wrap gap-1 mt-3">
-                            {analysis.risk_flags.map((flag, i) => (
-                              <Badge key={i} variant="outline" className="text-xs border-destructive/50 text-destructive">
-                                {flag}
-                              </Badge>
-                            ))}
+                            {analysis.risk_flags.map((flag, i) => {
+                              const flagText =
+                                typeof flag === "string"
+                                  ? flag
+                                  : (flag as any)?.description ?? (flag as any)?.flag ?? JSON.stringify(flag);
+                              return (
+                                <Badge
+                                  key={i}
+                                  variant="outline"
+                                  className="text-xs border-destructive/50 text-destructive"
+                                >
+                                  {flagText}
+                                </Badge>
+                              );
+                            })}
                           </div>
                         ) : null}
                       </Card>
