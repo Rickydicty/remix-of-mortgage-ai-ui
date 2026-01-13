@@ -14,28 +14,59 @@ import {
 
 // Mapping from extracted data field keys to form field names
 const extractedToFormFieldMap: Record<string, string[]> = {
-  // Payslip mappings
+  // Payslip / Salary Cert mappings
   grossPay: ['app1_gross_salary'],
+  gross_pay: ['app1_gross_salary'],
   netPay: ['app1_net_monthly_income'],
+  net_pay: ['app1_net_monthly_income'],
   employerName: ['app1_employer_name'],
+  employer_name: ['app1_employer_name'],
+  employer: ['app1_employer_name'],
+  basic_salary: ['app1_gross_salary'],
+  basicSalary: ['app1_gross_salary'],
+  annual_salary: ['app1_gross_salary'],
+  annualSalary: ['app1_gross_salary'],
+  salary: ['app1_gross_salary'],
   // ID mappings
   fullName: ['app1_forenames', 'app1_surname'],
+  full_name: ['app1_forenames', 'app1_surname'],
+  name: ['app1_forenames', 'app1_surname'],
   dateOfBirth: ['app1_date_of_birth'],
+  date_of_birth: ['app1_date_of_birth'],
+  dob: ['app1_date_of_birth'],
   nationality: ['app1_nationality'],
   gender: ['app1_gender'],
   // Address mappings
   addressLine1: ['app1_address_line1'],
+  address_line_1: ['app1_address_line1'],
   addressLine2: ['app1_address_line2'],
+  address_line_2: ['app1_address_line2'],
   city: ['app1_address_line3'],
   county: ['app1_county'],
+  address: ['app1_address_line1', 'app1_address'],
   // Bank mappings
   bankName: ['bank_name'],
+  bank_name: ['bank_name'],
+  bank: ['bank_name'],
   closingBalance: ['savings'],
+  closing_balance: ['savings'],
   openingBalance: ['savings'],
+  opening_balance: ['savings'],
   regularIncome: ['app1_gross_salary'],
+  regular_income: ['app1_gross_salary'],
   // Tax mappings
   totalIncome: ['app1_gross_salary'],
+  total_income: ['app1_gross_salary'],
   taxPaid: ['app1_gross_salary'],
+  tax_paid: ['app1_gross_salary'],
+  // Employment mappings
+  job_title: ['app1_occupation'],
+  jobTitle: ['app1_occupation'],
+  occupation: ['app1_occupation'],
+  start_date: ['app1_years_with_employer'],
+  startDate: ['app1_years_with_employer'],
+  employment_type: ['app1_employment_type'],
+  employmentType: ['app1_employment_type'],
 };
 
 interface ExtractedData {
@@ -124,8 +155,18 @@ const ExtractedDataDisplay = ({
 
   // Helper function to check if an extracted field has been applied to the form
   const isFieldApplied = (extractedFieldKey: string): boolean => {
+    // Check direct mapping
     const formFields = extractedToFormFieldMap[extractedFieldKey] || [];
-    return formFields.some(ff => appliedFieldsSet.has(ff));
+    if (formFields.some(ff => appliedFieldsSet.has(ff))) {
+      return true;
+    }
+    // Also check snake_case and camelCase variants
+    const snakeCase = extractedFieldKey.replace(/([A-Z])/g, '_$1').toLowerCase();
+    const camelCase = extractedFieldKey.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
+    const snakeFormFields = extractedToFormFieldMap[snakeCase] || [];
+    const camelFormFields = extractedToFormFieldMap[camelCase] || [];
+    return snakeFormFields.some(ff => appliedFieldsSet.has(ff)) || 
+           camelFormFields.some(ff => appliedFieldsSet.has(ff));
   };
 
   const formatCurrency = (value?: number) => {
