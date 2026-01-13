@@ -75,6 +75,20 @@ const DocumentReview = ({ clientId, clientName, applicationId, onUpdate }: Docum
   const [showRequestDialog, setShowRequestDialog] = useState(false);
   const [requestMessage, setRequestMessage] = useState("");
 
+  // Compute which form fields have values (i.e., have been applied from documents)
+  const getAppliedFormFields = (): string[] => {
+    if (!formData) return [];
+    return Object.entries(formData)
+      .filter(([key, value]) => 
+        value !== null && 
+        value !== undefined && 
+        value !== '' && 
+        value !== 0 &&
+        !['id', 'user_id', 'application_id', 'created_at', 'updated_at'].includes(key)
+      )
+      .map(([key]) => key);
+  };
+
   useEffect(() => {
     fetchDocuments();
     fetchDocumentAnalyses();
@@ -486,6 +500,7 @@ const DocumentReview = ({ clientId, clientName, applicationId, onUpdate }: Docum
                               extractedData={documentAnalyses.get(doc.id)!.extracted_data as any}
                               riskLevel={documentAnalyses.get(doc.id)!.risk_level}
                               completenessScore={documentAnalyses.get(doc.id)!.completeness_score}
+                              appliedFields={getAppliedFormFields()}
                             />
                           </div>
                         )}
@@ -621,6 +636,7 @@ const DocumentReview = ({ clientId, clientName, applicationId, onUpdate }: Docum
                               extractedData={documentAnalyses.get(doc.id)!.extracted_data as any}
                               riskLevel={documentAnalyses.get(doc.id)!.risk_level}
                               completenessScore={documentAnalyses.get(doc.id)!.completeness_score}
+                              appliedFields={getAppliedFormFields()}
                             />
                           </div>
                         )}
@@ -768,6 +784,7 @@ const DocumentReview = ({ clientId, clientName, applicationId, onUpdate }: Docum
                               extractedData={documentAnalyses.get(doc.id)!.extracted_data as any}
                               riskLevel={documentAnalyses.get(doc.id)!.risk_level}
                               completenessScore={documentAnalyses.get(doc.id)!.completeness_score}
+                              appliedFields={getAppliedFormFields()}
                             />
                           </div>
                         )}
