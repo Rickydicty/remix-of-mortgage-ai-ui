@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowRight, AlertTriangle, CheckCircle, Database } from "lucide-react";
+import { ArrowRight, AlertTriangle, CheckCircle, Database, Check } from "lucide-react";
 import { MappedField, formatFieldValue } from "@/lib/documentFormMapping";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -27,6 +27,19 @@ const DocumentFieldMapper = ({
     new Set(mappedFields.filter(f => !f.hasConflict).map(f => f.formField))
   );
   const [applying, setApplying] = useState(false);
+  const [appliedFields, setAppliedFields] = useState<Set<string>>(new Set());
+  const [hasApplied, setHasApplied] = useState(false);
+
+  // Check which fields already match current form data
+  const alreadyAppliedFields = mappedFields.filter(f => {
+    if (f.currentValue === undefined || f.currentValue === null || f.currentValue === '') {
+      return false;
+    }
+    // Compare values - handle numbers and strings
+    const extractedVal = String(f.value).toLowerCase().trim();
+    const currentVal = String(f.currentValue).toLowerCase().trim();
+    return extractedVal === currentVal;
+  });
 
   if (mappedFields.length === 0) {
     return null;
@@ -70,9 +83,11 @@ const DocumentFieldMapper = ({
 
       // Build update object with only selected fields
       const updates: Record<string, any> = {};
+      const fieldsToApply: string[] = [];
       for (const field of mappedFields) {
         if (selectedFields.has(field.formField)) {
           updates[field.formField] = field.value;
+          fieldsToApply.push(field.formField);
           console.log(`Adding field ${field.formField} = ${field.value}`);
         }
       }
@@ -112,7 +127,12 @@ const DocumentFieldMapper = ({
         console.log('Insert successful, returned data:', insertData);
       }
 
-      toast.success(`Applied ${selectedFields.size} field(s) from ${documentType.replace(/_/g, ' ')} to application form`);
+      // Mark fields as applied
+      setAppliedFields(new Set(fieldsToApply));
+      setHasApplied(true);
+      setSelectedFields(new Set()); // Clear selection
+
+      toast.success(`✅ Applied ${fieldsToApply.length} field(s) from ${documentType.replace(/_/g, ' ')} to application form`);
       onMappingComplete?.();
     } catch (error) {
       console.error('Error applying field mapping:', error);
@@ -124,6 +144,21 @@ const DocumentFieldMapper = ({
 
   const conflictCount = mappedFields.filter(f => f.hasConflict).length;
   const selectedCount = selectedFields.size;
+  const allFieldsApplied = hasApplied && appliedFields.size === mappedFields.length;
+
+  // If all fields have been applied, show success state
+  if (allFieldsApplied || (alreadyAppliedFields.length === mappedFields.length && !hasApplied)) {
+    return (
+      <Card className="border-green-500/30 bg-green-500/5">
+        <CardContent className="pt-4">
+          <div className="flex items-center gap-2 text-green-600">
+            <Check className="h-5 w-5" />
+            <span className="font-medium">All fields from {documentType.replace(/_/g, ' ')} applied to form</span>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="border-primary/30 bg-primary/5">
@@ -147,57 +182,89 @@ const DocumentFieldMapper = ({
         </p>
 
         <div className="space-y-2">
-          {mappedFields.map((field) => (
-            <div 
-              key={field.formField}
-              className={`flex items-center gap-3 p-2 rounded border ${
-                field.hasConflict 
-                  ? 'border-warning/30 bg-warning/5' 
-                  : 'border-border bg-background/50'
-              }`}
-            >
-              <Checkbox
-                checked={selectedFields.has(field.formField)}
-                onCheckedChange={() => toggleField(field.formField)}
-              />
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium">{field.label}</span>
-                  {field.hasConflict && (
-                    <AlertTriangle className="h-3 w-3 text-warning" />
-                  )}
-                </div>
-                <div className="flex items-center gap-2 text-xs">
-                  <span className="text-primary font-medium">
-                    {formatFieldValue(field.value)}
-                  </span>
-                  {field.hasConflict && (
-                    <>
-                      <ArrowRight className="h-3 w-3 text-muted-foreground" />
-                      <span className="text-muted-foreground line-through">
-                        Current: {formatFieldValue(field.currentValue)}
-                      </span>
-                    </>
-                  )}
+          {mappedFields.map((field) => {
+            const isApplied = appliedFields.has(field.formField);
+            const isAlreadyInForm = alreadyAppliedFields.some(f => f.formField === field.formField);
+            
+            return (
+              <div 
+                key={field.formField}
+                className={`flex items-center gap-3 p-2 rounded border ${
+                  isApplied || isAlreadyInForm
+                    ? 'border-green-500/30 bg-green-500/5'
+                    : field.hasConflict 
+                      ? 'border-warning/30 bg-warning/5' 
+                      : 'border-border bg-background/50'
+                }`}
+              >
+                {isApplied || isAlreadyInForm ? (
+                  <Check className="h-4 w-4 text-green-600 shrink-0" />
+                ) : (
+                  <Checkbox
+                    checked={selectedFields.has(field.formField)}
+                    onCheckedChange={() => toggleField(field.formField)}
+                  />
+                )}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium">{field.label}</span>
+                    {(isApplied || isAlreadyInForm) && (
+                      <Badge variant="outline" className="text-green-600 border-green-500/30 text-xs">
+                        Applied
+                      </Badge>
+                    )}
+                    {field.hasConflict && !isApplied && !isAlreadyInForm && (
+                      <AlertTriangle className="h-3 w-3 text-warning" />
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className={isApplied || isAlreadyInForm ? "text-green-600 font-medium" : "text-primary font-medium"}>
+                      {formatFieldValue(field.value)}
+                    </span>
+                    {field.hasConflict && !isApplied && !isAlreadyInForm && (
+                      <>
+                        <ArrowRight className="h-3 w-3 text-muted-foreground" />
+                        <span className="text-muted-foreground line-through">
+                          Current: {formatFieldValue(field.currentValue)}
+                        </span>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
-        <Button 
-          onClick={handleApplyMapping} 
-          disabled={applying || selectedCount === 0}
-          className="w-full gap-2"
-          size="sm"
-        >
-          <CheckCircle className="h-4 w-4" />
-          {applying ? 'Applying...' : `Apply ${selectedCount} Field${selectedCount !== 1 ? 's' : ''} to Form`}
-        </Button>
+        {selectedCount > 0 && (
+          <Button 
+            onClick={handleApplyMapping} 
+            disabled={applying || selectedCount === 0}
+            className="w-full gap-2"
+            size="sm"
+          >
+            <CheckCircle className="h-4 w-4" />
+            {applying ? 'Applying...' : `Apply ${selectedCount} Field${selectedCount !== 1 ? 's' : ''} to Form`}
+          </Button>
+        )}
 
-        <p className="text-xs text-muted-foreground text-center">
-          Fields with conflicts require manual confirmation
-        </p>
+        {hasApplied && selectedCount === 0 && (
+          <p className="text-xs text-green-600 text-center font-medium">
+            ✅ Fields applied successfully!
+          </p>
+        )}
+
+        {!hasApplied && selectedCount === 0 && (
+          <p className="text-xs text-muted-foreground text-center">
+            All available fields already applied
+          </p>
+        )}
+
+        {conflictCount > 0 && selectedCount > 0 && (
+          <p className="text-xs text-muted-foreground text-center">
+            Fields with conflicts require manual confirmation
+          </p>
+        )}
       </CardContent>
     </Card>
   );
