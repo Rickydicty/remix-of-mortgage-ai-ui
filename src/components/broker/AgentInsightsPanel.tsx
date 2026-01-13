@@ -36,9 +36,14 @@ interface EligibilityMetrics {
   affordabilityStatus: string;
 }
 
+interface AggregatedFlag {
+  flag: string;
+  severity: string;
+}
+
 interface ApplicationAnalysis {
   overall_risk_level: string;
-  aggregated_flags: string[];
+  aggregated_flags: (AggregatedFlag | string)[];
   estimated_approval_amount: number | null;
   estimated_monthly_payment: number | null;
   estimated_interest_range: { min: number; max: number } | null;
@@ -445,13 +450,13 @@ const AgentInsightsPanel = ({ applicationId, clientId, onRefresh }: AgentInsight
                       Risk Flags ({appAnalysis.aggregated_flags.length})
                     </h4>
                     <ul className="space-y-2">
-                      {appAnalysis.aggregated_flags.map((flagItem: { flag: string; severity: string } | string, i: number) => {
-                        const flagText = typeof flagItem === 'string' ? flagItem : flagItem.flag;
-                        const severity = typeof flagItem === 'string' ? 'warning' : flagItem.severity;
+                      {appAnalysis.aggregated_flags.map((flagItem, i: number) => {
+                        const flagText = typeof flagItem === 'string' ? flagItem : (flagItem as AggregatedFlag).flag;
+                        const severity = typeof flagItem === 'string' ? 'warning' : (flagItem as AggregatedFlag).severity;
                         return (
                           <li key={i} className="text-sm flex items-start gap-2">
                             <AlertCircle className={`h-4 w-4 shrink-0 mt-0.5 ${
-                              severity === 'critical' ? 'text-destructive' : 
+                              severity === 'critical' ? 'text-destructive' :
                               severity === 'warning' ? 'text-warning' : 'text-muted-foreground'
                             }`} />
                             {flagText}
