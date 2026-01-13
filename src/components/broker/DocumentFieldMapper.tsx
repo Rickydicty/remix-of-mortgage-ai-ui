@@ -82,32 +82,34 @@ const DocumentFieldMapper = ({
       if (currentData) {
         // Update existing record
         console.log('Updating existing record with id:', currentData.id);
-        const { error: updateError } = await supabase
+        const { data: updateData, error: updateError } = await supabase
           .from('application_form_data')
           .update(updates)
-          .eq('id', currentData.id);
+          .eq('id', currentData.id)
+          .select();
 
         if (updateError) {
           console.error('Update error:', updateError);
           throw updateError;
         }
-        console.log('Update successful');
+        console.log('Update successful, returned data:', updateData);
       } else {
-        // Insert new record
-        console.log('Inserting new record');
-        const { error: insertError } = await supabase
+        // Insert new record - need application_id for RLS policy
+        console.log('Inserting new record for userId:', userId, 'applicationId:', applicationId);
+        const { data: insertData, error: insertError } = await supabase
           .from('application_form_data')
           .insert({
             user_id: userId,
             application_id: applicationId,
             ...updates,
-          });
+          })
+          .select();
 
         if (insertError) {
           console.error('Insert error:', insertError);
           throw insertError;
         }
-        console.log('Insert successful');
+        console.log('Insert successful, returned data:', insertData);
       }
 
       toast.success(`Applied ${selectedFields.size} field(s) from ${documentType.replace(/_/g, ' ')} to application form`);
