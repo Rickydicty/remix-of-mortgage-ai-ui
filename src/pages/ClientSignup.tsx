@@ -166,6 +166,47 @@ const ClientSignup = () => {
           // Don't block signup if this fails, but log it
         }
 
+        // Send notification email for new client signup via SendGrid
+        try {
+          await supabase.functions.invoke('send-notification', {
+            body: {
+              notification_type: 'new_client_signup',
+              subject: `New Client Signup: ${validated.name}`,
+              html_content: `
+                <h2>New Client Registration</h2>
+                <p>A new client has signed up for the mortgage portal.</p>
+                <h3>Client Details:</h3>
+                <ul>
+                  <li><strong>Name:</strong> ${validated.name}</li>
+                  <li><strong>Email:</strong> ${validated.email}</li>
+                  <li><strong>Phone:</strong> ${validated.phone}</li>
+                </ul>
+                <h3>Eligibility Summary:</h3>
+                <ul>
+                  <li><strong>Eligibility Score:</strong> ${eligibilityData.eligibilityScore}%</li>
+                  <li><strong>Applicant Type:</strong> ${eligibilityData.applicantType}</li>
+                  <li><strong>Employment Type:</strong> ${eligibilityData.employmentType}</li>
+                  <li><strong>Borrowing Capacity:</strong> €${eligibilityData.borrowingCapacityLow.toLocaleString()} - €${eligibilityData.borrowingCapacityHigh.toLocaleString()}</li>
+                  <li><strong>Property Value:</strong> €${eligibilityData.propertyValue.toLocaleString()}</li>
+                  <li><strong>Deposit Amount:</strong> €${eligibilityData.depositAmount.toLocaleString()}</li>
+                  <li><strong>First Time Buyer:</strong> ${eligibilityData.firstTimeBuyer ? 'Yes' : 'No'}</li>
+                </ul>
+                <p>Please log in to the admin dashboard to view more details.</p>
+              `,
+              event_data: {
+                client_name: validated.name,
+                client_email: validated.email,
+                client_phone: validated.phone,
+                eligibility_score: eligibilityData.eligibilityScore,
+              },
+            },
+          });
+          console.log('New client signup notification sent');
+        } catch (notificationError) {
+          console.error('Failed to send signup notification:', notificationError);
+          // Don't block signup if notification fails
+        }
+
         // Clear the stored eligibility data
         localStorage.removeItem('pendingEligibilityData');
       }
