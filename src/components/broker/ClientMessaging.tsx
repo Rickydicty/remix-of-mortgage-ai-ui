@@ -136,6 +136,35 @@ const ClientMessaging = ({ clientId, clientName, applicationId }: ClientMessagin
       } else {
         toast.success("Message sent");
       }
+
+      // Send message_received notification email
+      supabase.functions.invoke('send-notification', {
+        body: {
+          notification_type: 'message_received',
+          subject: `New Message from ${isClient ? 'Client' : 'Broker'}`,
+          html_content: `
+            <h2>New Message Received</h2>
+            <p>A new message has been sent in the mortgage portal.</p>
+            <h3>Message Details:</h3>
+            <ul>
+              <li><strong>From:</strong> ${isClient ? 'Client' : 'Broker'}</li>
+              <li><strong>To:</strong> ${clientName}</li>
+              ${applicationId ? `<li><strong>Application ID:</strong> ${applicationId}</li>` : ''}
+            </ul>
+            <p><strong>Message Preview:</strong></p>
+            <blockquote style="border-left: 3px solid #ccc; padding-left: 10px; margin: 10px 0;">
+              ${newMessage.trim().substring(0, 200)}${newMessage.length > 200 ? '...' : ''}
+            </blockquote>
+            <p>Please log in to the dashboard to view the full message.</p>
+          `,
+          event_data: {
+            sender_type: isClient ? 'client' : 'broker',
+            receiver_name: clientName,
+            application_id: applicationId,
+          },
+        },
+      }).catch(err => console.log("Message notification sent:", err));
+
       setNewMessage("");
       fetchMessages();
     }

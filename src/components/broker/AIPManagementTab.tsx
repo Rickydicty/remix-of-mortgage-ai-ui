@@ -146,6 +146,30 @@ const AIPManagementTab = ({ applicationId }: AIPManagementTabProps) => {
         actor_type: 'broker'
       });
 
+      // Send aip_status_change notification email
+      supabase.functions.invoke('send-notification', {
+        body: {
+          notification_type: 'aip_status_change',
+          subject: `AIP Condition Updated: ${updates.status || 'Modified'}`,
+          html_content: `
+            <h2>AIP Condition Updated</h2>
+            <p>An AIP condition has been updated for an application.</p>
+            <h3>Update Details:</h3>
+            <ul>
+              <li><strong>Application ID:</strong> ${applicationId}</li>
+              <li><strong>New Status:</strong> ${updates.status || 'Modified'}</li>
+              ${updates.description ? `<li><strong>Description:</strong> ${updates.description}</li>` : ''}
+            </ul>
+            <p>Please log in to the broker dashboard to review.</p>
+          `,
+          event_data: {
+            application_id: applicationId,
+            condition_id: conditionId,
+            new_status: updates.status,
+          },
+        },
+      }).catch(err => console.log("AIP status notification sent:", err));
+
       toast({ title: "Success", description: "Condition updated successfully" });
       fetchAIPData();
       setEditingCondition(null);
