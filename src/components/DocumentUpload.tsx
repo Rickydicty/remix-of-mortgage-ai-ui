@@ -162,6 +162,34 @@ export const DocumentUpload = ({ onUploadComplete }: DocumentUploadProps) => {
         }).catch(err => console.log("State evaluation triggered:", err));
       }
 
+      // Send document_uploaded notification email
+      const docTypeLabel = DOCUMENT_TYPES.find(t => t.value === documentType)?.label || documentType;
+      supabase.functions.invoke('send-notification', {
+        body: {
+          notification_type: 'document_uploaded',
+          subject: `Document Uploaded: ${docTypeLabel}`,
+          html_content: `
+            <h2>New Document Uploaded</h2>
+            <p>A client has uploaded a new document.</p>
+            <h3>Document Details:</h3>
+            <ul>
+              <li><strong>Document Type:</strong> ${docTypeLabel}</li>
+              <li><strong>File Name:</strong> ${file.name}</li>
+              <li><strong>AI Score:</strong> ${score}/100</li>
+              <li><strong>Status:</strong> ${autoApproved ? 'Auto-Approved' : 'Pending Review'}</li>
+            </ul>
+            ${justification ? `<p><strong>Client Notes:</strong> ${justification}</p>` : ''}
+            <p>Please log in to the broker dashboard to review.</p>
+          `,
+          event_data: {
+            document_type: documentType,
+            file_name: file.name,
+            score,
+            auto_approved: autoApproved,
+          },
+        },
+      }).catch(err => console.log("Document notification sent:", err));
+
       // Show appropriate message based on AI decision
       toast({
         title: autoApproved ? "Document approved by AI" : "Document uploaded for review",

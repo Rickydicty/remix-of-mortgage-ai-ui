@@ -217,6 +217,39 @@ export const BatchDocumentUpload = ({ onUploadComplete }: BatchDocumentUploadPro
       }).catch(err => console.log("State evaluation triggered:", err));
     }
 
+    // Send batch document_uploaded notification email
+    if (successCount > 0) {
+      const uploadedDocs = queue
+        .filter(d => d.status === 'done')
+        .map(d => DOCUMENT_TYPES.find(t => t.value === d.documentType)?.label || d.documentType);
+      
+      supabase.functions.invoke('send-notification', {
+        body: {
+          notification_type: 'document_uploaded',
+          subject: `Batch Document Upload: ${successCount} Documents`,
+          html_content: `
+            <h2>Batch Documents Uploaded</h2>
+            <p>A client has uploaded multiple documents at once.</p>
+            <h3>Upload Summary:</h3>
+            <ul>
+              <li><strong>Total Uploaded:</strong> ${successCount} documents</li>
+              ${errorCount > 0 ? `<li><strong>Failed:</strong> ${errorCount} documents</li>` : ''}
+            </ul>
+            <h3>Documents Uploaded:</h3>
+            <ul>
+              ${uploadedDocs.map(d => `<li>${d}</li>`).join('')}
+            </ul>
+            <p>Please log in to the broker dashboard to review.</p>
+          `,
+          event_data: {
+            success_count: successCount,
+            error_count: errorCount,
+            document_types: uploadedDocs,
+          },
+        },
+      }).catch(err => console.log("Batch document notification sent:", err));
+    }
+
     setIsProcessing(false);
 
     toast({
