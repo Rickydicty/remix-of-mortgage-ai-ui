@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import ClientApplicationTab from "@/components/client/ClientApplicationTab";
 import ApplicationFeePayment from "@/components/payments/ApplicationFeePayment";
+import UnifiedChatBot from "@/components/client/UnifiedChatBot";
 
 interface Application {
   id: string;
@@ -262,6 +263,15 @@ const ClientDashboard = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Unified Chat Bot - Available in all tabs */}
+      {user && (
+        <UnifiedChatBot
+          applicationId={application?.id || null}
+          userId={user.id}
+          brokerId={application?.assigned_broker_id}
+        />
+      )}
     </div>
   );
 };
