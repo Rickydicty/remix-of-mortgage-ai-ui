@@ -15,7 +15,6 @@ import { cn } from "@/lib/utils";
 import { DocumentUpload } from "@/components/DocumentUpload";
 import { BatchDocumentUpload } from "@/components/BatchDocumentUpload";
 import { DocumentList } from "@/components/DocumentList";
-import UnifiedChatBot from "@/components/client/UnifiedChatBot";
 import { AIPDocumentsList } from "@/components/client/AIPDocumentsList";
 import { ESignaturesTab } from "@/components/client/ESignaturesTab";
 import { LoanOffersTab } from "@/components/client/LoanOffersTab";
@@ -763,15 +762,6 @@ const ClientApplicationTab = ({ applicationId, application, brokerProfile, onRef
                 </div>
               </CardContent>
             </Card>
-          )}
-
-          {/* Unified Chat Bot - Floating popup */}
-          {user && (
-            <UnifiedChatBot
-              applicationId={application?.id || null}
-              userId={user.id}
-              brokerId={application?.assigned_broker_id}
-            />
           )}
         </div>
       )}
