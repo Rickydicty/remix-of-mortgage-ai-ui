@@ -29,3 +29,6 @@ verify_jwt = true
 
 [functions.evaluate-application-state]
 verify_jwt = false
+
+[functions.document-upload-greeting]
+verify_jwt = true
