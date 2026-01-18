@@ -77,29 +77,58 @@ serve(async (req) => {
       .eq("application_id", applicationId)
       .order("created_at", { ascending: true });
 
-    // Get form data for context
+    // Get FULL form data for comprehensive context
     const { data: formData } = await supabaseClient
       .from("application_form_data")
-      .select("loan_amount, property_value, first_time_buyer, app1_forenames, app1_surname")
+      .select("*")
       .eq("application_id", applicationId)
       .single();
 
-    // Get documents status
+    // Get FULL documents with all details
     const { data: allDocs } = await supabaseClient
       .from("documents")
-      .select("document_type, status, flag_reason")
+      .select("id, document_type, status, flag_reason, approval_status, analysis_text, filename, created_at")
       .eq("user_id", user.id);
+
+    // Get document analysis for detailed rejection reasons
+    const { data: docAnalysis } = await supabaseService
+      .from("agent_document_analysis")
+      .select("document_id, risk_level, risk_flags, quality_issues, client_explanation, completeness_score, extracted_data")
+      .eq("client_id", user.id);
+
+    // Get application analysis for AI insights
+    const { data: appAnalysis } = await supabaseService
+      .from("agent_application_analysis")
+      .select("*")
+      .eq("application_id", applicationId)
+      .single();
 
     const requiredDocs = ["certified_id", "proof_of_address", "payslips", "bank_statements", "employment_summary"];
     const submittedTypes = (allDocs || []).map(d => d.document_type);
     const missingDocs = requiredDocs.filter(d => !submittedTypes.includes(d));
-    const flaggedDocs = (allDocs || []).filter(d => d.status === "flagged");
-    const approvedDocs = (allDocs || []).filter(d => d.status === "approved");
+    const flaggedDocs = (allDocs || []).filter(d => d.status === "flagged" || d.approval_status === "rejected");
+    const approvedDocs = (allDocs || []).filter(d => d.status === "approved" || d.approval_status === "approved");
+    const pendingDocs = (allDocs || []).filter(d => d.status === "pending" || d.approval_status === "pending");
+
+    // Build detailed document context with analysis
+    const docAnalysisMap = new Map((docAnalysis || []).map(a => [a.document_id, a]));
+    const detailedDocStatus = (allDocs || []).map(doc => {
+      const analysis = docAnalysisMap.get(doc.id);
+      let status = `${doc.document_type}: ${doc.status}`;
+      if (doc.flag_reason) status += ` - Reason: ${doc.flag_reason}`;
+      if (analysis?.quality_issues) status += ` - Issues: ${JSON.stringify(analysis.quality_issues)}`;
+      if (analysis?.risk_flags) status += ` - Flags: ${JSON.stringify(analysis.risk_flags)}`;
+      if (analysis?.client_explanation) status += ` - Explanation needed: ${analysis.client_explanation}`;
+      return status;
+    }).join("\n");
 
     // Get flagged document details for context
-    const flaggedDetails = flaggedDocs.map(d => 
-      `${d.document_type}: ${d.flag_reason || "needs review"}`
-    ).join(", ");
+    const flaggedDetails = flaggedDocs.map(d => {
+      const analysis = docAnalysisMap.get(d.id);
+      let detail = `${d.document_type}: ${d.flag_reason || "needs review"}`;
+      if (analysis?.client_explanation) detail += ` (${analysis.client_explanation})`;
+      return detail;
+    }).join(", ");
 
     // Build conversation context
     const historyText = (history || [])
