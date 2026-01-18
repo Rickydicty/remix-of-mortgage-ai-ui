@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
-    "lib": ["deno.ns", "deno.unstable", "dom", "dom.iterable"]
+    "lib": ["deno.ns", "deno.unstable", "dom", "dom.iterable"],
+    "types": []
   },
   "nodeModulesDir": "auto"
 }

@@ -162,6 +162,28 @@ export const DocumentUpload = ({ onUploadComplete }: DocumentUploadProps) => {
         }).catch(err => console.log("State evaluation triggered:", err));
       }
 
+      // Send AI agent greeting message about the document upload
+      if (application?.id) {
+        fetch(
+          `https://urdyzlulkpgffzrwefwj.supabase.co/functions/v1/document-upload-greeting`,
+          {
+            method: "POST",
+            headers: { 
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${session.access_token}`,
+            },
+            body: JSON.stringify({
+              applicationId: application.id,
+              documentType,
+              documentId: data.document.id,
+              score,
+              autoApproved,
+              filename: file.name
+            }),
+          }
+        ).catch(err => console.log("Document greeting triggered:", err));
+      }
+
       // Send document_uploaded notification email
       const docTypeLabel = DOCUMENT_TYPES.find(t => t.value === documentType)?.label || documentType;
       supabase.functions.invoke('send-notification', {
