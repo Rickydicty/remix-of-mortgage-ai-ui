@@ -54,13 +54,32 @@ const ClientDashboard = () => {
       
       setUserProfile(profile);
 
-      const { data: app } = await supabase
+      const { data: apps } = await supabase
         .from('applications')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
+        .limit(1);
+
+      let app = apps?.[0] || null;
+
+      // Auto-create application if none exists (so chat can work)
+      if (!app) {
+        const { data: newApp, error: createError } = await supabase
+          .from('applications')
+          .insert({
+            user_id: user.id,
+            application_number: `APP-${Date.now()}`,
+            status: 'draft',
+            current_step: 1
+          })
+          .select()
+          .single();
+
+        if (!createError && newApp) {
+          app = newApp;
+        }
+      }
 
       if (app) {
         setApplication(app);
