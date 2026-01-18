@@ -225,7 +225,14 @@ const UnifiedChatBot = ({ applicationId, userId, brokerId }: UnifiedChatBotProps
 
   // Send regular chat message
   const sendMessage = async () => {
-    if (!input.trim() || !applicationId) return;
+    if (!input.trim()) return;
+    
+    if (!applicationId) {
+      toast.error("Application not ready yet", {
+        description: "Please wait a moment while we set up your application."
+      });
+      return;
+    }
 
     // If there's an active clarification, submit that instead
     if (activeClarification) {
