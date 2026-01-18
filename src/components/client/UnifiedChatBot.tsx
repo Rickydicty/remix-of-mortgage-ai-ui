@@ -14,6 +14,7 @@ import {
   AlertTriangle,
   FileText,
   CheckCircle,
+  Paperclip,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -62,10 +63,12 @@ const UnifiedChatBot = ({ applicationId, userId, brokerId }: UnifiedChatBotProps
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [pendingClarifications, setPendingClarifications] = useState<PendingClarification[]>([]);
   const [activeClarification, setActiveClarification] = useState<PendingClarification | null>(null);
   const [hasUnread, setHasUnread] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch pending document clarifications
   const fetchPendingClarifications = async () => {
@@ -307,6 +310,132 @@ const UnifiedChatBot = ({ applicationId, userId, brokerId }: UnifiedChatBotProps
     }
   };
 
+  // Handle file upload
+  const handleFileUpload = async (file: File) => {
+    if (!applicationId) {
+      toast.error("Application not ready yet", {
+        description: "Please wait a moment while we set up your application."
+      });
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast.error("Authentication required", {
+          description: "Please log in to upload documents"
+        });
+        return;
+      }
+
+      // Show uploading message
+      const uploadMessageId = `upload-${Date.now()}`;
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: uploadMessageId,
+          role: "client",
+          message: `📎 Uploading ${file.name}...`,
+          created_at: new Date().toISOString(),
+          type: "chat",
+        },
+      ]);
+
+      // Determine document type from filename or use "other"
+      const documentType = "other"; // Default, can be enhanced later
+
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('documentType', documentType);
+
+      const response = await fetch(
+        `https://urdyzlulkpgffzrwefwj.supabase.co/functions/v1/analyze-document`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+          body: formData,
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Upload failed');
+      }
+
+      // Remove uploading message and add success message
+      setMessages((prev) => {
+        const filtered = prev.filter(m => m.id !== uploadMessageId);
+        return [
+          ...filtered,
+          {
+            id: `upload-success-${Date.now()}`,
+            role: "client",
+            message: `✅ Successfully uploaded ${file.name}`,
+            created_at: new Date().toISOString(),
+            type: "chat",
+          },
+          {
+            id: `agent-upload-${Date.now()}`,
+            role: "agent",
+            message: `Thank you for uploading ${file.name}! I've received your document and it's being processed. Our team will review it shortly.`,
+            created_at: new Date().toISOString(),
+            type: "chat",
+          },
+        ];
+      });
+
+      // Add to conversation
+      await supabase.from("agent_conversations").insert({
+        application_id: applicationId,
+        client_id: userId,
+        role: "client",
+        message: `[Document Upload]: ${file.name}`,
+        message_type: "chat",
+        metadata: { documentId: data.document?.id, filename: file.name },
+      });
+
+      toast.success("Document uploaded successfully");
+      
+      // Refresh pending clarifications in case new ones appear
+      fetchPendingClarifications();
+    } catch (error) {
+      console.error("Error uploading file:", error);
+      toast.error("Failed to upload document");
+      
+      // Remove uploading message and add error message
+      setMessages((prev) => {
+        const filtered = prev.filter(m => !m.id.startsWith('upload-'));
+        return [
+          ...filtered,
+          {
+            id: `upload-error-${Date.now()}`,
+            role: "agent",
+            message: "I'm sorry, there was an error uploading your document. Please try again or contact support.",
+            created_at: new Date().toISOString(),
+            type: "chat",
+          },
+        ];
+      });
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleFileUpload(file);
+    }
+  };
+
   const handleOpen = () => {
     setIsOpen(true);
     setHasUnread(false);
@@ -512,6 +641,28 @@ const UnifiedChatBot = ({ applicationId, userId, brokerId }: UnifiedChatBotProps
             {/* Input Area */}
             <div className="p-3 border-t shrink-0">
               <div className="flex gap-2">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileSelect}
+                  className="hidden"
+                  accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                  disabled={uploading || !applicationId}
+                />
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-9 w-9 shrink-0"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading || !applicationId}
+                  title="Upload document"
+                >
+                  {uploading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Paperclip className="h-4 w-4" />
+                  )}
+                </Button>
                 <Input
                   placeholder={
                     activeClarification
@@ -521,14 +672,14 @@ const UnifiedChatBot = ({ applicationId, userId, brokerId }: UnifiedChatBotProps
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyPress={handleKeyPress}
-                  disabled={sending || !applicationId}
+                  disabled={sending || uploading || !applicationId}
                   className="flex-1 h-9 text-sm"
                 />
                 <Button
                   size="icon"
-                  className="h-9 w-9"
+                  className="h-9 w-9 shrink-0"
                   onClick={sendMessage}
-                  disabled={!input.trim() || sending || !applicationId}
+                  disabled={!input.trim() || sending || uploading || !applicationId}
                 >
                   {sending ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
