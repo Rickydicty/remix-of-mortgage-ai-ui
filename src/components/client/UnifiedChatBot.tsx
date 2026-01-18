@@ -3,12 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
   Bot,
   User,
@@ -327,214 +322,230 @@ const UnifiedChatBot = ({ applicationId, userId, brokerId }: UnifiedChatBotProps
 
   return (
     <>
-      {/* Floating Chat Button */}
-      <Button
-        onClick={handleOpen}
-        className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-50 p-0"
-        size="icon"
-      >
-        <MessageCircle className="h-6 w-6" />
-        {(hasUnread || totalNotifications > 0) && (
-          <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-destructive text-destructive-foreground text-xs flex items-center justify-center font-bold">
-            {totalNotifications > 0 ? totalNotifications : "!"}
-          </span>
-        )}
-      </Button>
+      {/* Floating Chat Button - hidden when chat is open */}
+      {!isOpen && (
+        <Button
+          onClick={handleOpen}
+          className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-50 p-0"
+          size="icon"
+        >
+          <MessageCircle className="h-6 w-6" />
+          {(hasUnread || totalNotifications > 0) && (
+            <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-destructive text-destructive-foreground text-xs flex items-center justify-center font-bold">
+              {totalNotifications > 0 ? totalNotifications : "!"}
+            </span>
+          )}
+        </Button>
+      )}
 
-      {/* Chat Dialog */}
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="sm:max-w-[440px] h-[600px] flex flex-col p-0 gap-0">
-          <DialogHeader className="p-4 pb-3 border-b shrink-0">
+      {/* Chat Panel - Fixed bottom right */}
+      {isOpen && (
+        <Card className="fixed bottom-6 right-6 w-[380px] h-[500px] flex flex-col z-50 shadow-2xl border">
+          {/* Header */}
+          <CardHeader className="p-3 pb-2 border-b shrink-0">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Bot className="h-5 w-5 text-primary" />
+              <div className="flex items-center gap-2">
+                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Bot className="h-4 w-4 text-primary" />
                 </div>
                 <div>
-                  <DialogTitle className="text-base">Mortgage Assistant</DialogTitle>
-                  <p className="text-xs text-muted-foreground">Here to help 24/7</p>
+                  <h3 className="text-sm font-semibold">Mortgage Assistant</h3>
+                  <p className="text-[10px] text-muted-foreground">Here to help 24/7</p>
                 </div>
               </div>
-              {pendingClarifications.length > 0 && (
-                <Badge variant="destructive" className="text-xs">
-                  {pendingClarifications.length} action{pendingClarifications.length > 1 ? "s" : ""} needed
-                </Badge>
-              )}
-            </div>
-          </DialogHeader>
-
-          {/* Clarification Banner */}
-          {activeClarification && (
-            <div className="mx-4 mt-3 p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg shrink-0">
-              <div className="flex items-start gap-2">
-                <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
-                    Clarification needed
-                  </p>
-                  <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
-                    <span className="font-medium">
-                      {DOCUMENT_TYPE_LABELS[activeClarification.documentType] || activeClarification.documentType}
-                    </span>
-                    : {activeClarification.flagReason}
-                  </p>
-                  {pendingClarifications.length > 1 && (
-                    <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
-                      +{pendingClarifications.length - 1} more clarification{pendingClarifications.length > 2 ? "s" : ""} needed
-                    </p>
-                  )}
-                </div>
+              <div className="flex items-center gap-2">
+                {pendingClarifications.length > 0 && (
+                  <Badge variant="destructive" className="text-[10px] px-1.5 py-0.5">
+                    {pendingClarifications.length} action{pendingClarifications.length > 1 ? "s" : ""}
+                  </Badge>
+                )}
                 <Button
                   variant="ghost"
-                  size="sm"
-                  className="h-6 w-6 p-0 text-amber-600 hover:text-amber-800"
-                  onClick={() => setActiveClarification(null)}
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => setIsOpen(false)}
                 >
-                  <X className="h-3 w-3" />
+                  <X className="h-4 w-4" />
                 </Button>
               </div>
             </div>
-          )}
+          </CardHeader>
 
-          {/* Messages Area */}
-          <ScrollArea className="flex-1 p-4" ref={scrollRef}>
-            {loading ? (
-              <div className="flex items-center justify-center h-full">
-                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-              </div>
-            ) : messages.length === 0 && !activeClarification ? (
-              <div className="text-center py-8">
-                <Bot className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-                <p className="text-muted-foreground mb-4 text-sm">
-                  Hi! I'm your mortgage assistant. I can help with questions about your application, documents, and more.
-                </p>
-                <div className="flex flex-wrap gap-2 justify-center">
-                  {quickQuestions.map((q, i) => (
-                    <Button
-                      key={i}
-                      variant="outline"
-                      size="sm"
-                      className="text-xs"
-                      onClick={() => {
-                        setInput(q);
-                      }}
-                    >
-                      {q}
-                    </Button>
-                  ))}
+          <CardContent className="flex-1 flex flex-col p-0 overflow-hidden">
+            {/* Clarification Banner */}
+            {activeClarification && (
+              <div className="mx-3 mt-2 p-2 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg shrink-0">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-amber-800 dark:text-amber-200">
+                      Clarification needed
+                    </p>
+                    <p className="text-[10px] text-amber-700 dark:text-amber-300 mt-0.5">
+                      <span className="font-medium">
+                        {DOCUMENT_TYPE_LABELS[activeClarification.documentType] || activeClarification.documentType}
+                      </span>
+                      : {activeClarification.flagReason}
+                    </p>
+                    {pendingClarifications.length > 1 && (
+                      <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-0.5">
+                        +{pendingClarifications.length - 1} more
+                      </p>
+                    )}
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-5 w-5 p-0 text-amber-600 hover:text-amber-800"
+                    onClick={() => setActiveClarification(null)}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
                 </div>
               </div>
-            ) : (
-              <div className="space-y-3">
-                {messages.map((msg) => (
-                  <div
-                    key={msg.id}
-                    className={`flex gap-2 ${msg.role === "agent" ? "" : "flex-row-reverse"}`}
-                  >
-                    <div
-                      className={`h-7 w-7 rounded-full flex items-center justify-center shrink-0 ${
-                        msg.role === "agent" ? "bg-primary/10" : "bg-muted"
-                      }`}
-                    >
-                      {msg.role === "agent" ? (
-                        <Bot className="h-3.5 w-3.5 text-primary" />
-                      ) : (
-                        <User className="h-3.5 w-3.5" />
-                      )}
-                    </div>
-                    <div
-                      className={`max-w-[80%] rounded-lg p-2.5 ${
-                        msg.role === "agent"
-                          ? "bg-muted"
-                          : msg.type === "clarification"
-                          ? "bg-amber-100 dark:bg-amber-900/50 text-amber-900 dark:text-amber-100"
-                          : "bg-primary text-primary-foreground"
-                      }`}
-                    >
-                      {msg.type === "clarification" && (
-                        <div className="flex items-center gap-1 mb-1">
-                          <FileText className="h-3 w-3" />
-                          <span className="text-xs font-medium">Clarification</span>
-                        </div>
-                      )}
-                      {msg.type === "escalation" && msg.role === "agent" && (
-                        <div className="flex items-center gap-1 mb-1 text-primary">
-                          <CheckCircle className="h-3 w-3" />
-                          <span className="text-xs font-medium">Forwarded to broker</span>
-                        </div>
-                      )}
-                      <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
-                      <span className="text-[10px] opacity-60 block mt-1">
-                        {new Date(msg.created_at).toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </span>
-                    </div>
+            )}
+
+            {/* Messages Area */}
+            <ScrollArea className="flex-1 p-3" ref={scrollRef}>
+              {loading ? (
+                <div className="flex items-center justify-center h-full">
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                </div>
+              ) : messages.length === 0 && !activeClarification ? (
+                <div className="text-center py-6">
+                  <Bot className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
+                  <p className="text-muted-foreground mb-3 text-xs">
+                    Hi! I'm your mortgage assistant. Ask me anything!
+                  </p>
+                  <div className="flex flex-wrap gap-1.5 justify-center">
+                    {quickQuestions.map((q, i) => (
+                      <Button
+                        key={i}
+                        variant="outline"
+                        size="sm"
+                        className="text-[10px] h-7 px-2"
+                        onClick={() => {
+                          setInput(q);
+                        }}
+                      >
+                        {q}
+                      </Button>
+                    ))}
                   </div>
-                ))}
-                {sending && (
-                  <div className="flex gap-2">
-                    <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                      <Bot className="h-3.5 w-3.5 text-primary" />
-                    </div>
-                    <div className="bg-muted rounded-lg p-2.5">
-                      <div className="flex gap-1">
-                        <span
-                          className="w-1.5 h-1.5 bg-primary/50 rounded-full animate-bounce"
-                          style={{ animationDelay: "0ms" }}
-                        />
-                        <span
-                          className="w-1.5 h-1.5 bg-primary/50 rounded-full animate-bounce"
-                          style={{ animationDelay: "150ms" }}
-                        />
-                        <span
-                          className="w-1.5 h-1.5 bg-primary/50 rounded-full animate-bounce"
-                          style={{ animationDelay: "300ms" }}
-                        />
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {messages.map((msg) => (
+                    <div
+                      key={msg.id}
+                      className={`flex gap-2 ${msg.role === "agent" ? "" : "flex-row-reverse"}`}
+                    >
+                      <div
+                        className={`h-6 w-6 rounded-full flex items-center justify-center shrink-0 ${
+                          msg.role === "agent" ? "bg-primary/10" : "bg-muted"
+                        }`}
+                      >
+                        {msg.role === "agent" ? (
+                          <Bot className="h-3 w-3 text-primary" />
+                        ) : (
+                          <User className="h-3 w-3" />
+                        )}
+                      </div>
+                      <div
+                        className={`max-w-[80%] rounded-lg p-2 ${
+                          msg.role === "agent"
+                            ? "bg-muted"
+                            : msg.type === "clarification"
+                            ? "bg-amber-100 dark:bg-amber-900/50 text-amber-900 dark:text-amber-100"
+                            : "bg-primary text-primary-foreground"
+                        }`}
+                      >
+                        {msg.type === "clarification" && (
+                          <div className="flex items-center gap-1 mb-0.5">
+                            <FileText className="h-2.5 w-2.5" />
+                            <span className="text-[10px] font-medium">Clarification</span>
+                          </div>
+                        )}
+                        {msg.type === "escalation" && msg.role === "agent" && (
+                          <div className="flex items-center gap-1 mb-0.5 text-primary">
+                            <CheckCircle className="h-2.5 w-2.5" />
+                            <span className="text-[10px] font-medium">Forwarded to broker</span>
+                          </div>
+                        )}
+                        <p className="text-xs whitespace-pre-wrap">{msg.message}</p>
+                        <span className="text-[9px] opacity-60 block mt-0.5">
+                          {new Date(msg.created_at).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
                       </div>
                     </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </ScrollArea>
+                  ))}
+                  {sending && (
+                    <div className="flex gap-2">
+                      <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                        <Bot className="h-3 w-3 text-primary" />
+                      </div>
+                      <div className="bg-muted rounded-lg p-2">
+                        <div className="flex gap-1">
+                          <span
+                            className="w-1.5 h-1.5 bg-primary/50 rounded-full animate-bounce"
+                            style={{ animationDelay: "0ms" }}
+                          />
+                          <span
+                            className="w-1.5 h-1.5 bg-primary/50 rounded-full animate-bounce"
+                            style={{ animationDelay: "150ms" }}
+                          />
+                          <span
+                            className="w-1.5 h-1.5 bg-primary/50 rounded-full animate-bounce"
+                            style={{ animationDelay: "300ms" }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </ScrollArea>
 
-          {/* Input Area */}
-          <div className="p-4 border-t shrink-0">
-            <div className="flex gap-2">
-              <Input
-                placeholder={
-                  activeClarification
-                    ? `Provide clarification for ${DOCUMENT_TYPE_LABELS[activeClarification.documentType] || "document"}...`
-                    : "Type your message..."
-                }
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyPress={handleKeyPress}
-                disabled={sending || !applicationId}
-                className="flex-1"
-              />
-              <Button
-                size="icon"
-                onClick={sendMessage}
-                disabled={!input.trim() || sending || !applicationId}
-              >
-                {sending ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Send className="h-4 w-4" />
-                )}
-              </Button>
+            {/* Input Area */}
+            <div className="p-3 border-t shrink-0">
+              <div className="flex gap-2">
+                <Input
+                  placeholder={
+                    activeClarification
+                      ? `Clarify ${DOCUMENT_TYPE_LABELS[activeClarification.documentType] || "document"}...`
+                      : "Type your message..."
+                  }
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  disabled={sending || !applicationId}
+                  className="flex-1 h-9 text-sm"
+                />
+                <Button
+                  size="icon"
+                  className="h-9 w-9"
+                  onClick={sendMessage}
+                  disabled={!input.trim() || sending || !applicationId}
+                >
+                  {sending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Send className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+              {!applicationId && (
+                <p className="text-[10px] text-muted-foreground mt-1.5 text-center">
+                  Start your application to enable chat
+                </p>
+              )}
             </div>
-            {!applicationId && (
-              <p className="text-xs text-muted-foreground mt-2 text-center">
-                Start your application to enable chat
-              </p>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+          </CardContent>
+        </Card>
+      )}
     </>
   );
 };
