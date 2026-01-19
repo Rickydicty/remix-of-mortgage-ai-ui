@@ -84,11 +84,21 @@ serve(async (req) => {
       .eq("application_id", applicationId)
       .single();
 
-    // Get FULL documents with all details
-    const { data: allDocs } = await supabaseClient
+    // Get ALL documents sorted by created_at to get latest version of each type
+    const { data: allDocsRaw } = await supabaseClient
       .from("documents")
       .select("id, document_type, status, flag_reason, approval_status, analysis_text, filename, created_at")
-      .eq("user_id", user.id);
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false });
+
+    // Get only the LATEST version of each document type
+    const latestDocsByType = new Map();
+    (allDocsRaw || []).forEach(doc => {
+      if (!latestDocsByType.has(doc.document_type)) {
+        latestDocsByType.set(doc.document_type, doc);
+      }
+    });
+    const allDocs = Array.from(latestDocsByType.values());
 
     // Get document analysis for detailed rejection reasons
     const { data: docAnalysis } = await supabaseService
@@ -103,32 +113,52 @@ serve(async (req) => {
       .eq("application_id", applicationId)
       .single();
 
+    // Required docs - excludes loan_request and property_valuation (these are form-based, not uploads)
     const requiredDocs = ["certified_id", "proof_of_address", "payslips", "bank_statements", "employment_summary"];
-    const submittedTypes = (allDocs || []).map(d => d.document_type);
+    const submittedTypes = allDocs.map(d => d.document_type);
     const missingDocs = requiredDocs.filter(d => !submittedTypes.includes(d));
-    const flaggedDocs = (allDocs || []).filter(d => d.status === "flagged" || d.approval_status === "rejected");
-    const approvedDocs = (allDocs || []).filter(d => d.status === "approved" || d.approval_status === "approved");
-    const pendingDocs = (allDocs || []).filter(d => d.status === "pending" || d.approval_status === "pending");
+    
+    // Categorize by CURRENT status (latest upload only)
+    const approvedDocs = allDocs.filter(d => d.approval_status === "approved" || d.status === "approved");
+    const rejectedDocs = allDocs.filter(d => d.approval_status === "rejected" || d.status === "rejected");
+    const flaggedDocs = allDocs.filter(d => d.status === "flagged" && d.approval_status !== "approved" && d.approval_status !== "rejected");
+    const pendingDocs = allDocs.filter(d => (d.status === "pending" || d.approval_status === "pending") && d.approval_status !== "approved" && d.approval_status !== "rejected");
 
     // Build detailed document context with analysis
     const docAnalysisMap = new Map((docAnalysis || []).map(a => [a.document_id, a]));
-    const detailedDocStatus = (allDocs || []).map(doc => {
-      const analysis = docAnalysisMap.get(doc.id);
-      let status = `${doc.document_type}: ${doc.status}`;
-      if (doc.flag_reason) status += ` - Reason: ${doc.flag_reason}`;
-      if (analysis?.quality_issues) status += ` - Issues: ${JSON.stringify(analysis.quality_issues)}`;
-      if (analysis?.risk_flags) status += ` - Flags: ${JSON.stringify(analysis.risk_flags)}`;
-      if (analysis?.client_explanation) status += ` - Explanation needed: ${analysis.client_explanation}`;
-      return status;
+    
+    // Build approved docs list
+    const approvedDocsList = approvedDocs.map(doc => {
+      return `✅ ${doc.document_type.replace(/_/g, ' ')}: Approved`;
     }).join("\n");
 
-    // Get flagged document details for context
-    const flaggedDetails = flaggedDocs.map(d => {
-      const analysis = docAnalysisMap.get(d.id);
-      let detail = `${d.document_type}: ${d.flag_reason || "needs review"}`;
-      if (analysis?.client_explanation) detail += ` (${analysis.client_explanation})`;
-      return detail;
-    }).join(", ");
+    // Build rejected docs list with reasons
+    const rejectedDocsList = rejectedDocs.map(doc => {
+      const analysis = docAnalysisMap.get(doc.id);
+      let reason = doc.flag_reason || "No specific reason provided";
+      if (analysis?.quality_issues && Array.isArray(analysis.quality_issues) && analysis.quality_issues.length > 0) {
+        reason = analysis.quality_issues.join(", ");
+      }
+      if (analysis?.client_explanation) {
+        reason += ` - ${analysis.client_explanation}`;
+      }
+      return `❌ ${doc.document_type.replace(/_/g, ' ')}: Rejected - ${reason}`;
+    }).join("\n");
+
+    // Build flagged docs list with reasons
+    const flaggedDocsList = flaggedDocs.map(doc => {
+      const analysis = docAnalysisMap.get(doc.id);
+      let reason = doc.flag_reason || "Needs review";
+      if (analysis?.quality_issues && Array.isArray(analysis.quality_issues) && analysis.quality_issues.length > 0) {
+        reason = analysis.quality_issues.join(", ");
+      }
+      return `⚠️ ${doc.document_type.replace(/_/g, ' ')}: Flagged - ${reason}`;
+    }).join("\n");
+
+    // Build pending docs list
+    const pendingDocsList = pendingDocs.map(doc => {
+      return `⏳ ${doc.document_type.replace(/_/g, ' ')}: Pending review`;
+    }).join("\n");
 
     // Build conversation context
     const historyText = (history || [])
@@ -200,22 +230,30 @@ AI ANALYSIS:
 
     const prompt = `You are Éire, the AI mortgage assistant for an Irish mortgage brokerage.
 
-**CRITICAL INSTRUCTION**: You MUST reference the client's ACTUAL data below in EVERY response. Never give generic answers - always tie your response to their specific documents, form data, and application status.
+**CRITICAL INSTRUCTION**: Answer the client's question DIRECTLY and SPECIFICALLY. Use the ACTUAL data below.
 
 === CLIENT'S COMPLETE APPLICATION DATA ===
 
 ${formSummary}
 
-=== DOCUMENT STATUS (CRITICAL - ALWAYS REFERENCE THIS) ===
+=== DOCUMENT STATUS (LATEST VERSION OF EACH DOCUMENT TYPE ONLY) ===
 
-DETAILED STATUS OF EACH DOCUMENT:
-${detailedDocStatus || 'No documents submitted yet'}
+**APPROVED DOCUMENTS (${approvedDocs.length}):**
+${approvedDocsList || 'None approved yet'}
 
-SUMMARY:
-- ✅ Approved Documents: ${approvedDocs.length} (${approvedDocs.map(d => d.document_type).join(', ') || 'None'})
-- ⏳ Pending Review: ${pendingDocs.length} (${pendingDocs.map(d => d.document_type).join(', ') || 'None'})
-- ❌ Flagged/Rejected: ${flaggedDocs.length} (${flaggedDetails || 'None'})
-- 📋 Missing Documents: ${missingDocs.length > 0 ? missingDocs.join(', ') : 'All required docs submitted!'}
+**REJECTED DOCUMENTS (${rejectedDocs.length}):**
+${rejectedDocsList || 'None rejected'}
+
+**FLAGGED FOR REVIEW (${flaggedDocs.length}):**
+${flaggedDocsList || 'None flagged'}
+
+**PENDING REVIEW (${pendingDocs.length}):**
+${pendingDocsList || 'None pending'}
+
+**MISSING DOCUMENTS (${missingDocs.length}):**
+${missingDocs.length > 0 ? missingDocs.map(d => `📋 ${d.replace(/_/g, ' ')}`).join('\n') : 'All required documents submitted!'}
+
+**Note:** Loan request amount and property valuation are provided in the application form, not as document uploads.
 
 ${analysisSummary}
 
@@ -227,28 +265,25 @@ ${historyText}
 
 === YOUR RESPONSE RULES ===
 
-1. **ALWAYS REFERENCE THEIR DATA**: If they ask about documents, tell them EXACTLY which are approved/pending/flagged/missing. If they ask about their application, reference their ACTUAL loan amount, property value, income.
+1. **ANSWER THE QUESTION DIRECTLY FIRST**: If they ask "how many docs approved?" - start with the exact number. Example: "You have ${approvedDocs.length} documents approved!"
 
-2. **FOR FLAGGED DOCUMENTS**: If any document is flagged, explain the SPECIFIC reason from the data above. Example: "Your bank statements were flagged because [exact flag_reason]"
+2. **FOR DOCUMENT COUNT QUESTIONS**: Give the exact count, then list them by name.
 
-3. **FOR QUESTIONS ABOUT STATUS**: Reference their actual numbers - "You have X of Y documents approved, with Z flagged"
+3. **FOR REJECTED DOCUMENTS**: Always explain the SPECIFIC reason from the data above.
 
-4. **FOR GENERAL QUESTIONS**: Still tie it back to their situation - "Given your €X loan amount and €Y income..."
+4. **ONLY USE LATEST UPLOADS**: If a document was rejected before but approved now, it counts as approved (we only show latest version).
 
-5. **NEXT STEPS**: Always end with a clear action based on their ACTUAL status
+5. **NAME**: Address them as ${clientName}
 
-6. **NAME**: Address them as ${clientName}
+6. **BE CONCISE**: Answer what they asked, don't over-explain.
 
 === IRISH MORTGAGE KNOWLEDGE ===
 - Central Bank rules: 4x income limit, 90% LTV for FTBs, 80% for others
 - Major lenders: AIB, Bank of Ireland, PTSB, Haven, Avant Money
-- First Home Scheme: Government equity up to 30% for new homes
-- Help to Buy: Tax refund up to €30,000 for FTBs on new builds
-- Green mortgages: Better rates for BER A/B homes
 
 ${shouldEscalate ? "⚠️ This query may need escalation to a human broker." : ""}
 
-Respond now - be warm, specific to their data, and action-oriented:`;
+Respond now - answer their question directly first:`;
 
     const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
     
@@ -265,26 +300,20 @@ Respond now - be warm, specific to their data, and action-oriented:`;
             role: "system", 
             content: `You are Éire, an expert AI mortgage assistant for an Irish brokerage.
 
-**YOUR #1 RULE**: NEVER give generic answers. You have FULL ACCESS to the client's application data, documents, and status. USE IT in every response.
+**YOUR #1 RULE**: ANSWER THE QUESTION DIRECTLY. If they ask a count, give the count first. If they ask about a specific document, address that document.
 
-EXAMPLES OF BAD RESPONSES (NEVER DO THIS):
-❌ "Your documents are being processed" (too vague)
-❌ "You'll need to submit bank statements" (without checking if they already did)
-❌ "The typical loan amount is..." (when you know their exact request)
-
-EXAMPLES OF GOOD RESPONSES (ALWAYS DO THIS):
-✅ "Your bank statements from AIB were flagged because they don't show 6 months of history - you've only provided 4 months. Please upload statements going back to [date]."
-✅ "Great news! 4 of your 5 documents are approved. You're just waiting on your employment summary which is currently pending review."
-✅ "Based on your €85,000 combined income and €340,000 property value, you're looking at an 80% LTV which qualifies you for..."
+EXAMPLES OF GOOD RESPONSES:
+✅ "You have 3 documents approved! These are: Certified ID, Proof of Address, and Payslips."
+✅ "1 document has been rejected - your Bank Statements. The reason: statements don't cover the required 6-month period."
+✅ "Great news, ${clientName}! All 5 of your documents are now approved."
 
 PERSONALITY:
+- Direct and to the point
 - Warm and personal (use their name)
-- Incredibly specific (always reference their actual data)
-- Knowledgeable about Irish mortgages
-- Action-oriented (clear next steps)
-- Reassuring but honest
+- Always give exact numbers
+- Clear on rejection reasons
 
-Remember: The client's COMPLETE data is provided. Reference it directly.` 
+Remember: Only consider the LATEST version of each document type.` 
           },
           { role: "user", content: prompt }
         ],
@@ -313,7 +342,7 @@ Remember: The client's COMPLETE data is provided. Reference it directly.`
         sender_id: user.id,
         receiver_id: app.assigned_broker_id,
         application_id: applicationId,
-        message: `[AI Escalation] Client message: "${message}"\n\nContext: ${flaggedDocs.length} flagged docs, ${missingDocs.length} missing docs.`,
+        message: `[AI Escalation] Client message: "${message}"\n\nContext: ${rejectedDocs.length} rejected docs, ${flaggedDocs.length} flagged docs, ${missingDocs.length} missing docs.`,
         approval_status: "approved",
       });
     }
