@@ -285,20 +285,12 @@ ${shouldEscalate ? "⚠️ This query may need escalation to a human broker." : 
 
 Respond now - answer their question directly first:`;
 
-    const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
+    const geminiApiKey = Deno.env.get("GEMINI_API_KEY");
+    if (!geminiApiKey) {
+      throw new Error("GEMINI_API_KEY is not configured");
+    }
     
-    const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${lovableApiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { 
-            role: "system", 
-            content: `You are Aida, an Irish mortgage assistant.
+    const systemPrompt = `You are Aida, an Irish mortgage assistant.
 
 CRITICAL: Give SHORT, DIRECT answers (1-3 sentences max).
 
@@ -307,27 +299,29 @@ EXAMPLES:
 - "Which rejected?" → "Bank Statements rejected: doesn't cover 6 months."
 - "What's missing?" → "Missing: Employment Summary."
 
-NO long explanations. NO encouragement unless asked. Just answer the question.` 
+NO long explanations. NO encouragement unless asked. Just answer the question.`;
+
+    const aiResponse = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [
+            { role: "user", parts: [{ text: systemPrompt + "\n\n" + prompt }] }
+          ],
+          generationConfig: {
+            maxOutputTokens: 500,
+            temperature: 0.7,
           },
-          { role: "user", content: prompt }
-        ],
-      }),
-    });
+        }),
+      }
+    );
 
     if (!aiResponse.ok) {
       const errorText = await aiResponse.text();
-      console.error("AI API error:", aiResponse.status, errorText);
+      console.error("Gemini API error:", aiResponse.status, errorText);
       
-      // Handle specific error codes with user-friendly messages
-      if (aiResponse.status === 402) {
-        return new Response(JSON.stringify({ 
-          error: "AI service temporarily unavailable. Please try again later.",
-          code: "CREDITS_EXHAUSTED"
-        }), {
-          status: 503,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
       if (aiResponse.status === 429) {
         return new Response(JSON.stringify({ 
           error: "Too many requests. Please wait a moment and try again.",
@@ -337,11 +331,11 @@ NO long explanations. NO encouragement unless asked. Just answer the question.`
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      throw new Error(`AI API error: ${aiResponse.status}`);
+      throw new Error(`Gemini API error: ${aiResponse.status}`);
     }
 
     const aiData = await aiResponse.json();
-    let agentMessage = aiData.choices[0]?.message?.content || 
+    let agentMessage = aiData.candidates?.[0]?.content?.parts?.[0]?.text || 
       "I apologize, but I'm having trouble right now. Let me connect you with our team.";
 
     // Check if the AI response indicates escalation
