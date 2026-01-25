@@ -271,9 +271,33 @@ const UnifiedChatBot = ({ applicationId, userId, brokerId }: UnifiedChatBotProps
         },
       });
 
-      if (response.error) throw response.error;
-
+      // Check for rate limit or other errors in response data
       const data = response.data;
+      
+      if (response.error || data?.error) {
+        const errorCode = data?.code;
+        const errorMessage = data?.error || response.error?.message;
+        
+        // Handle rate limiting gracefully
+        if (errorCode === "RATE_LIMITED" || response.error?.message?.includes("429")) {
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: `agent-${Date.now()}`,
+              role: "agent",
+              message: "I'm currently experiencing high demand. Please wait a moment and try again. 🙏",
+              created_at: new Date().toISOString(),
+              type: "chat",
+            },
+          ]);
+          toast.info("Please wait a moment", {
+            description: "The AI assistant is busy. Try again in 30 seconds.",
+          });
+          return;
+        }
+        
+        throw new Error(errorMessage || "Unknown error");
+      }
 
       if (data.success && data.response) {
         setMessages((prev) => [
@@ -295,9 +319,24 @@ const UnifiedChatBot = ({ applicationId, userId, brokerId }: UnifiedChatBotProps
       } else {
         toast.error("Failed to get response");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error sending message:", error);
-      toast.error("Failed to send message");
+      
+      // Show friendly error in chat instead of just toast
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `agent-error-${Date.now()}`,
+          role: "agent",
+          message: "I'm sorry, I'm having trouble responding right now. Please try again in a moment.",
+          created_at: new Date().toISOString(),
+          type: "chat",
+        },
+      ]);
+      
+      toast.error("Message not sent", {
+        description: "Please try again in a few seconds."
+      });
     } finally {
       setSending(false);
     }
