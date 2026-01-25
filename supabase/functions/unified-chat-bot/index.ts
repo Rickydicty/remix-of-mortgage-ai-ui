@@ -317,6 +317,26 @@ NO long explanations. NO encouragement unless asked. Just answer the question.`
     if (!aiResponse.ok) {
       const errorText = await aiResponse.text();
       console.error("AI API error:", aiResponse.status, errorText);
+      
+      // Handle specific error codes with user-friendly messages
+      if (aiResponse.status === 402) {
+        return new Response(JSON.stringify({ 
+          error: "AI service temporarily unavailable. Please try again later.",
+          code: "CREDITS_EXHAUSTED"
+        }), {
+          status: 503,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      if (aiResponse.status === 429) {
+        return new Response(JSON.stringify({ 
+          error: "Too many requests. Please wait a moment and try again.",
+          code: "RATE_LIMITED"
+        }), {
+          status: 429,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
       throw new Error(`AI API error: ${aiResponse.status}`);
     }
 
