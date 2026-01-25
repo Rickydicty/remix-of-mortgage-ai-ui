@@ -14,6 +14,7 @@ import { PropertyValuationSubmit } from "@/components/client/PropertyValuationSu
 import { cn } from "@/lib/utils";
 import { DocumentUpload } from "@/components/DocumentUpload";
 import { BatchDocumentUpload } from "@/components/BatchDocumentUpload";
+import { SmartDocumentUpload } from "@/components/SmartDocumentUpload";
 import { DocumentList } from "@/components/DocumentList";
 import { AIPDocumentsList } from "@/components/client/AIPDocumentsList";
 import { ESignaturesTab } from "@/components/client/ESignaturesTab";
@@ -588,11 +589,22 @@ const ClientApplicationTab = ({ applicationId, application, brokerProfile, onRef
       {/* Documents Tab */}
       {activeTab === "documents" && (
         <div className="space-y-8">
-          {/* Batch Upload - Upload all at once */}
-          <BatchDocumentUpload onUploadComplete={handleUploadComplete} />
+          {/* Smart Upload - AI auto-identifies document types */}
+          <SmartDocumentUpload 
+            onUploadComplete={handleUploadComplete} 
+            employmentType={eligibilityData.employmentType}
+          />
           
-          {/* Single Upload - For individual documents */}
-          <DocumentUpload onUploadComplete={handleUploadComplete} />
+          {/* Legacy Batch Upload (collapsed) */}
+          <details className="group">
+            <summary className="cursor-pointer text-sm text-muted-foreground hover:text-foreground flex items-center gap-2">
+              <span>Or upload with manual document type selection</span>
+            </summary>
+            <div className="mt-4 space-y-4">
+              <BatchDocumentUpload onUploadComplete={handleUploadComplete} />
+              <DocumentUpload onUploadComplete={handleUploadComplete} />
+            </div>
+          </details>
           
           <DocumentList refreshTrigger={refreshTrigger} employmentType={eligibilityData.employmentType} />
 

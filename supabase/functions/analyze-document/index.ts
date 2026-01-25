@@ -559,14 +559,85 @@ function getExtractionTool(documentType: string) {
   };
 }
 
-async function analyzeDocumentWithAI(imageBase64: string, mimeType: string, documentType: string): Promise<AnalysisResponse> {
+// Auto-detect document type from image
+async function detectDocumentType(imageBase64: string, mimeType: string): Promise<string> {
   const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
   
-  const expectedDocDescription = DOCUMENT_TYPE_DESCRIPTIONS[documentType] || "Unknown document type";
+  const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${lovableApiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'google/gemini-2.5-flash-lite',
+      messages: [
+        { 
+          role: 'system', 
+          content: `You are a document classifier for Irish mortgage applications. 
+Classify the document into ONE of these categories:
+- certified_id (passport, driving licence, national ID card)
+- proof_of_address (utility bill, bank statement used as address proof, government letter)
+- payslips (employer payslip showing salary)
+- current_account_statements (bank current account statements)
+- savings_account_statements (savings account statements)
+- employment_summary (Revenue Employment Detail Summary / EDS)
+- salary_cert (Salary Certificate from employer)
+- marriage_certificate (marriage cert)
+- self_employed_docs (business accounts, audited accounts)
+- form_11 (Form 11 tax returns)
+- chapter_4 (Chapter 4 notices)
+- business_bank_statements (business bank statements)
+- ros_payment_charges (ROS payment/charges form)
+- tax_clearance (Tax Clearance Certificate)
+- gift_letter (gift letter for deposit)
+- loan_account_statements (personal loan statements)
+- mortgage_statements (existing mortgage statements)
+- application_form (mortgage application form)
+- other (if none of the above)
+
+Return ONLY the category name, nothing else.`
+        },
+        { 
+          role: 'user', 
+          content: [
+            { type: 'text', text: 'Classify this document:' },
+            { type: 'image_url', image_url: { url: `data:${mimeType};base64,${imageBase64}` } }
+          ]
+        }
+      ],
+    }),
+  });
+
+  if (!response.ok) {
+    console.error('Document type detection failed');
+    return 'other';
+  }
+
+  const data = await response.json();
+  const detected = data.choices[0]?.message?.content?.trim()?.toLowerCase() || 'other';
+  
+  // Validate against known types
+  const validTypes = Object.keys(DOCUMENT_TYPE_DESCRIPTIONS);
+  return validTypes.includes(detected) ? detected : 'other';
+}
+
+async function analyzeDocumentWithAI(imageBase64: string, mimeType: string, documentType: string, autoDetect: boolean = false): Promise<AnalysisResponse & { detectedType?: string }> {
+  const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
+  
+  // Auto-detect document type if requested
+  let finalDocType = documentType;
+  if (autoDetect || documentType === 'auto') {
+    console.log('Auto-detecting document type...');
+    finalDocType = await detectDocumentType(imageBase64, mimeType);
+    console.log('Detected document type:', finalDocType);
+  }
+  
+  const expectedDocDescription = DOCUMENT_TYPE_DESCRIPTIONS[finalDocType] || "Unknown document type";
   
   const systemPrompt = `${DOCUMENT_KNOWLEDGE_BASE}
 
-You are analyzing this document: "${documentType}"
+You are analyzing this document: "${finalDocType}"
 Expected: ${expectedDocDescription}
 
 DOCUMENT QUALITY CHECKS - Look for these issues:
@@ -674,7 +745,7 @@ Remember: Read the document carefully and extract ALL visible information.`
           ]
         }
       ],
-      tools: [getExtractionTool(documentType)],
+      tools: [getExtractionTool(finalDocType)],
       tool_choice: { type: "function", function: { name: "extract_document_data" } }
     }),
   });
@@ -707,7 +778,8 @@ Remember: Read the document carefully and extract ALL visible information.`
       score: parsed.score,
       analysis: parsed.analysis,
       status,
-      extractedData: parsed.extractedData || {}
+      extractedData: parsed.extractedData || {},
+      detectedType: finalDocType
     };
   }
   
@@ -736,14 +808,16 @@ Remember: Read the document carefully and extract ALL visible information.`
       score: parsed.score || 50,
       analysis: parsed.analysis || 'Document analyzed',
       status,
-      extractedData: parsed.extractedData || {}
+      extractedData: parsed.extractedData || {},
+      detectedType: finalDocType
     };
   } catch {
     return {
       score: 50,
       analysis: 'Unable to fully analyze document - manual review recommended',
       status: 'waiting',
-      extractedData: {}
+      extractedData: {},
+      detectedType: finalDocType
     };
   }
 }
@@ -781,6 +855,7 @@ Deno.serve(async (req) => {
     const formData = await req.formData();
     const file = formData.get('file') as File;
     const documentType = formData.get('documentType') as string;
+    const autoDetect = formData.get('autoDetect') === 'true';
 
     if (!file || !documentType) {
       return new Response(JSON.stringify({ error: 'Missing file or documentType' }), {
@@ -789,7 +864,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    console.log('Processing file:', file.name, 'Type:', documentType);
+    console.log('Processing file:', file.name, 'Type:', documentType, 'AutoDetect:', autoDetect);
 
     // Upload to storage
     const filePath = `${user.id}/${Date.now()}_${file.name}`;
@@ -815,19 +890,23 @@ Deno.serve(async (req) => {
       new Uint8Array(fileBuffer).reduce((data, byte) => data + String.fromCharCode(byte), '')
     );
 
-    // Analyze with AI - extract structured data
-    const analysis = await analyzeDocumentWithAI(base64Image, file.type, documentType);
+    // Analyze with AI - extract structured data (with optional auto-detection)
+    const analysis = await analyzeDocumentWithAI(base64Image, file.type, documentType, autoDetect);
+    
+    // Use detected type if auto-detection was enabled
+    const finalDocumentType = analysis.detectedType || documentType;
 
     console.log('Extracted data:', JSON.stringify(analysis.extractedData, null, 2));
+    console.log('Final document type:', finalDocumentType);
 
-    // Save document to database
+    // Save document to database with detected type
     const { data: document, error: dbError } = await supabaseClient
       .from('documents')
       .insert({
         user_id: user.id,
         filename: file.name,
         file_path: filePath,
-        document_type: documentType,
+        document_type: finalDocumentType,
         status: analysis.status,
         score: analysis.score,
         analysis_text: analysis.analysis,
@@ -891,7 +970,8 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ 
       success: true,
       document,
-      extractedData: analysis.extractedData
+      extractedData: analysis.extractedData,
+      detectedType: analysis.detectedType
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
