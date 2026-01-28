@@ -559,15 +559,43 @@ function getExtractionTool(documentType: string) {
   };
 }
 
-// Auto-detect document type from image
-async function detectDocumentType(imageBase64: string, mimeType: string): Promise<string> {
-  const geminiApiKey = Deno.env.get('GEMINI_API_KEY');
-  
-  if (!geminiApiKey) {
-    console.error('GEMINI_API_KEY not configured');
-    return 'other';
+// Helper to call Gemini API with a specific key
+async function callGeminiForClassification(apiKey: string, classificationPrompt: string, imageBase64: string, mimeType: string): Promise<string> {
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{
+          parts: [
+            { text: classificationPrompt },
+            { inline_data: { mime_type: mimeType, data: imageBase64 } }
+          ]
+        }],
+        generationConfig: {
+          maxOutputTokens: 50,
+          temperature: 0.1,
+        },
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    const status = response.status;
+    console.error(`Gemini classification failed with status ${status}`);
+    throw new Error(`GEMINI_ERROR_${status}`);
   }
 
+  const data = await response.json();
+  return data.candidates?.[0]?.content?.parts?.[0]?.text?.trim()?.toLowerCase() || 'other';
+}
+
+// Auto-detect document type from image with fallback
+async function detectDocumentType(imageBase64: string, mimeType: string): Promise<string> {
+  const geminiPrimary = Deno.env.get('GEMINI_API_KEY');
+  const geminiBackup = Deno.env.get('GEMINI_API_KEY_BACKUP');
+  
   const classificationPrompt = `You are a document classifier for Irish mortgage applications. 
 Classify the document into ONE of these categories:
 - certified_id (passport, driving licence, national ID card)
@@ -594,48 +622,80 @@ Return ONLY the category name, nothing else.
 
 Classify this document:`;
 
+  // Try primary Gemini key
+  if (geminiPrimary) {
+    try {
+      console.log('Trying document classification with primary Gemini key...');
+      const detected = await callGeminiForClassification(geminiPrimary, classificationPrompt, imageBase64, mimeType);
+      const validTypes = Object.keys(DOCUMENT_TYPE_DESCRIPTIONS);
+      return validTypes.includes(detected) ? detected : 'other';
+    } catch (e) {
+      console.error('Primary Gemini failed:', e);
+    }
+  }
+
+  // Try backup Gemini key
+  if (geminiBackup) {
+    try {
+      console.log('Trying document classification with backup Gemini key...');
+      const detected = await callGeminiForClassification(geminiBackup, classificationPrompt, imageBase64, mimeType);
+      const validTypes = Object.keys(DOCUMENT_TYPE_DESCRIPTIONS);
+      return validTypes.includes(detected) ? detected : 'other';
+    } catch (e) {
+      console.error('Backup Gemini failed:', e);
+    }
+  }
+
+  // If all providers fail, return 'other' and let the user manually categorize
+  console.error('All AI providers failed for classification, defaulting to "other"');
+  return 'other';
+}
+
+// Helper to call Gemini API for document analysis
+async function callGeminiForAnalysis(apiKey: string, systemPrompt: string, userPrompt: string, imageBase64: string, mimeType: string): Promise<any> {
   const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contents: [{
           parts: [
-            { text: classificationPrompt },
+            { text: systemPrompt + "\n\n" + userPrompt },
             { inline_data: { mime_type: mimeType, data: imageBase64 } }
           ]
         }],
         generationConfig: {
-          maxOutputTokens: 50,
-          temperature: 0.1,
+          maxOutputTokens: 2000,
+          temperature: 0.3,
         },
       }),
     }
   );
 
   if (!response.ok) {
-    if (response.status === 429) {
-      console.error('Document type detection failed: Rate limit exceeded');
-      throw new Error('RATE_LIMITED: Too many requests. Please wait a moment and try again.');
-    }
-    console.error('Document type detection failed:', response.status);
-    return 'other';
+    const status = response.status;
+    console.error(`Gemini analysis failed with status ${status}`);
+    throw new Error(`GEMINI_ERROR_${status}`);
   }
 
   const data = await response.json();
-  const detected = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim()?.toLowerCase() || 'other';
+  const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
   
-  // Validate against known types
-  const validTypes = Object.keys(DOCUMENT_TYPE_DESCRIPTIONS);
-  return validTypes.includes(detected) ? detected : 'other';
+  // Try to extract JSON from the response
+  const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+  if (jsonMatch) {
+    return JSON.parse(jsonMatch[0]);
+  }
+  throw new Error('No JSON found in response');
 }
 
 async function analyzeDocumentWithAI(imageBase64: string, mimeType: string, documentType: string, autoDetect: boolean = false): Promise<AnalysisResponse & { detectedType?: string }> {
-  const geminiApiKey = Deno.env.get('GEMINI_API_KEY');
+  const geminiPrimary = Deno.env.get('GEMINI_API_KEY');
+  const geminiBackup = Deno.env.get('GEMINI_API_KEY_BACKUP');
   
-  if (!geminiApiKey) {
-    throw new Error('GEMINI_API_KEY not configured');
+  if (!geminiPrimary && !geminiBackup) {
+    throw new Error('No Gemini API keys configured');
   }
   
   // Auto-detect document type if requested
@@ -708,7 +768,7 @@ SCORING GUIDE:
 - 70-90: Correct document type, good quality, LOW severity or minor issues only
 - 90-100: Perfect document - correct type, high quality, all details visible, no issues
 
-IMPORTANT: You MUST use the extract_document_data function and populate the extractedData object with all fields you can see on the document. Do not return empty extractedData.`;
+IMPORTANT: Return a JSON object with score, analysis, extractedData, flags, and agentComment.`;
 
 
   const userPrompt = `Analyze this "${documentType}" document for an Irish mortgage application. 
@@ -732,79 +792,54 @@ Return a JSON object with:
 
 Remember: Read the document carefully and extract ALL visible information.`;
 
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{
-          parts: [
-            { text: systemPrompt + "\n\n" + userPrompt },
-            { inline_data: { mime_type: mimeType, data: imageBase64 } }
-          ]
-        }],
-        generationConfig: {
-          maxOutputTokens: 2000,
-          temperature: 0.3,
-        },
-      }),
-    }
-  );
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error('Gemini API error:', response.status, errorText);
-    
-    if (response.status === 429) {
-      throw new Error('RATE_LIMITED: Too many requests. Please wait a moment and try again.');
-    }
-    throw new Error(`AI analysis failed: ${response.status}`);
-  }
-
-  const data = await response.json();
-  console.log('AI response:', JSON.stringify(data, null, 2));
-  
-  // Parse response from Gemini
-  const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-  
-  // Try to extract JSON from the response
   let parsedResult: any = null;
-  try {
-    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      parsedResult = JSON.parse(jsonMatch[0]);
-    }
-  } catch (e) {
-    console.error('Failed to parse AI response as JSON:', e);
-  }
-  
-  // Parse from the parsedResult we extracted above
-  if (parsedResult) {
-    let status: 'approved' | 'disapproved' | 'waiting';
-    if (parsedResult.score >= 70) {
-      status = 'approved';
-    } else if (parsedResult.score < 50) {
-      status = 'disapproved';
-    } else {
-      status = 'waiting';
-    }
+  let lastError: Error | null = null;
 
-    return {
-      score: parsedResult.score || 50,
-      analysis: parsedResult.analysis || 'Document analyzed',
-      status,
-      extractedData: parsedResult.extractedData || {},
-      detectedType: finalDocType
-    };
+  // Try primary Gemini key
+  if (geminiPrimary) {
+    try {
+      console.log('Trying document analysis with primary Gemini key...');
+      parsedResult = await callGeminiForAnalysis(geminiPrimary, systemPrompt, userPrompt, imageBase64, mimeType);
+      console.log('Primary Gemini succeeded');
+    } catch (e) {
+      console.error('Primary Gemini failed:', e);
+      lastError = e instanceof Error ? e : new Error(String(e));
+    }
   }
-  
-  // Fallback if no JSON found
+
+  // Try backup Gemini key if primary failed
+  if (!parsedResult && geminiBackup) {
+    try {
+      console.log('Trying document analysis with backup Gemini key...');
+      parsedResult = await callGeminiForAnalysis(geminiBackup, systemPrompt, userPrompt, imageBase64, mimeType);
+      console.log('Backup Gemini succeeded');
+    } catch (e) {
+      console.error('Backup Gemini failed:', e);
+      lastError = e instanceof Error ? e : new Error(String(e));
+    }
+  }
+
+  // If all providers failed, throw a user-friendly error
+  if (!parsedResult) {
+    console.error('All AI providers failed for document analysis');
+    throw new Error('AI_TEMPORARILY_UNAVAILABLE: All AI services are busy. Please try again in a few moments.');
+  }
+
+  // Process the parsed result
+  let status: 'approved' | 'disapproved' | 'waiting';
+  if (parsedResult.score >= 70) {
+    status = 'approved';
+  } else if (parsedResult.score < 50) {
+    status = 'disapproved';
+  } else {
+    status = 'waiting';
+  }
+
   return {
-    score: 50,
-    analysis: 'Unable to fully analyze document - manual review recommended',
-    status: 'waiting',
-    extractedData: {},
+    score: parsedResult.score || 50,
+    analysis: parsedResult.analysis || 'Document analyzed',
+    status,
+    extractedData: parsedResult.extractedData || {},
     detectedType: finalDocType
   };
 }
