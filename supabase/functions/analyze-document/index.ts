@@ -319,7 +319,7 @@ interface ExtractedData {
 interface AnalysisResponse {
   score: number;
   analysis: string;
-  status: 'approved' | 'disapproved' | 'waiting';
+  status: 'approved' | 'disapproved' | 'pending';
   extractedData: ExtractedData;
 }
 
@@ -825,14 +825,14 @@ Remember: Read the document carefully and extract ALL visible information.`;
     throw new Error('AI_TEMPORARILY_UNAVAILABLE: All AI services are busy. Please try again in a few moments.');
   }
 
-  // Process the parsed result
-  let status: 'approved' | 'disapproved' | 'waiting';
+  // Process the parsed result - use valid status values from documents_status_check constraint
+  let status: 'approved' | 'disapproved' | 'pending';
   if (parsedResult.score >= 70) {
     status = 'approved';
   } else if (parsedResult.score < 50) {
     status = 'disapproved';
   } else {
-    status = 'waiting';
+    status = 'pending';
   }
 
   return {
