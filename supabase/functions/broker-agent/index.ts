@@ -181,35 +181,37 @@ Your success is measured by: Fewer broker back-and-forths, Cleaner submissions, 
 `;
 
 async function callAI(prompt: string, systemPrompt: string = BROKER_AGENT_SYSTEM_PROMPT): Promise<string> {
-  const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
+  const geminiApiKey = Deno.env.get("GEMINI_API_KEY");
   
-  if (!lovableApiKey) {
-    throw new Error("LOVABLE_API_KEY not configured");
+  if (!geminiApiKey) {
+    throw new Error("GEMINI_API_KEY not configured");
   }
 
-  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${lovableApiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "google/gemini-2.5-flash",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: prompt }
-      ],
-    }),
-  });
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{
+          parts: [{ text: systemPrompt + "\n\n" + prompt }]
+        }],
+        generationConfig: {
+          maxOutputTokens: 1000,
+          temperature: 0.5,
+        },
+      }),
+    }
+  );
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error("AI API error:", response.status, errorText);
-    throw new Error(`AI API error: ${response.status}`);
+    console.error("Gemini API error:", response.status, errorText);
+    throw new Error(`Gemini API error: ${response.status}`);
   }
 
   const data = await response.json();
-  return data.choices[0]?.message?.content || "";
+  return data.candidates?.[0]?.content?.parts?.[0]?.text || "";
 }
 
 async function analyzeDocument(doc: DocumentData, formData: ApplicationFormData): Promise<{

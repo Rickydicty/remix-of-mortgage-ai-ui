@@ -149,20 +149,13 @@ RESPONSE GUIDELINES:
 
 Respond directly to the client:`;
 
-    const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
+    const geminiApiKey = Deno.env.get("GEMINI_API_KEY");
     
-    const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${lovableApiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { 
-            role: "system", 
-            content: `You are a professional mortgage advisor assistant at an established Irish mortgage brokerage.
+    if (!geminiApiKey) {
+      throw new Error("GEMINI_API_KEY not configured");
+    }
+
+    const systemPrompt = `You are a professional mortgage advisor assistant at an established Irish mortgage brokerage.
 
 YOUR ROLE:
 - You represent the brokerage team and speak with their authority
@@ -184,21 +177,33 @@ EXPERTISE:
 BOUNDARIES:
 - Never promise specific rates or approval - that's the broker's job
 - Don't give specific financial advice - recommend speaking with the broker for complex questions
-- If unsure, say so honestly and offer to have the broker follow up` 
+- If unsure, say so honestly and offer to have the broker follow up`;
+
+    const aiResponse = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{ text: systemPrompt + "\n\n" + prompt }]
+          }],
+          generationConfig: {
+            maxOutputTokens: 500,
+            temperature: 0.7,
           },
-          { role: "user", content: prompt }
-        ],
-      }),
-    });
+        }),
+      }
+    );
 
     if (!aiResponse.ok) {
       const errorText = await aiResponse.text();
-      console.error("AI API error:", aiResponse.status, errorText);
-      throw new Error(`AI API error: ${aiResponse.status}`);
+      console.error("Gemini API error:", aiResponse.status, errorText);
+      throw new Error(`Gemini API error: ${aiResponse.status}`);
     }
 
     const aiData = await aiResponse.json();
-    const agentMessage = aiData.choices[0]?.message?.content || 
+    const agentMessage = aiData.candidates?.[0]?.content?.parts?.[0]?.text || 
       "I apologize, but I'm having trouble right now. Our broker will be in touch shortly.";
 
     // Save agent response

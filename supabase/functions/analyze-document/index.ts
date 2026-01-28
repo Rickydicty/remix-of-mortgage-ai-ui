@@ -561,20 +561,14 @@ function getExtractionTool(documentType: string) {
 
 // Auto-detect document type from image
 async function detectDocumentType(imageBase64: string, mimeType: string): Promise<string> {
-  const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
+  const geminiApiKey = Deno.env.get('GEMINI_API_KEY');
   
-  const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${lovableApiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'google/gemini-2.5-flash-lite',
-      messages: [
-        { 
-          role: 'system', 
-          content: `You are a document classifier for Irish mortgage applications. 
+  if (!geminiApiKey) {
+    console.error('GEMINI_API_KEY not configured');
+    return 'other';
+  }
+
+  const classificationPrompt = `You are a document classifier for Irish mortgage applications. 
 Classify the document into ONE of these categories:
 - certified_id (passport, driving licence, national ID card)
 - proof_of_address (utility bill, bank statement used as address proof, government letter)
@@ -596,24 +590,31 @@ Classify the document into ONE of these categories:
 - application_form (mortgage application form)
 - other (if none of the above)
 
-Return ONLY the category name, nothing else.`
-        },
-        { 
-          role: 'user', 
-          content: [
-            { type: 'text', text: 'Classify this document:' },
-            { type: 'image_url', image_url: { url: `data:${mimeType};base64,${imageBase64}` } }
+Return ONLY the category name, nothing else.
+
+Classify this document:`;
+
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{
+          parts: [
+            { text: classificationPrompt },
+            { inline_data: { mime_type: mimeType, data: imageBase64 } }
           ]
-        }
-      ],
-    }),
-  });
+        }],
+        generationConfig: {
+          maxOutputTokens: 50,
+          temperature: 0.1,
+        },
+      }),
+    }
+  );
 
   if (!response.ok) {
-    if (response.status === 402) {
-      console.error('Document type detection failed: Lovable AI credits exhausted');
-      throw new Error('PAYMENT_REQUIRED: Your Lovable AI credits have been exhausted. Please add credits in Settings → Workspace → Usage.');
-    }
     if (response.status === 429) {
       console.error('Document type detection failed: Rate limit exceeded');
       throw new Error('RATE_LIMITED: Too many requests. Please wait a moment and try again.');
@@ -623,7 +624,7 @@ Return ONLY the category name, nothing else.`
   }
 
   const data = await response.json();
-  const detected = data.choices[0]?.message?.content?.trim()?.toLowerCase() || 'other';
+  const detected = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim()?.toLowerCase() || 'other';
   
   // Validate against known types
   const validTypes = Object.keys(DOCUMENT_TYPE_DESCRIPTIONS);
@@ -631,7 +632,11 @@ Return ONLY the category name, nothing else.`
 }
 
 async function analyzeDocumentWithAI(imageBase64: string, mimeType: string, documentType: string, autoDetect: boolean = false): Promise<AnalysisResponse & { detectedType?: string }> {
-  const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
+  const geminiApiKey = Deno.env.get('GEMINI_API_KEY');
+  
+  if (!geminiApiKey) {
+    throw new Error('GEMINI_API_KEY not configured');
+  }
   
   // Auto-detect document type if requested
   let finalDocType = documentType;
@@ -706,25 +711,7 @@ SCORING GUIDE:
 IMPORTANT: You MUST use the extract_document_data function and populate the extractedData object with all fields you can see on the document. Do not return empty extractedData.`;
 
 
-  const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${lovableApiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'google/gemini-2.5-pro',
-      messages: [
-        { 
-          role: 'system', 
-          content: systemPrompt
-        },
-        { 
-          role: 'user', 
-          content: [
-            {
-              type: 'text',
-              text: `Analyze this "${documentType}" document for an Irish mortgage application. 
+  const userPrompt = `Analyze this "${documentType}" document for an Irish mortgage application. 
 
 CRITICAL INSTRUCTIONS:
 1. CAREFULLY READ ALL TEXT on the document including names, numbers, dates
@@ -736,35 +723,39 @@ CRITICAL INSTRUCTIONS:
 
 Expected document type: ${expectedDocDescription}
 
-Use the extract_document_data function to return:
-1. A quality score (0-100)
-2. Technical analysis for broker
-3. ALL extracted data fields - populate every field you can see on the document
-4. Any risk flags detected
+Return a JSON object with:
+1. score: A quality score (0-100)
+2. analysis: Technical analysis for broker
+3. extractedData: ALL extracted data fields - populate every field you can see on the document
+4. flags: Any risk flags detected (array of strings)
+5. agentComment: A helpful message for the client
 
-Remember: Read the document carefully and extract ALL visible information.`
-            },
-            {
-              type: 'image_url',
-              image_url: {
-                url: `data:${mimeType};base64,${imageBase64}`
-              }
-            }
+Remember: Read the document carefully and extract ALL visible information.`;
+
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{
+          parts: [
+            { text: systemPrompt + "\n\n" + userPrompt },
+            { inline_data: { mime_type: mimeType, data: imageBase64 } }
           ]
-        }
-      ],
-      tools: [getExtractionTool(finalDocType)],
-      tool_choice: { type: "function", function: { name: "extract_document_data" } }
-    }),
-  });
+        }],
+        generationConfig: {
+          maxOutputTokens: 2000,
+          temperature: 0.3,
+        },
+      }),
+    }
+  );
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error('AI Gateway error:', response.status, errorText);
+    console.error('Gemini API error:', response.status, errorText);
     
-    if (response.status === 402) {
-      throw new Error('PAYMENT_REQUIRED: Your Lovable AI credits have been exhausted. Please add credits in Settings → Workspace → Usage.');
-    }
     if (response.status === 429) {
       throw new Error('RATE_LIMITED: Too many requests. Please wait a moment and try again.');
     }
@@ -774,67 +765,48 @@ Remember: Read the document carefully and extract ALL visible information.`
   const data = await response.json();
   console.log('AI response:', JSON.stringify(data, null, 2));
   
-  // Parse tool call response
-  const toolCall = data.choices[0]?.message?.tool_calls?.[0];
+  // Parse response from Gemini
+  const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
   
-  if (toolCall && toolCall.function?.arguments) {
-    const parsed = JSON.parse(toolCall.function.arguments);
-    
-    let status: 'approved' | 'disapproved' | 'waiting';
-    if (parsed.score >= 70) {
-      status = 'approved';
-    } else if (parsed.score < 50) {
-      status = 'disapproved';
-    } else {
-      status = 'waiting';
-    }
-
-    return {
-      score: parsed.score,
-      analysis: parsed.analysis,
-      status,
-      extractedData: parsed.extractedData || {},
-      detectedType: finalDocType
-    };
-  }
-  
-  // Fallback: try parsing message content
-  let content = data.choices[0]?.message?.content || '{}';
-  
-  if (content.includes('```json')) {
-    content = content.replace(/```json\s*/g, '').replace(/```\s*/g, '');
-  } else if (content.includes('```')) {
-    content = content.replace(/```\s*/g, '');
-  }
-  
+  // Try to extract JSON from the response
+  let parsedResult: any = null;
   try {
-    const parsed = JSON.parse(content.trim());
-    
+    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      parsedResult = JSON.parse(jsonMatch[0]);
+    }
+  } catch (e) {
+    console.error('Failed to parse AI response as JSON:', e);
+  }
+  
+  // Parse from the parsedResult we extracted above
+  if (parsedResult) {
     let status: 'approved' | 'disapproved' | 'waiting';
-    if (parsed.score >= 70) {
+    if (parsedResult.score >= 70) {
       status = 'approved';
-    } else if (parsed.score < 50) {
+    } else if (parsedResult.score < 50) {
       status = 'disapproved';
     } else {
       status = 'waiting';
     }
 
     return {
-      score: parsed.score || 50,
-      analysis: parsed.analysis || 'Document analyzed',
+      score: parsedResult.score || 50,
+      analysis: parsedResult.analysis || 'Document analyzed',
       status,
-      extractedData: parsed.extractedData || {},
-      detectedType: finalDocType
-    };
-  } catch {
-    return {
-      score: 50,
-      analysis: 'Unable to fully analyze document - manual review recommended',
-      status: 'waiting',
-      extractedData: {},
+      extractedData: parsedResult.extractedData || {},
       detectedType: finalDocType
     };
   }
+  
+  // Fallback if no JSON found
+  return {
+    score: 50,
+    analysis: 'Unable to fully analyze document - manual review recommended',
+    status: 'waiting',
+    extractedData: {},
+    detectedType: finalDocType
+  };
 }
 
 Deno.serve(async (req) => {
