@@ -70,60 +70,21 @@ async function callGroq(apiKey: string, systemPrompt: string, userPrompt: string
   return data.choices?.[0]?.message?.content || "";
 }
 
-// Call AI with fallback chain
+// Call AI - TESTING MODE: Only use Gemini Primary (fallbacks disabled)
 async function callAIWithFallback(systemPrompt: string, userPrompt: string): Promise<{ text: string; provider: string }> {
   const geminiKey = Deno.env.get("GEMINI_API_KEY");
-  const geminiBackupKey = Deno.env.get("GEMINI_API_KEY_BACKUP");
-  const groqKey = Deno.env.get("GROQ_API_KEY");
+  // DISABLED FOR TESTING:
+  // const geminiBackupKey = Deno.env.get("GEMINI_API_KEY_BACKUP");
+  // const groqKey = Deno.env.get("GROQ_API_KEY");
 
-  const providers: AIProvider[] = [];
-
-  // Primary: Gemini API
-  if (geminiKey) {
-    providers.push({
-      name: "Gemini Primary",
-      call: (sys, usr) => callGemini(geminiKey, sys, usr),
-    });
+  if (!geminiKey) {
+    throw new Error("GEMINI_API_KEY not configured");
   }
 
-  // Backup: Gemini Backup API
-  if (geminiBackupKey) {
-    providers.push({
-      name: "Gemini Backup",
-      call: (sys, usr) => callGemini(geminiBackupKey, sys, usr),
-    });
-  }
-
-  // Final fallback: Groq with compound-beta
-  if (groqKey) {
-    providers.push({
-      name: "Groq (compound-beta)",
-      call: (sys, usr) => callGroq(groqKey, sys, usr),
-    });
-  }
-
-  if (providers.length === 0) {
-    throw new Error("No AI API keys configured");
-  }
-
-  let lastError: Error | null = null;
-
-  for (const provider of providers) {
-    try {
-      console.log(`Trying AI provider: ${provider.name}`);
-      const text = await provider.call(systemPrompt, userPrompt);
-      if (text) {
-        console.log(`Success with provider: ${provider.name}`);
-        return { text, provider: provider.name };
-      }
-    } catch (error) {
-      console.error(`Provider ${provider.name} failed:`, error);
-      lastError = error instanceof Error ? error : new Error(String(error));
-      // Continue to next provider
-    }
-  }
-
-  throw lastError || new Error("All AI providers failed");
+  console.log("Testing Gemini Primary only (fallbacks disabled)");
+  const text = await callGemini(geminiKey, systemPrompt, userPrompt);
+  console.log("Success with Gemini Primary");
+  return { text, provider: "Gemini Primary (test mode)" };
 }
 
 serve(async (req) => {
