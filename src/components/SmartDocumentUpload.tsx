@@ -146,11 +146,21 @@ const processDocument = async (doc: QueuedDocument, sessionToken: string, applic
 
     return { success: true };
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Upload failed';
+    
+    // Parse specific error types for user-friendly messages
+    let displayError = errorMessage;
+    if (errorMessage.includes('PAYMENT_REQUIRED') || errorMessage.includes('402')) {
+      displayError = 'AI credits exhausted. Add credits in Settings → Workspace → Usage.';
+    } else if (errorMessage.includes('RATE_LIMITED') || errorMessage.includes('429')) {
+      displayError = 'Rate limit reached. Please wait and retry.';
+    }
+    
     console.error('Upload error for', doc.file.name, error);
     updateGlobalQueueItem(doc.id, { 
       status: 'error', 
       progress: 0,
-      error: error instanceof Error ? error.message : 'Upload failed'
+      error: displayError
     });
     return { success: false };
   }
