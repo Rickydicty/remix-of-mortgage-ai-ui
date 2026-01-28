@@ -610,7 +610,15 @@ Return ONLY the category name, nothing else.`
   });
 
   if (!response.ok) {
-    console.error('Document type detection failed');
+    if (response.status === 402) {
+      console.error('Document type detection failed: Lovable AI credits exhausted');
+      throw new Error('PAYMENT_REQUIRED: Your Lovable AI credits have been exhausted. Please add credits in Settings → Workspace → Usage.');
+    }
+    if (response.status === 429) {
+      console.error('Document type detection failed: Rate limit exceeded');
+      throw new Error('RATE_LIMITED: Too many requests. Please wait a moment and try again.');
+    }
+    console.error('Document type detection failed:', response.status);
     return 'other';
   }
 
@@ -753,6 +761,13 @@ Remember: Read the document carefully and extract ALL visible information.`
   if (!response.ok) {
     const errorText = await response.text();
     console.error('AI Gateway error:', response.status, errorText);
+    
+    if (response.status === 402) {
+      throw new Error('PAYMENT_REQUIRED: Your Lovable AI credits have been exhausted. Please add credits in Settings → Workspace → Usage.');
+    }
+    if (response.status === 429) {
+      throw new Error('RATE_LIMITED: Too many requests. Please wait a moment and try again.');
+    }
     throw new Error(`AI analysis failed: ${response.status}`);
   }
 
