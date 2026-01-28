@@ -6,6 +6,126 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// AI Provider configurations
+interface AIProvider {
+  name: string;
+  call: (systemPrompt: string, userPrompt: string) => Promise<string>;
+}
+
+// Gemini API call helper
+async function callGemini(apiKey: string, systemPrompt: string, userPrompt: string): Promise<string> {
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [
+          { role: "user", parts: [{ text: systemPrompt + "\n\n" + userPrompt }] }
+        ],
+        generationConfig: {
+          maxOutputTokens: 500,
+          temperature: 0.7,
+        },
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error(`Gemini API error: ${response.status}`, errorText);
+    throw new Error(`Gemini API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  return data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+}
+
+// Groq API call helper (compound-beta model)
+async function callGroq(apiKey: string, systemPrompt: string, userPrompt: string): Promise<string> {
+  const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "compound-beta",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt }
+      ],
+      max_tokens: 500,
+      temperature: 0.7,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error(`Groq API error: ${response.status}`, errorText);
+    throw new Error(`Groq API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  return data.choices?.[0]?.message?.content || "";
+}
+
+// Call AI with fallback chain
+async function callAIWithFallback(systemPrompt: string, userPrompt: string): Promise<{ text: string; provider: string }> {
+  const geminiKey = Deno.env.get("GEMINI_API_KEY");
+  const geminiBackupKey = Deno.env.get("GEMINI_API_KEY_BACKUP");
+  const groqKey = Deno.env.get("GROQ_API_KEY");
+
+  const providers: AIProvider[] = [];
+
+  // Primary: Gemini API
+  if (geminiKey) {
+    providers.push({
+      name: "Gemini Primary",
+      call: (sys, usr) => callGemini(geminiKey, sys, usr),
+    });
+  }
+
+  // Backup: Gemini Backup API
+  if (geminiBackupKey) {
+    providers.push({
+      name: "Gemini Backup",
+      call: (sys, usr) => callGemini(geminiBackupKey, sys, usr),
+    });
+  }
+
+  // Final fallback: Groq with compound-beta
+  if (groqKey) {
+    providers.push({
+      name: "Groq (compound-beta)",
+      call: (sys, usr) => callGroq(groqKey, sys, usr),
+    });
+  }
+
+  if (providers.length === 0) {
+    throw new Error("No AI API keys configured");
+  }
+
+  let lastError: Error | null = null;
+
+  for (const provider of providers) {
+    try {
+      console.log(`Trying AI provider: ${provider.name}`);
+      const text = await provider.call(systemPrompt, userPrompt);
+      if (text) {
+        console.log(`Success with provider: ${provider.name}`);
+        return { text, provider: provider.name };
+      }
+    } catch (error) {
+      console.error(`Provider ${provider.name} failed:`, error);
+      lastError = error instanceof Error ? error : new Error(String(error));
+      // Continue to next provider
+    }
+  }
+
+  throw lastError || new Error("All AI providers failed");
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -228,7 +348,7 @@ AI ANALYSIS:
 - Blockers: ${appAnalysis.aggregated_flags ? JSON.stringify(appAnalysis.aggregated_flags) : 'None identified'}
 ` : '';
 
-    const prompt = `You are Éire, the AI mortgage assistant for an Irish mortgage brokerage.
+    const userPrompt = `You are Éire, the AI mortgage assistant for an Irish mortgage brokerage.
 
 **CRITICAL INSTRUCTION**: Answer the client's question DIRECTLY and SPECIFICALLY. Use the ACTUAL data below.
 
@@ -285,11 +405,6 @@ ${shouldEscalate ? "⚠️ This query may need escalation to a human broker." : 
 
 Respond now - answer their question directly first:`;
 
-    const geminiApiKey = Deno.env.get("GEMINI_API_KEY");
-    if (!geminiApiKey) {
-      throw new Error("GEMINI_API_KEY is not configured");
-    }
-    
     const systemPrompt = `You are Aida, an Irish mortgage assistant.
 
 CRITICAL: Give SHORT, DIRECT answers (1-3 sentences max).
@@ -301,48 +416,17 @@ EXAMPLES:
 
 NO long explanations. NO encouragement unless asked. Just answer the question.`;
 
-    const aiResponse = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [
-            { role: "user", parts: [{ text: systemPrompt + "\n\n" + prompt }] }
-          ],
-          generationConfig: {
-            maxOutputTokens: 500,
-            temperature: 0.7,
-          },
-        }),
-      }
-    );
+    // Call AI with automatic fallback
+    const { text: agentMessage, provider: usedProvider } = await callAIWithFallback(systemPrompt, userPrompt);
+    console.log(`Response generated using: ${usedProvider}`);
 
-    if (!aiResponse.ok) {
-      const errorText = await aiResponse.text();
-      console.error("Gemini API error:", aiResponse.status, errorText);
-      
-      if (aiResponse.status === 429) {
-        return new Response(JSON.stringify({ 
-          error: "Too many requests. Please wait a moment and try again.",
-          code: "RATE_LIMITED"
-        }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      throw new Error(`Gemini API error: ${aiResponse.status}`);
-    }
-
-    const aiData = await aiResponse.json();
-    let agentMessage = aiData.candidates?.[0]?.content?.parts?.[0]?.text || 
-      "I apologize, but I'm having trouble right now. Let me connect you with our team.";
+    const finalMessage = agentMessage || "I apologize, but I'm having trouble right now. Let me connect you with our team.";
 
     // Check if the AI response indicates escalation
     const responseIndicatesEscalation = shouldEscalate || 
-      agentMessage.toLowerCase().includes("forwarding to") ||
-      agentMessage.toLowerCase().includes("connect you with") ||
-      agentMessage.toLowerCase().includes("broker will");
+      finalMessage.toLowerCase().includes("forwarding to") ||
+      finalMessage.toLowerCase().includes("connect you with") ||
+      finalMessage.toLowerCase().includes("broker will");
 
     // If escalating, send message to broker
     if (responseIndicatesEscalation && app.assigned_broker_id) {
@@ -360,14 +444,15 @@ NO long explanations. NO encouragement unless asked. Just answer the question.`;
       application_id: applicationId,
       client_id: user.id,
       role: "agent",
-      message: agentMessage,
+      message: finalMessage,
       message_type: responseIndicatesEscalation ? "escalation" : "chat",
     });
 
     return new Response(JSON.stringify({ 
       success: true, 
-      response: agentMessage,
-      escalated: responseIndicatesEscalation
+      response: finalMessage,
+      escalated: responseIndicatesEscalation,
+      provider: usedProvider
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
