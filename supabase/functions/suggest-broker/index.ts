@@ -12,10 +12,10 @@ serve(async (req) => {
 
   try {
     const { clientId, clientName, brokers } = await req.json();
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
 
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY not configured");
+    if (!GEMINI_API_KEY) {
+      throw new Error("GEMINI_API_KEY not configured");
     }
 
     // Prepare broker data for AI
@@ -33,51 +33,45 @@ Consider:
 2. Expertise match (if data available)
 3. Load distribution for optimal service
 
-Respond with the broker ID, their name, reason for selection, and current client count.`;
+Respond with a JSON object containing: broker_id, broker_name, reason (max 50 words), current_clients (number).
+Example: {"broker_id": "abc123", "broker_name": "John Smith", "reason": "Lowest workload with 5 clients", "current_clients": 5}
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "system", content: "You are a broker assignment expert. Always respond with structured data." },
-          { role: "user", content: prompt }
-        ],
-        tools: [{
-          type: "function",
-          function: {
-            name: "suggest_broker",
-            description: "Suggest the best broker for a client",
-            parameters: {
-              type: "object",
-              properties: {
-                broker_id: { type: "string", description: "The ID of the suggested broker" },
-                broker_name: { type: "string", description: "The name of the suggested broker" },
-                reason: { type: "string", description: "Brief reason for the suggestion (max 50 words)" },
-                current_clients: { type: "number", description: "Current number of clients" }
-              },
-              required: ["broker_id", "broker_name", "reason", "current_clients"],
-              additionalProperties: false
-            }
-          }
-        }],
-        tool_choice: { type: "function", function: { name: "suggest_broker" } }
-      }),
-    });
+Only output valid JSON, nothing else.`;
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{ text: "You are a broker assignment expert. " + prompt }]
+          }],
+          generationConfig: {
+            maxOutputTokens: 200,
+            temperature: 0.3,
+          },
+        }),
+      }
+    );
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("AI Gateway error:", response.status, errorText);
-      throw new Error(`AI Gateway error: ${response.status}`);
+      console.error("Gemini API error:", response.status, errorText);
+      throw new Error(`Gemini API error: ${response.status}`);
     }
 
     const data = await response.json();
-    const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
-    const suggestion = toolCall ? JSON.parse(toolCall.function.arguments) : null;
+    const content = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    
+    // Parse JSON from response
+    let suggestion = null;
+    try {
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      suggestion = jsonMatch ? JSON.parse(jsonMatch[0]) : null;
+    } catch {
+      console.error("Failed to parse AI response:", content);
+    }
 
     if (!suggestion) {
       throw new Error("Failed to get AI suggestion");
