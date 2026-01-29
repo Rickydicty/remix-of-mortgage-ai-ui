@@ -13,6 +13,7 @@ interface NotificationRequest {
   notification_type: string;
   subject: string;
   html_content: string;
+  recipient_email?: string; // Optional: send to specific email instead of from settings
   event_data?: Record<string, any>;
 }
 
@@ -28,38 +29,46 @@ const handler = async (req: Request): Promise<Response> => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    const { notification_type, subject, html_content, event_data }: NotificationRequest = await req.json();
+    const { notification_type, subject, html_content, recipient_email, event_data }: NotificationRequest = await req.json();
 
     console.log(`Processing notification: ${notification_type}`);
 
-    // Check if this notification type is enabled and get recipient email
-    const { data: setting, error: settingError } = await supabaseClient
-      .from("notification_settings")
-      .select("*")
-      .eq("notification_type", notification_type)
-      .single();
+    let toEmail = recipient_email;
 
-    if (settingError) {
-      console.error("Error fetching notification setting:", settingError);
-      return new Response(
-        JSON.stringify({ error: "Notification type not found", sent: false }),
-        {
-          status: 200,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
-        }
-      );
+    // If no recipient_email provided, look up from notification_settings
+    if (!toEmail) {
+      const { data: setting, error: settingError } = await supabaseClient
+        .from("notification_settings")
+        .select("*")
+        .eq("notification_type", notification_type)
+        .single();
+
+      if (settingError) {
+        console.error("Error fetching notification setting:", settingError);
+        return new Response(
+          JSON.stringify({ error: "Notification type not found", sent: false }),
+          {
+            status: 200,
+            headers: { "Content-Type": "application/json", ...corsHeaders },
+          }
+        );
+      }
+
+      if (!setting.enabled) {
+        console.log(`Notification type ${notification_type} is disabled`);
+        return new Response(
+          JSON.stringify({ message: "Notification disabled", sent: false }),
+          {
+            status: 200,
+            headers: { "Content-Type": "application/json", ...corsHeaders },
+          }
+        );
+      }
+
+      toEmail = setting.recipient_email;
     }
 
-    if (!setting.enabled) {
-      console.log(`Notification type ${notification_type} is disabled`);
-      return new Response(
-        JSON.stringify({ message: "Notification disabled", sent: false }),
-        {
-          status: 200,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
-        }
-      );
-    }
+    console.log(`Sending email to: ${toEmail}`);
 
     // Send email via SendGrid
     const emailResponse = await fetch("https://api.sendgrid.com/v3/mail/send", {
@@ -71,7 +80,7 @@ const handler = async (req: Request): Promise<Response> => {
       body: JSON.stringify({
         personalizations: [
           {
-            to: [{ email: setting.recipient_email }],
+            to: [{ email: toEmail }],
           },
         ],
         from: { email: "support@yourkey.ie", name: "Mortgage Portal" },

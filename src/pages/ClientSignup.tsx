@@ -136,10 +136,39 @@ const ClientSignup = () => {
         return;
       }
 
-      // Send notification email for new client signup via SendGrid
-      // Do this regardless of email confirmation status
+      // Send notification emails via SendGrid
+      // 1. Send welcome email to the user
       try {
-        console.log('Sending new client signup notification...');
+        console.log('Sending welcome email to user...');
+        await supabase.functions.invoke('send-notification', {
+          body: {
+            notification_type: 'user_welcome',
+            recipient_email: validated.email,
+            subject: 'Welcome to YourKey Mortgages!',
+            html_content: `
+              <h2>Welcome to YourKey Mortgages, ${validated.name}!</h2>
+              <p>Thank you for signing up. Your account has been successfully created.</p>
+              <h3>Your Details:</h3>
+              <ul>
+                <li><strong>Email:</strong> ${validated.email}</li>
+                <li><strong>Eligibility Score:</strong> ${eligibilityData.eligibilityScore}%</li>
+                <li><strong>Borrowing Capacity:</strong> €${eligibilityData.borrowingCapacityLow.toLocaleString()} - €${eligibilityData.borrowingCapacityHigh.toLocaleString()}</li>
+              </ul>
+              <p>You can now log in to your dashboard to continue your mortgage application.</p>
+              <p><a href="${window.location.origin}/login">Log in to your account</a></p>
+              <p>If you have any questions, please don't hesitate to contact us.</p>
+              <p>Best regards,<br>The YourKey Team</p>
+            `,
+          },
+        });
+        console.log('Welcome email sent to user');
+      } catch (error) {
+        console.error('Failed to send welcome email:', error);
+      }
+
+      // 2. Send admin notification
+      try {
+        console.log('Sending admin notification...');
         const { data: notificationData, error: notificationError } = await supabase.functions.invoke('send-notification', {
           body: {
             notification_type: 'new_client_signup',
@@ -175,13 +204,12 @@ const ClientSignup = () => {
         });
         
         if (notificationError) {
-          console.error('Notification error:', notificationError);
+          console.error('Admin notification error:', notificationError);
         } else {
-          console.log('New client signup notification sent successfully:', notificationData);
+          console.log('Admin notification sent:', notificationData);
         }
-      } catch (notificationError) {
-        console.error('Failed to send signup notification:', notificationError);
-        // Don't block signup if notification fails
+      } catch (error) {
+        console.error('Failed to send admin notification:', error);
       }
 
       // If user was created, save the eligibility data
