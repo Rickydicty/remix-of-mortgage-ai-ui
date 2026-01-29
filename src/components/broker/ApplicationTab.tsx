@@ -109,7 +109,7 @@ const ApplicationTab = () => {
     }
   };
 
-  // Row 1 tabs
+  // Row 1 tabs (Transactions tab removed per request)
   const row1Tabs = [
     { id: "aip-portal", label: "AIP Portal", highlight: true },
     { id: "valuation", label: "Property Valuation" },
@@ -117,7 +117,6 @@ const ApplicationTab = () => {
     { id: "alternative", label: "Alternative Lending" },
     { id: "declarations", label: "Declarations" },
     { id: "docs", label: "Docs & Conditions" },
-    { id: "transactions", label: "Transactions" },
     { id: "lender", label: "Select Lender" },
     { id: "notes", label: "Notes and Messages" },
     { id: "log", label: "Action Log" },
@@ -229,7 +228,7 @@ const ApplicationTab = () => {
           <Route path="valuation" element={<PropertyValuationReview applicationId={applicationId || ''} propertyAddress={formData?.property_address} />} />
           <Route path="docs" element={<DocsTab applicationId={applicationId} userId={application?.user_id} />} />
           <Route path="declarations" element={<DeclarationsTab preEligibility={preEligibility} formData={formData} />} />
-          <Route path="transactions" element={<TransactionsTab />} />
+          {/* Transactions tab removed per request */}
           <Route path="lender" element={<LenderTab />} />
           <Route path="notes" element={<NotesTab />} />
           <Route path="log" element={<ActionLogTab />} />
@@ -241,32 +240,53 @@ const ApplicationTab = () => {
   );
 };
 
-// AI Pre-Screen Summary Component
+// AI Pre-Screen Summary Component - Structured with clear headers
 const AIPreScreenSummary = ({ preEligibility, formData }: { preEligibility: PreEligibilityData | null; formData: any }) => {
-  // Calculate missing information
+  // Calculate missing information by category
   const getMissingInfo = () => {
-    const missing: string[] = [];
+    const categories: { category: string; items: string[] }[] = [];
     
-    // Check personal details
-    if (!formData?.app1_forenames) missing.push('Applicant Name');
-    if (!formData?.app1_date_of_birth) missing.push('Date of Birth');
-    if (!formData?.app1_pps_number) missing.push('PPS Number');
-    if (!formData?.app1_address) missing.push('Current Address');
-    if (!formData?.app1_phone && !preEligibility?.phone) missing.push('Phone Number');
-    if (!formData?.app1_email && !preEligibility?.email) missing.push('Email');
+    // Personal Details category
+    const personalMissing: string[] = [];
+    if (!formData?.app1_forenames || !formData?.app1_surname) personalMissing.push('Name');
+    if (!formData?.app1_phone && !preEligibility?.phone && !formData?.app1_email && !preEligibility?.email) personalMissing.push('Contact Details');
+    if (!formData?.app1_address_line1 && !formData?.app1_address) personalMissing.push('Address');
+    if (!formData?.app1_date_of_birth) personalMissing.push('Date of Birth');
+    if (!formData?.app1_pps_number) personalMissing.push('PPS Number');
+    if (personalMissing.length > 0) {
+      categories.push({ category: 'Personal Details', items: personalMissing });
+    }
     
-    // Check income details
-    if (!formData?.app1_gross_salary && !preEligibility?.income_1) missing.push('Gross Salary');
+    // Income & Employment category
+    const incomeMissing: string[] = [];
+    const isEmployed = formData?.app1_employment_status !== 'self_employed';
+    if (isEmployed) {
+      if (!formData?.app1_gross_salary && !preEligibility?.income_1) incomeMissing.push('Salary');
+    } else {
+      if (!formData?.app1_se_average_profit) incomeMissing.push('Gross Profit');
+    }
+    if (!formData?.app1_employer_name && isEmployed) incomeMissing.push('Employer Details');
+    if (incomeMissing.length > 0) {
+      categories.push({ category: 'Income & Employment Details', items: incomeMissing });
+    }
     
-    // Check property details
-    if (!formData?.property_address) missing.push('Property Address');
-    if (!formData?.property_type) missing.push('Property Type');
+    // Property Details category
+    const propertyMissing: string[] = [];
+    if (!formData?.property_address_line1 && !formData?.property_address) propertyMissing.push('Property Address');
+    if (!formData?.property_type) propertyMissing.push('Property Type');
+    if (propertyMissing.length > 0) {
+      categories.push({ category: 'Property Details', items: propertyMissing });
+    }
     
-    // Check mortgage details
-    if (!formData?.loan_amount && !preEligibility?.property_value) missing.push('Loan Amount');
-    if (!formData?.mortgage_term && !preEligibility?.desired_term) missing.push('Mortgage Term');
+    // Mortgage Details category
+    const mortgageMissing: string[] = [];
+    if (!formData?.loan_amount && !preEligibility?.property_value) mortgageMissing.push('Loan Amount');
+    if (!formData?.mortgage_term && !preEligibility?.desired_term) mortgageMissing.push('Mortgage Term');
+    if (mortgageMissing.length > 0) {
+      categories.push({ category: 'Mortgage Details', items: mortgageMissing });
+    }
     
-    return missing;
+    return categories;
   };
 
   const missingInfo = getMissingInfo();
@@ -328,28 +348,23 @@ const AIPreScreenSummary = ({ preEligibility, formData }: { preEligibility: PreE
           {eligibilityScore > 0 && eligibilityScore < 60 && <div className="text-sm text-destructive">Review recommended</div>}
         </div>
 
-        {/* Missing Info */}
+        {/* Missing Info - Structured by category */}
         <div className="space-y-2">
-          <Label className="text-muted-foreground text-sm font-medium">Missing Information</Label>
+          <Label className="text-muted-foreground text-sm font-medium">Key Missing Info</Label>
           {missingInfo.length === 0 ? (
             <div className="text-success font-medium flex items-center gap-1">
               <span>✓</span> All required info provided
             </div>
           ) : (
-            <div className="space-y-1">
-              <Badge variant="outline" className="bg-warning/10 text-warning border-warning/30">
-                {missingInfo.length} item{missingInfo.length > 1 ? 's' : ''} missing
-              </Badge>
-              <ul className="text-sm text-muted-foreground max-h-20 overflow-y-auto">
-                {missingInfo.slice(0, 4).map((item, idx) => (
-                  <li key={idx} className="flex items-center gap-1">
-                    <span className="text-warning">•</span> {item}
-                  </li>
-                ))}
-                {missingInfo.length > 4 && (
-                  <li className="text-warning text-xs">+{missingInfo.length - 4} more...</li>
-                )}
-              </ul>
+            <div className="space-y-2 max-h-32 overflow-y-auto">
+              {missingInfo.map((category, idx) => (
+                <div key={idx} className="text-sm">
+                  <span className="font-medium text-foreground">{category.category}:</span>
+                  <span className="text-muted-foreground ml-1">
+                    {category.items.join(', ')}
+                  </span>
+                </div>
+              ))}
             </div>
           )}
         </div>
@@ -1940,7 +1955,7 @@ const LenderTab = () => {
   );
 };
 
-// Notes Tab - Notes and Messages
+// Notes Tab - Notes and Messages (Updated dropdown options)
 const NotesTab = () => (
   <Card>
     <CardContent className="pt-6">
@@ -1951,14 +1966,13 @@ const NotesTab = () => (
         />
         <div className="space-y-3">
           <Select defaultValue="other">
-            <SelectTrigger className="w-40">
+            <SelectTrigger className="w-56">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="ebs_additional">EBS Additional Information</SelectItem>
+              <SelectItem value="ebs_clarification">EBS Clarification Response</SelectItem>
               <SelectItem value="other">Other</SelectItem>
-              <SelectItem value="general">General</SelectItem>
-              <SelectItem value="urgent">Urgent</SelectItem>
-              <SelectItem value="followup">Follow Up</SelectItem>
             </SelectContent>
           </Select>
           <Button variant="outline">Add note</Button>
