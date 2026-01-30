@@ -592,6 +592,7 @@ export type Database = {
           mortgage_term: number | null
           mortgage_type: string | null
           other_mortgage_details: string | null
+          progress_email_sent: boolean | null
           property_address: string | null
           property_address_line1: string | null
           property_address_line2: string | null
@@ -830,6 +831,7 @@ export type Database = {
           mortgage_term?: number | null
           mortgage_type?: string | null
           other_mortgage_details?: string | null
+          progress_email_sent?: boolean | null
           property_address?: string | null
           property_address_line1?: string | null
           property_address_line2?: string | null
@@ -1068,6 +1070,7 @@ export type Database = {
           mortgage_term?: number | null
           mortgage_type?: string | null
           other_mortgage_details?: string | null
+          progress_email_sent?: boolean | null
           property_address?: string | null
           property_address_line1?: string | null
           property_address_line2?: string | null

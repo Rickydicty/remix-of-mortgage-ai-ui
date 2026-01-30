@@ -557,9 +557,21 @@ const ClientApplicationTab = ({ applicationId, application, brokerProfile, onRef
   };
 
   // Check and send progress email if needed (only once at ~50% threshold)
-  const checkAndSendProgressEmail = async (completionPercent: number, previousPercent: number) => {
-    // Only send if crossing the 50% threshold for the first time
-    if (completionPercent >= 50 && previousPercent < 50) {
+  const checkAndSendProgressEmail = async (completionPercent: number, savedFormDataId: string | null) => {
+    // Only send if at 50% or more and we have a formDataId
+    if (completionPercent >= 50 && savedFormDataId) {
+      // Check if email already sent
+      const { data: formRecord } = await supabase
+        .from('application_form_data')
+        .select('progress_email_sent')
+        .eq('id', savedFormDataId)
+        .single();
+
+      if (formRecord?.progress_email_sent) {
+        console.log('Progress email already sent, skipping');
+        return;
+      }
+
       try {
         const { data: profile } = await supabase
           .from('profiles')
@@ -589,6 +601,13 @@ const ClientApplicationTab = ({ applicationId, application, brokerProfile, onRef
               `,
             },
           });
+
+          // Mark email as sent
+          await supabase
+            .from('application_form_data')
+            .update({ progress_email_sent: true })
+            .eq('id', savedFormDataId);
+
           console.log('Form progress email sent successfully');
         }
       } catch (error) {
@@ -601,9 +620,6 @@ const ClientApplicationTab = ({ applicationId, application, brokerProfile, onRef
     if (!user) return;
     setSaving(true);
 
-    // Calculate previous completion before save
-    const previousCompletion = calculateFormCompletion(formData);
-
     try {
       const dataToSave = {
         user_id: user.id,
@@ -613,6 +629,8 @@ const ClientApplicationTab = ({ applicationId, application, brokerProfile, onRef
         app2_date_of_birth: formData.app2_date_of_birth || null,
         estimated_closing_date: formData.estimated_closing_date || null,
       };
+
+      let savedId = formDataId;
 
       if (formDataId) {
         const { error } = await supabase
@@ -630,11 +648,12 @@ const ClientApplicationTab = ({ applicationId, application, brokerProfile, onRef
 
         if (error) throw error;
         setFormDataId(data.id);
+        savedId = data.id;
       }
 
-      // Calculate new completion and check for progress email
-      const newCompletion = calculateFormCompletion(formData);
-      await checkAndSendProgressEmail(newCompletion, previousCompletion);
+      // Calculate completion and check for progress email
+      const completionPercent = calculateFormCompletion(formData);
+      await checkAndSendProgressEmail(completionPercent, savedId);
 
       toast({
         title: "Changes saved",
