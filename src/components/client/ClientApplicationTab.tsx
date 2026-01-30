@@ -529,9 +529,80 @@ const ClientApplicationTab = ({ applicationId, application, brokerProfile, onRef
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  // Calculate form completion percentage
+  const calculateFormCompletion = (data: FormData): number => {
+    const requiredFields = [
+      // Personal - App 1
+      'app1_forenames', 'app1_surname', 'app1_date_of_birth', 'app1_pps_number',
+      'app1_phone', 'app1_email', 'app1_address_line1', 'app1_county',
+      // Employment
+      'app1_employment_status', 'app1_gross_salary', 'app1_employer_name',
+      // Bank
+      'bank_name', 'bank_account_number',
+      // Mortgage
+      'mortgage_purpose', 'property_value', 'loan_amount', 'mortgage_term',
+      // Property
+      'property_address_line1', 'property_type', 'property_county',
+    ];
+
+    let filledCount = 0;
+    for (const field of requiredFields) {
+      const value = data[field];
+      if (value !== null && value !== undefined && value !== '' && value !== 0) {
+        filledCount++;
+      }
+    }
+
+    return Math.round((filledCount / requiredFields.length) * 100);
+  };
+
+  // Check and send progress email if needed (only once at ~50% threshold)
+  const checkAndSendProgressEmail = async (completionPercent: number, previousPercent: number) => {
+    // Only send if crossing the 50% threshold for the first time
+    if (completionPercent >= 50 && previousPercent < 50) {
+      try {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('email, full_name')
+          .eq('id', user?.id)
+          .single();
+
+        if (profile?.email) {
+          console.log('Sending form progress email to:', profile.email);
+          await supabase.functions.invoke('send-notification', {
+            body: {
+              notification_type: 'form_progress',
+              recipient_email: profile.email,
+              subject: 'Great Progress on Your Mortgage Application!',
+              html_content: `
+                <h2>You're Halfway There, ${profile.full_name || 'Valued Client'}!</h2>
+                <p>Congratulations! You've completed ${completionPercent}% of your mortgage application forms.</p>
+                <h3>Your Progress:</h3>
+                <ul>
+                  <li><strong>Completion:</strong> ${completionPercent}%</li>
+                  <li><strong>Status:</strong> In Progress</li>
+                </ul>
+                <p>Keep up the great work! Complete the remaining sections to move your application forward.</p>
+                <p><a href="${window.location.origin}/login" style="background: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Continue Your Application</a></p>
+                <p>If you have any questions or need assistance, our team is here to help.</p>
+                <p>Best regards,<br>The YourKey Team</p>
+              `,
+            },
+          });
+          console.log('Form progress email sent successfully');
+        }
+      } catch (error) {
+        console.error('Failed to send progress email:', error);
+      }
+    }
+  };
+
   const handleSave = async () => {
     if (!user) return;
     setSaving(true);
+
+    // Calculate previous completion before save
+    const previousCompletion = calculateFormCompletion(formData);
 
     try {
       const dataToSave = {
@@ -560,6 +631,10 @@ const ClientApplicationTab = ({ applicationId, application, brokerProfile, onRef
         if (error) throw error;
         setFormDataId(data.id);
       }
+
+      // Calculate new completion and check for progress email
+      const newCompletion = calculateFormCompletion(formData);
+      await checkAndSendProgressEmail(newCompletion, previousCompletion);
 
       toast({
         title: "Changes saved",

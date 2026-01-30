@@ -101,6 +101,17 @@ const ClientMessaging = ({ clientId, clientName, applicationId }: ClientMessagin
 
     const isClient = roleData?.role === 'client';
     
+    // Get the recipient's email for notification
+    let recipientEmail: string | null = null;
+    const { data: profileData } = await supabase
+      .from('profiles')
+      .select('email, full_name')
+      .eq('id', clientId)
+      .maybeSingle();
+    
+    recipientEmail = profileData?.email || null;
+    const recipientName = profileData?.full_name || clientName;
+    
     const { data: msgData, error } = await supabase
       .from('messages')
       .insert({
@@ -137,33 +148,40 @@ const ClientMessaging = ({ clientId, clientName, applicationId }: ClientMessagin
         toast.success("Message sent");
       }
 
-      // Send message_received notification email
-      supabase.functions.invoke('send-notification', {
-        body: {
-          notification_type: 'message_received',
-          subject: `New Message from ${isClient ? 'Client' : 'Broker'}`,
-          html_content: `
-            <h2>New Message Received</h2>
-            <p>A new message has been sent in the mortgage portal.</p>
-            <h3>Message Details:</h3>
-            <ul>
-              <li><strong>From:</strong> ${isClient ? 'Client' : 'Broker'}</li>
-              <li><strong>To:</strong> ${clientName}</li>
-              ${applicationId ? `<li><strong>Application ID:</strong> ${applicationId}</li>` : ''}
-            </ul>
-            <p><strong>Message Preview:</strong></p>
-            <blockquote style="border-left: 3px solid #ccc; padding-left: 10px; margin: 10px 0;">
-              ${newMessage.trim().substring(0, 200)}${newMessage.length > 200 ? '...' : ''}
-            </blockquote>
-            <p>Please log in to the dashboard to view the full message.</p>
-          `,
-          event_data: {
-            sender_type: isClient ? 'client' : 'broker',
-            receiver_name: clientName,
-            application_id: applicationId,
+      // Send message_received notification email to the recipient
+      if (recipientEmail) {
+        console.log('Sending message notification to:', recipientEmail);
+        supabase.functions.invoke('send-notification', {
+          body: {
+            notification_type: 'message_received',
+            recipient_email: recipientEmail, // Send directly to the recipient
+            subject: `New Message from YourKey Mortgages`,
+            html_content: `
+              <h2>New Message from Your ${isClient ? 'Client' : 'Broker'}</h2>
+              <p>Hello ${recipientName},</p>
+              <p>You have received a new message regarding your mortgage application.</p>
+              <h3>Message Details:</h3>
+              <ul>
+                <li><strong>From:</strong> ${isClient ? 'Your Client' : 'Your Broker'}</li>
+                ${applicationId ? `<li><strong>Application ID:</strong> ${applicationId}</li>` : ''}
+              </ul>
+              <p><strong>Message Preview:</strong></p>
+              <blockquote style="border-left: 3px solid #4CAF50; padding-left: 15px; margin: 15px 0; background: #f9f9f9; padding: 10px 15px;">
+                ${newMessage.trim().substring(0, 200)}${newMessage.length > 200 ? '...' : ''}
+              </blockquote>
+              <p><a href="${window.location.origin}/login" style="background: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">View Full Message</a></p>
+              <p>If you have any questions, please don't hesitate to contact us.</p>
+              <p>Best regards,<br>The YourKey Team</p>
+            `,
+            event_data: {
+              sender_type: isClient ? 'client' : 'broker',
+              receiver_name: recipientName,
+              application_id: applicationId,
+            },
           },
-        },
-      }).catch(err => console.log("Message notification sent:", err));
+        }).then(() => console.log("Message notification sent successfully"))
+          .catch(err => console.error("Message notification error:", err));
+      }
 
       setNewMessage("");
       fetchMessages();
