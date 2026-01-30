@@ -20,6 +20,7 @@ import { AIPDocumentsList } from "@/components/client/AIPDocumentsList";
 import { ESignaturesTab } from "@/components/client/ESignaturesTab";
 import { LoanOffersTab } from "@/components/client/LoanOffersTab";
 import { format, addDays } from "date-fns";
+import { emailTemplates } from "@/lib/emailTemplates";
 import { 
   FormFieldFlags, 
   validateSecurityDetails,
@@ -586,19 +587,12 @@ const ClientApplicationTab = ({ applicationId, application, brokerProfile, onRef
               notification_type: 'form_progress',
               recipient_email: profile.email,
               subject: 'Great Progress on Your Mortgage Application!',
-              html_content: `
-                <h2>You're Halfway There, ${profile.full_name || 'Valued Client'}!</h2>
-                <p>Congratulations! You've completed ${completionPercent}% of your mortgage application forms.</p>
-                <h3>Your Progress:</h3>
-                <ul>
-                  <li><strong>Completion:</strong> ${completionPercent}%</li>
-                  <li><strong>Status:</strong> In Progress</li>
-                </ul>
-                <p>Keep up the great work! Complete the remaining sections to move your application forward.</p>
-                <p><a href="${window.location.origin}/login" style="background: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Continue Your Application</a></p>
-                <p>If you have any questions or need assistance, our team is here to help.</p>
-                <p>Best regards,<br>The YourKey Team</p>
-              `,
+              html_content: emailTemplates.formProgress({
+                clientName: profile.full_name || 'Valued Client',
+                clientEmail: profile.email,
+                completionPercent,
+                dashboardUrl: `${window.location.origin}/login`,
+              }),
             },
           });
 

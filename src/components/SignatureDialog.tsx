@@ -12,6 +12,7 @@ import {
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2 } from 'lucide-react';
+import { emailTemplates } from '@/lib/emailTemplates';
 
 interface SignatureDialogProps {
   open: boolean;
@@ -62,17 +63,12 @@ export const SignatureDialog = ({
         body: {
           notification_type: 'signature_completed',
           subject: `Signature Completed: ${documentType}`,
-          html_content: `
-            <h2>E-Signature Completed</h2>
-            <p>A client has completed an electronic signature.</p>
-            <h3>Signature Details:</h3>
-            <ul>
-              <li><strong>Document Type:</strong> ${documentType}</li>
-              <li><strong>Application ID:</strong> ${applicationId}</li>
-              <li><strong>Signed At:</strong> ${new Date().toLocaleString()}</li>
-            </ul>
-            <p>Please log in to the broker dashboard to review the signature.</p>
-          `,
+          html_content: emailTemplates.signatureCompleted({
+            documentType,
+            applicationId,
+            signedAt: new Date().toLocaleString(),
+            dashboardUrl: `${window.location.origin}/login`,
+          }),
           event_data: {
             document_type: documentType,
             application_id: applicationId,

@@ -19,6 +19,7 @@ import { AIPDocumentUpload } from "./AIPDocumentUpload";
 import { AIPSignatureUpload } from "./AIPSignatureUpload";
 import { SignatureReview } from "./SignatureReview";
 import { LoanOfferUpload } from "./LoanOfferUpload";
+import { emailTemplates } from "@/lib/emailTemplates";
 
 interface AIPCondition {
   id: string;
@@ -151,17 +152,12 @@ const AIPManagementTab = ({ applicationId }: AIPManagementTabProps) => {
         body: {
           notification_type: 'aip_status_change',
           subject: `AIP Condition Updated: ${updates.status || 'Modified'}`,
-          html_content: `
-            <h2>AIP Condition Updated</h2>
-            <p>An AIP condition has been updated for an application.</p>
-            <h3>Update Details:</h3>
-            <ul>
-              <li><strong>Application ID:</strong> ${applicationId}</li>
-              <li><strong>New Status:</strong> ${updates.status || 'Modified'}</li>
-              ${updates.description ? `<li><strong>Description:</strong> ${updates.description}</li>` : ''}
-            </ul>
-            <p>Please log in to the broker dashboard to review.</p>
-          `,
+          html_content: emailTemplates.aipStatusChange({
+            applicationId,
+            newStatus: updates.status || 'Modified',
+            description: updates.description,
+            dashboardUrl: `${window.location.origin}/login`,
+          }),
           event_data: {
             application_id: applicationId,
             condition_id: conditionId,

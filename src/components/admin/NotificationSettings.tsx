@@ -25,6 +25,12 @@ const NOTIFICATION_TYPE_LABELS: Record<string, string> = {
   aip_status_change: "AIP Status Change",
   signature_completed: "Signature Completed",
   message_received: "Message Received",
+  form_progress: "Form Progress (50%)",
+  docs_complete: "Documents Complete",
+  journey_started: "Journey Started",
+  human_review_needed: "Human Review Needed",
+  application_approved: "Application Approved",
+  application_rejected: "Application Rejected",
 };
 
 export const NotificationSettings = () => {

@@ -9,6 +9,7 @@ import { Upload, Loader2, MessageSquare, HelpCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { autoPopulateFormFromDocument } from "@/lib/autoPopulateFormData";
+import { emailTemplates } from "@/lib/emailTemplates";
 import {
   Tooltip,
   TooltipContent,
@@ -190,19 +191,14 @@ export const DocumentUpload = ({ onUploadComplete }: DocumentUploadProps) => {
         body: {
           notification_type: 'document_uploaded',
           subject: `Document Uploaded: ${docTypeLabel}`,
-          html_content: `
-            <h2>New Document Uploaded</h2>
-            <p>A client has uploaded a new document.</p>
-            <h3>Document Details:</h3>
-            <ul>
-              <li><strong>Document Type:</strong> ${docTypeLabel}</li>
-              <li><strong>File Name:</strong> ${file.name}</li>
-              <li><strong>AI Score:</strong> ${score}/100</li>
-              <li><strong>Status:</strong> ${autoApproved ? 'Auto-Approved' : 'Pending Review'}</li>
-            </ul>
-            ${justification ? `<p><strong>Client Notes:</strong> ${justification}</p>` : ''}
-            <p>Please log in to the broker dashboard to review.</p>
-          `,
+          html_content: emailTemplates.documentUploaded({
+            documentType: docTypeLabel,
+            fileName: file.name,
+            aiScore: score,
+            status: autoApproved ? 'Auto-Approved' : 'Pending Review',
+            clientNotes: justification || undefined,
+            dashboardUrl: `${window.location.origin}/login`,
+          }),
           event_data: {
             document_type: documentType,
             file_name: file.name,
