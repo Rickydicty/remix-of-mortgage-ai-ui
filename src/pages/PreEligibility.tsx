@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useNavigate } from "react-router-dom";
-import { Building2, ArrowRight, TrendingUp, Loader2, XCircle } from "lucide-react";
+import { Building2, ArrowRight, TrendingUp, Loader2, XCircle, AlertTriangle, Lightbulb } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
 
@@ -38,19 +38,58 @@ const PreEligibility = () => {
     email: "",
   });
 
-  const calculateResults = () => {
+  const [backendResult, setBackendResult] = useState<{
+    riskFactors: string[];
+    recommendations: string[];
+  } | null>(null);
+
+  const checkEligibilityBackend = async () => {
+    try {
+      const { supabase } = await import("@/integrations/supabase/client");
+      
+      const { data, error } = await supabase.functions.invoke('mortgage-eligibility', {
+        body: {
+          income1: parseFloat(formData.income1) || 0,
+          income2: formData.income2 ? parseFloat(formData.income2) : undefined,
+          creditHistory: formData.creditHistory || 'fair',
+          monthlyCommitments: parseFloat(formData.monthlyCommitments) || 0,
+          depositAmount: parseFloat(formData.depositAmount) || 0,
+          propertyValue: parseFloat(formData.propertyValue) || 0,
+          firstTimeBuyer: formData.firstTimeBuyer,
+          desiredTerm: formData.desiredTerm[0],
+          residencyStatus: formData.residencyStatus || 'citizen',
+          employmentType: formData.employmentType || 'paye',
+        }
+      });
+
+      if (error) throw error;
+      
+      return {
+        borrowingLow: data.borrowingCapacityLow,
+        borrowingHigh: data.borrowingCapacityHigh,
+        monthlyPayment: data.estimatedMonthlyPayment,
+        eligibilityScore: data.eligibilityScore,
+        riskFactors: data.riskFactors || [],
+        recommendations: data.recommendations || [],
+      };
+    } catch (error) {
+      console.error("Backend eligibility check failed, using fallback:", error);
+      // Fallback to local calculation
+      return calculateResultsFallback();
+    }
+  };
+
+  const calculateResultsFallback = () => {
     const income1 = parseFloat(formData.income1) || 0;
     const income2 = parseFloat(formData.income2) || 0;
     const totalIncome = income1 + income2;
     const commitments = parseFloat(formData.monthlyCommitments) || 0;
     const deposit = parseFloat(formData.depositAmount) || 0;
     
-    // Simple calculation based on income multiplier
     const baseMultiplier = formData.firstTimeBuyer ? 4 : 3.5;
     const borrowingLow = Math.round(totalIncome * baseMultiplier * 0.9);
     const borrowingHigh = Math.round(totalIncome * baseMultiplier * 1.1);
     
-    // Calculate monthly payment at 3.4% interest
     const loanAmount = (borrowingLow + borrowingHigh) / 2;
     const monthlyRate = 0.034 / 12;
     const numPayments = formData.desiredTerm[0] * 12;
@@ -59,7 +98,6 @@ const PreEligibility = () => {
       (Math.pow(1 + monthlyRate, numPayments) - 1)
     );
     
-    // Calculate eligibility score
     let score = 70;
     if (formData.creditHistory === "good") score += 15;
     else if (formData.creditHistory === "fair") score += 5;
@@ -70,7 +108,14 @@ const PreEligibility = () => {
     if (formData.residencyStatus === "other") score -= 10;
     score = Math.min(Math.max(score, 0), 100);
     
-    return { borrowingLow, borrowingHigh, monthlyPayment, eligibilityScore: score };
+    return { 
+      borrowingLow, 
+      borrowingHigh, 
+      monthlyPayment, 
+      eligibilityScore: score,
+      riskFactors: [],
+      recommendations: [],
+    };
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -78,7 +123,8 @@ const PreEligibility = () => {
     setIsSubmitting(true);
     
     try {
-      const results = calculateResults();
+      // Call backend API for eligibility check
+      const results = await checkEligibilityBackend();
       
       // Store eligibility data in localStorage for use after signup
       const eligibilityData = {
@@ -103,7 +149,16 @@ const PreEligibility = () => {
       
       localStorage.setItem('pendingEligibilityData', JSON.stringify(eligibilityData));
       
-      setCalculatedResults(results);
+      setCalculatedResults({
+        borrowingLow: results.borrowingLow,
+        borrowingHigh: results.borrowingHigh,
+        monthlyPayment: results.monthlyPayment,
+        eligibilityScore: results.eligibilityScore,
+      });
+      setBackendResult({
+        riskFactors: results.riskFactors,
+        recommendations: results.recommendations,
+      });
       setShowResults(true);
     } catch (error: any) {
       console.error("Error calculating eligibility:", error);
@@ -197,6 +252,53 @@ const PreEligibility = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* Risk Factors & Recommendations from Backend */}
+          {backendResult && (backendResult.riskFactors.length > 0 || backendResult.recommendations.length > 0) && (
+            <div className="grid md:grid-cols-2 gap-6 mb-8">
+              {backendResult.riskFactors.length > 0 && (
+                <Card className="border-warning/50">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-warning">
+                      <AlertTriangle className="h-5 w-5" />
+                      Risk Factors
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="space-y-2">
+                      {backendResult.riskFactors.map((factor, idx) => (
+                        <li key={idx} className="flex items-start gap-2 text-sm text-muted-foreground">
+                          <span className="text-warning mt-1">•</span>
+                          {factor}
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                </Card>
+              )}
+
+              {backendResult.recommendations.length > 0 && (
+                <Card className="border-primary/50">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-primary">
+                      <Lightbulb className="h-5 w-5" />
+                      Recommendations
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="space-y-2">
+                      {backendResult.recommendations.map((rec, idx) => (
+                        <li key={idx} className="flex items-start gap-2 text-sm text-muted-foreground">
+                          <span className="text-primary mt-1">✓</span>
+                          {rec}
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          )}
 
           {isEligible ? (
             <>
