@@ -10,6 +10,7 @@ import { Upload, Loader2, X, FileText, CheckCircle2, AlertCircle, Files } from "
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { autoPopulateFormFromDocument } from "@/lib/autoPopulateFormData";
+import { emailTemplates } from "@/lib/emailTemplates";
 
 const DOCUMENT_TYPES = [
   { value: "certified_id", label: "Certified ID" },
@@ -227,20 +228,12 @@ export const BatchDocumentUpload = ({ onUploadComplete }: BatchDocumentUploadPro
         body: {
           notification_type: 'document_uploaded',
           subject: `Batch Document Upload: ${successCount} Documents`,
-          html_content: `
-            <h2>Batch Documents Uploaded</h2>
-            <p>A client has uploaded multiple documents at once.</p>
-            <h3>Upload Summary:</h3>
-            <ul>
-              <li><strong>Total Uploaded:</strong> ${successCount} documents</li>
-              ${errorCount > 0 ? `<li><strong>Failed:</strong> ${errorCount} documents</li>` : ''}
-            </ul>
-            <h3>Documents Uploaded:</h3>
-            <ul>
-              ${uploadedDocs.map(d => `<li>${d}</li>`).join('')}
-            </ul>
-            <p>Please log in to the broker dashboard to review.</p>
-          `,
+          html_content: emailTemplates.batchDocumentUpload({
+            successCount,
+            errorCount,
+            documentsList: uploadedDocs,
+            dashboardUrl: `${window.location.origin}/login`,
+          }),
           event_data: {
             success_count: successCount,
             error_count: errorCount,

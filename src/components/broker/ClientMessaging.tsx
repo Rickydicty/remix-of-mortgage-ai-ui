@@ -6,6 +6,7 @@ import { Send, MessageSquare } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { emailTemplates } from "@/lib/emailTemplates";
 
 interface Message {
   id: string;
@@ -154,25 +155,15 @@ const ClientMessaging = ({ clientId, clientName, applicationId }: ClientMessagin
         supabase.functions.invoke('send-notification', {
           body: {
             notification_type: 'message_received',
-            recipient_email: recipientEmail, // Send directly to the recipient
+            recipient_email: recipientEmail,
             subject: `New Message from YourKey Mortgages`,
-            html_content: `
-              <h2>New Message from Your ${isClient ? 'Client' : 'Broker'}</h2>
-              <p>Hello ${recipientName},</p>
-              <p>You have received a new message regarding your mortgage application.</p>
-              <h3>Message Details:</h3>
-              <ul>
-                <li><strong>From:</strong> ${isClient ? 'Your Client' : 'Your Broker'}</li>
-                ${applicationId ? `<li><strong>Application ID:</strong> ${applicationId}</li>` : ''}
-              </ul>
-              <p><strong>Message Preview:</strong></p>
-              <blockquote style="border-left: 3px solid #4CAF50; padding-left: 15px; margin: 15px 0; background: #f9f9f9; padding: 10px 15px;">
-                ${newMessage.trim().substring(0, 200)}${newMessage.length > 200 ? '...' : ''}
-              </blockquote>
-              <p><a href="${window.location.origin}/login" style="background: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">View Full Message</a></p>
-              <p>If you have any questions, please don't hesitate to contact us.</p>
-              <p>Best regards,<br>The YourKey Team</p>
-            `,
+            html_content: emailTemplates.messageReceived({
+              recipientName,
+              senderType: isClient ? 'client' : 'broker',
+              messagePreview: newMessage.trim().substring(0, 200) + (newMessage.length > 200 ? '...' : ''),
+              applicationId,
+              loginUrl: `${window.location.origin}/login`,
+            }),
             event_data: {
               sender_type: isClient ? 'client' : 'broker',
               receiver_name: recipientName,

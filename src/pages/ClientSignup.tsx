@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
+import { emailTemplates } from "@/lib/emailTemplates";
 
 const signupSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -173,27 +174,20 @@ const ClientSignup = () => {
           body: {
             notification_type: 'new_client_signup',
             subject: `New Client Signup: ${validated.name}`,
-            html_content: `
-              <h2>New Client Registration</h2>
-              <p>A new client has signed up for the mortgage portal.</p>
-              <h3>Client Details:</h3>
-              <ul>
-                <li><strong>Name:</strong> ${validated.name}</li>
-                <li><strong>Email:</strong> ${validated.email}</li>
-                <li><strong>Phone:</strong> ${validated.phone}</li>
-              </ul>
-              <h3>Eligibility Summary:</h3>
-              <ul>
-                <li><strong>Eligibility Score:</strong> ${eligibilityData.eligibilityScore}%</li>
-                <li><strong>Applicant Type:</strong> ${eligibilityData.applicantType}</li>
-                <li><strong>Employment Type:</strong> ${eligibilityData.employmentType}</li>
-                <li><strong>Borrowing Capacity:</strong> €${eligibilityData.borrowingCapacityLow.toLocaleString()} - €${eligibilityData.borrowingCapacityHigh.toLocaleString()}</li>
-                <li><strong>Property Value:</strong> €${eligibilityData.propertyValue.toLocaleString()}</li>
-                <li><strong>Deposit Amount:</strong> €${eligibilityData.depositAmount.toLocaleString()}</li>
-                <li><strong>First Time Buyer:</strong> ${eligibilityData.firstTimeBuyer ? 'Yes' : 'No'}</li>
-              </ul>
-              <p>Please log in to the admin dashboard to view more details.</p>
-            `,
+            html_content: emailTemplates.newClientSignup({
+              clientName: validated.name,
+              clientEmail: validated.email,
+              clientPhone: validated.phone,
+              eligibilityScore: eligibilityData.eligibilityScore,
+              applicantType: eligibilityData.applicantType,
+              employmentType: eligibilityData.employmentType,
+              borrowingCapacityLow: eligibilityData.borrowingCapacityLow,
+              borrowingCapacityHigh: eligibilityData.borrowingCapacityHigh,
+              propertyValue: eligibilityData.propertyValue,
+              depositAmount: eligibilityData.depositAmount,
+              firstTimeBuyer: eligibilityData.firstTimeBuyer,
+              dashboardUrl: `${window.location.origin}/login`,
+            }),
             event_data: {
               client_name: validated.name,
               client_email: validated.email,
