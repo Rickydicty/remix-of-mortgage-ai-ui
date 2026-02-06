@@ -1,6 +1,8 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { IRISH_COUNTIES, COUNTRIES } from "@/lib/irishLocations";
 
 interface AfterOfferBankFormProps {
   formData: any;
@@ -46,11 +48,29 @@ export const AfterOfferBankForm = ({ formData, onChange }: AfterOfferBankFormPro
             </div>
             <div className="flex items-center gap-4">
               <Label className="w-40 text-sm text-muted-foreground">County</Label>
-              <Input className="flex-1" value={formData.dd_bank_county || ''} onChange={(e) => onChange('dd_bank_county', e.target.value)} />
+              <Select value={formData.dd_bank_county || ''} onValueChange={(v) => onChange('dd_bank_county', v)}>
+                <SelectTrigger className="flex-1">
+                  <SelectValue placeholder="Select County" />
+                </SelectTrigger>
+                <SelectContent>
+                  {IRISH_COUNTIES.map((county) => (
+                    <SelectItem key={county} value={county}>{county}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="flex items-center gap-4">
               <Label className="w-40 text-sm text-muted-foreground">Country</Label>
-              <Input className="flex-1" value={formData.dd_bank_country || 'Ireland'} onChange={(e) => onChange('dd_bank_country', e.target.value)} />
+              <Select value={formData.dd_bank_country || 'Ireland'} onValueChange={(v) => onChange('dd_bank_country', v)}>
+                <SelectTrigger className="flex-1">
+                  <SelectValue placeholder="Select Country" />
+                </SelectTrigger>
+                <SelectContent>
+                  {COUNTRIES.map((country) => (
+                    <SelectItem key={country} value={country}>{country}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </div>

@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { FormFieldFlags, validatePropertyDetails } from "@/components/client/FormFieldFlags";
 import { Separator } from "@/components/ui/separator";
+import { IRISH_COUNTIES, COUNTRIES } from "@/lib/irishLocations";
 
 interface PropertyDetailsFormProps {
   formData: any;
@@ -40,11 +41,29 @@ export const PropertyDetailsForm = ({ formData, onChange }: PropertyDetailsFormP
               </div>
               <div className="flex items-center gap-4">
                 <Label className="w-40 text-sm text-muted-foreground">County</Label>
-                <Input className="flex-1" value={formData.property_county || ''} onChange={(e) => onChange('property_county', e.target.value)} />
+                <Select value={formData.property_county || ''} onValueChange={(v) => onChange('property_county', v)}>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Select County" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {IRISH_COUNTIES.map((county) => (
+                      <SelectItem key={county} value={county}>{county}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="flex items-center gap-4">
                 <Label className="w-40 text-sm text-muted-foreground">Country</Label>
-                <Input className="flex-1" value={formData.property_country || 'Ireland'} onChange={(e) => onChange('property_country', e.target.value)} />
+                <Select value={formData.property_country || 'Ireland'} onValueChange={(v) => onChange('property_country', v)}>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Select Country" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {COUNTRIES.map((country) => (
+                      <SelectItem key={country} value={country}>{country}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <div className="space-y-3">

@@ -4,7 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
-
+import { IRISH_COUNTIES, COUNTRIES } from "@/lib/irishLocations";
 interface BeforeAIPPersonalFormProps {
   formData: any;
   onChange: (field: string, value: any) => void;
@@ -116,11 +116,29 @@ const ApplicantFields = ({
         </div>
         <div className="flex items-center gap-4">
           <Label className="w-40 text-sm text-muted-foreground">County<span className="text-destructive">*</span></Label>
-          <Input className="flex-1" value={formData[`${prefix}_county`] || ''} onChange={(e) => onChange(`${prefix}_county`, e.target.value)} />
+          <Select value={formData[`${prefix}_county`] || ''} onValueChange={(v) => onChange(`${prefix}_county`, v)}>
+            <SelectTrigger className="flex-1">
+              <SelectValue placeholder="Select County" />
+            </SelectTrigger>
+            <SelectContent>
+              {IRISH_COUNTIES.map((county) => (
+                <SelectItem key={county} value={county}>{county}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <div className="flex items-center gap-4">
           <Label className="w-40 text-sm text-muted-foreground">Country</Label>
-          <Input className="flex-1" value={formData[`${prefix}_country`] || 'Ireland'} onChange={(e) => onChange(`${prefix}_country`, e.target.value)} />
+          <Select value={formData[`${prefix}_country`] || 'Ireland'} onValueChange={(v) => onChange(`${prefix}_country`, v)}>
+            <SelectTrigger className="flex-1">
+              <SelectValue placeholder="Select Country" />
+            </SelectTrigger>
+            <SelectContent>
+              {COUNTRIES.map((country) => (
+                <SelectItem key={country} value={country}>{country}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
       <div className="space-y-3">
@@ -183,11 +201,29 @@ const ApplicantFields = ({
         <div className="space-y-3">
           <div className="flex items-center gap-4">
             <Label className="w-40 text-sm text-muted-foreground">County</Label>
-            <Input className="flex-1" value={formData[`${prefix}_correspondence_county`] || ''} onChange={(e) => onChange(`${prefix}_correspondence_county`, e.target.value)} />
+            <Select value={formData[`${prefix}_correspondence_county`] || ''} onValueChange={(v) => onChange(`${prefix}_correspondence_county`, v)}>
+              <SelectTrigger className="flex-1">
+                <SelectValue placeholder="Select County" />
+              </SelectTrigger>
+              <SelectContent>
+                {IRISH_COUNTIES.map((county) => (
+                  <SelectItem key={county} value={county}>{county}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="flex items-center gap-4">
             <Label className="w-40 text-sm text-muted-foreground">Country</Label>
-            <Input className="flex-1" value={formData[`${prefix}_correspondence_country`] || 'Ireland'} onChange={(e) => onChange(`${prefix}_correspondence_country`, e.target.value)} />
+            <Select value={formData[`${prefix}_correspondence_country`] || 'Ireland'} onValueChange={(v) => onChange(`${prefix}_correspondence_country`, v)}>
+              <SelectTrigger className="flex-1">
+                <SelectValue placeholder="Select Country" />
+              </SelectTrigger>
+              <SelectContent>
+                {COUNTRIES.map((country) => (
+                  <SelectItem key={country} value={country}>{country}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </div>
@@ -215,11 +251,29 @@ const ApplicantFields = ({
           <div className="space-y-3">
             <div className="flex items-center gap-4">
               <Label className="w-40 text-sm text-muted-foreground">County</Label>
-              <Input className="flex-1" value={formData[`${prefix}_previous_county`] || ''} onChange={(e) => onChange(`${prefix}_previous_county`, e.target.value)} />
+              <Select value={formData[`${prefix}_previous_county`] || ''} onValueChange={(v) => onChange(`${prefix}_previous_county`, v)}>
+                <SelectTrigger className="flex-1">
+                  <SelectValue placeholder="Select County" />
+                </SelectTrigger>
+                <SelectContent>
+                  {IRISH_COUNTIES.map((county) => (
+                    <SelectItem key={county} value={county}>{county}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="flex items-center gap-4">
               <Label className="w-40 text-sm text-muted-foreground">Country</Label>
-              <Input className="flex-1" value={formData[`${prefix}_previous_country`] || 'Ireland'} onChange={(e) => onChange(`${prefix}_previous_country`, e.target.value)} />
+              <Select value={formData[`${prefix}_previous_country`] || 'Ireland'} onValueChange={(v) => onChange(`${prefix}_previous_country`, v)}>
+                <SelectTrigger className="flex-1">
+                  <SelectValue placeholder="Select Country" />
+                </SelectTrigger>
+                <SelectContent>
+                  {COUNTRIES.map((country) => (
+                    <SelectItem key={country} value={country}>{country}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="flex items-center gap-4">
               <Label className="w-40 text-sm text-muted-foreground">Time at Previous</Label>
