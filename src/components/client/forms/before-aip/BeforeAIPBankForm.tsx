@@ -3,6 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { IRISH_COUNTIES, COUNTRIES } from "@/lib/irishLocations";
 
 interface BeforeAIPBankFormProps {
   formData: any;
@@ -37,11 +38,29 @@ export const BeforeAIPBankForm = ({ formData, onChange }: BeforeAIPBankFormProps
             </div>
             <div className="flex items-center gap-4">
               <Label className="w-40 text-sm text-muted-foreground">County</Label>
-              <Input className="flex-1" value={formData.bank_county || ''} onChange={(e) => onChange('bank_county', e.target.value)} />
+              <Select value={formData.bank_county || ''} onValueChange={(v) => onChange('bank_county', v)}>
+                <SelectTrigger className="flex-1">
+                  <SelectValue placeholder="Select County" />
+                </SelectTrigger>
+                <SelectContent>
+                  {IRISH_COUNTIES.map((county) => (
+                    <SelectItem key={county} value={county}>{county}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="flex items-center gap-4">
               <Label className="w-40 text-sm text-muted-foreground">Country</Label>
-              <Input className="flex-1" value={formData.bank_country || 'Ireland'} onChange={(e) => onChange('bank_country', e.target.value)} />
+              <Select value={formData.bank_country || 'Ireland'} onValueChange={(v) => onChange('bank_country', v)}>
+                <SelectTrigger className="flex-1">
+                  <SelectValue placeholder="Select Country" />
+                </SelectTrigger>
+                <SelectContent>
+                  {COUNTRIES.map((country) => (
+                    <SelectItem key={country} value={country}>{country}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <div className="space-y-3">

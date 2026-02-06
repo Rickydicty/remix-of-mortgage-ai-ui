@@ -6,6 +6,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { FormFieldFlags, validatePersonalDetails } from "@/components/client/FormFieldFlags";
 import { Separator } from "@/components/ui/separator";
+import { IRISH_COUNTIES, COUNTRIES } from "@/lib/irishLocations";
 
 interface PersonalDetailsFormProps {
   formData: any;
@@ -168,11 +169,29 @@ const ApplicantPersonalFields = ({
       <div className="space-y-3">
         <div className="flex items-center gap-4">
           <Label className="w-40 text-sm text-muted-foreground">County</Label>
-          <Input className="flex-1" value={formData[`${prefix}_county`] || ''} onChange={(e) => onChange(`${prefix}_county`, e.target.value)} />
+          <Select value={formData[`${prefix}_county`] || ''} onValueChange={(v) => onChange(`${prefix}_county`, v)}>
+            <SelectTrigger className="flex-1">
+              <SelectValue placeholder="Select County" />
+            </SelectTrigger>
+            <SelectContent>
+              {IRISH_COUNTIES.map((county) => (
+                <SelectItem key={county} value={county}>{county}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <div className="flex items-center gap-4">
           <Label className="w-40 text-sm text-muted-foreground">Country</Label>
-          <Input className="flex-1" value={formData[`${prefix}_country`] || 'Ireland'} onChange={(e) => onChange(`${prefix}_country`, e.target.value)} />
+          <Select value={formData[`${prefix}_country`] || 'Ireland'} onValueChange={(v) => onChange(`${prefix}_country`, v)}>
+            <SelectTrigger className="flex-1">
+              <SelectValue placeholder="Select Country" />
+            </SelectTrigger>
+            <SelectContent>
+              {COUNTRIES.map((country) => (
+                <SelectItem key={country} value={country}>{country}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <div className="flex items-center gap-4">
           <Label className="w-40 text-sm text-muted-foreground">Years at Address</Label>
