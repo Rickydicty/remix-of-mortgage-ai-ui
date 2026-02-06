@@ -11,7 +11,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import ClientApplicationTab from "@/components/client/ClientApplicationTab";
 import ApplicationFeePayment from "@/components/payments/ApplicationFeePayment";
 import UnifiedChatBot from "@/components/client/UnifiedChatBot";
-
+import BrokerMessageNotification from "@/components/client/BrokerMessageNotification";
 interface Application {
   id: string;
   application_number: string;
@@ -235,6 +235,15 @@ const ClientDashboard = () => {
       </header>
 
       <div className="container mx-auto px-4 py-8">
+        {/* Broker Message Notification */}
+        {application?.assigned_broker_id && (
+          <BrokerMessageNotification
+            applicationId={application?.id || null}
+            brokerId={application?.assigned_broker_id}
+            brokerName={brokerProfile?.full_name}
+          />
+        )}
+
         {/* Progress Tracker */}
         <Card className="mb-8">
           <CardHeader>
