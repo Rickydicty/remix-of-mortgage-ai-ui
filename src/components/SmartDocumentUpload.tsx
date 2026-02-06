@@ -47,7 +47,7 @@ interface SmartDocumentUploadProps {
   employmentType?: string;
 }
 
-// Global state that persists across component unmounts
+// Global state that persists across component unmounts (and survives HMR/tab switches)
 interface GlobalUploadState {
   queue: QueuedDocument[];
   isProcessing: boolean;
@@ -55,12 +55,18 @@ interface GlobalUploadState {
   processingPromise: Promise<void> | null;
 }
 
-const globalState: GlobalUploadState = {
-  queue: [],
-  isProcessing: false,
-  listeners: new Set(),
-  processingPromise: null,
+type SmartUploadGlobal = typeof globalThis & {
+  __smartDocumentUploadState?: GlobalUploadState;
 };
+
+const globalState: GlobalUploadState =
+  (globalThis as SmartUploadGlobal).__smartDocumentUploadState ??
+  ((globalThis as SmartUploadGlobal).__smartDocumentUploadState = {
+    queue: [],
+    isProcessing: false,
+    listeners: new Set(),
+    processingPromise: null,
+  });
 
 // Helper to notify all listeners of queue changes
 const notifyListeners = () => {
@@ -168,66 +174,77 @@ const processDocument = async (doc: QueuedDocument, sessionToken: string, applic
 
 // Process all pending documents in background
 const processQueueInBackground = async () => {
-  if (globalState.isProcessing) return;
-  
-  globalState.isProcessing = true;
-  notifyListeners();
+  // De-dupe: if a run is already in-flight, reuse it
+  if (globalState.processingPromise) return globalState.processingPromise;
 
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) {
+  const run = (async () => {
+    if (globalState.isProcessing) return;
+
+    globalState.isProcessing = true;
+    notifyListeners();
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      globalState.isProcessing = false;
+      notifyListeners();
+      return;
+    }
+
+    const { data: application } = await supabase
+      .from('applications')
+      .select('id')
+      .eq('user_id', session.user.id)
+      .maybeSingle();
+
+    // Process in batches of 3
+    const batchSize = 3;
+    let successCount = 0;
+    let errorCount = 0;
+
+    while (true) {
+      const pendingDocs = globalState.queue.filter(doc => doc.status === 'pending');
+      if (pendingDocs.length === 0) break;
+
+      const batch = pendingDocs.slice(0, batchSize);
+
+      const results = await Promise.all(
+        batch.map(doc => processDocument(doc, session.access_token, application?.id))
+      );
+
+      results.forEach(result => {
+        if (result.success) successCount++;
+        else errorCount++;
+      });
+    }
+
+    // Trigger broker-agent analysis after all uploads
+    if (application?.id && successCount > 0) {
+      fetch(
+        `https://urdyzlulkpgffzrwefwj.supabase.co/functions/v1/broker-agent`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "analyze_application",
+            applicationId: application.id,
+          }),
+        }
+      ).catch(err => console.log("AI analysis triggered:", err));
+
+      supabase.functions.invoke('evaluate-application-state', {
+        body: { application_id: application.id }
+      }).catch(err => console.log("State evaluation triggered:", err));
+    }
+
     globalState.isProcessing = false;
     notifyListeners();
-    return;
-  }
+  })();
 
-  const { data: application } = await supabase
-    .from('applications')
-    .select('id')
-    .eq('user_id', session.user.id)
-    .maybeSingle();
+  globalState.processingPromise = run.finally(() => {
+    globalState.processingPromise = null;
+  });
 
-  // Process in batches of 3
-  const batchSize = 3;
-  let successCount = 0;
-  let errorCount = 0;
-
-  while (true) {
-    const pendingDocs = globalState.queue.filter(doc => doc.status === 'pending');
-    if (pendingDocs.length === 0) break;
-
-    const batch = pendingDocs.slice(0, batchSize);
-    
-    const results = await Promise.all(
-      batch.map(doc => processDocument(doc, session.access_token, application?.id))
-    );
-
-    results.forEach(result => {
-      if (result.success) successCount++;
-      else errorCount++;
-    });
-  }
-
-  // Trigger broker-agent analysis after all uploads
-  if (application?.id && successCount > 0) {
-    fetch(
-      `https://urdyzlulkpgffzrwefwj.supabase.co/functions/v1/broker-agent`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "analyze_application",
-          applicationId: application.id,
-        }),
-      }
-    ).catch(err => console.log("AI analysis triggered:", err));
-
-    supabase.functions.invoke('evaluate-application-state', {
-      body: { application_id: application.id }
-    }).catch(err => console.log("State evaluation triggered:", err));
-  }
-
-  globalState.isProcessing = false;
-  notifyListeners();
+  return globalState.processingPromise;
 };
 
 export const SmartDocumentUpload = ({ onUploadComplete, employmentType }: SmartDocumentUploadProps) => {
@@ -242,7 +259,7 @@ export const SmartDocumentUpload = ({ onUploadComplete, employmentType }: SmartD
     const handleQueueChange = (newQueue: QueuedDocument[]) => {
       setQueue(newQueue);
       setIsProcessing(globalState.isProcessing);
-      
+
       // Check if all done
       const allDone = newQueue.length > 0 && newQueue.every(d => d.status === 'done' || d.status === 'error');
       if (allDone && onUploadComplete) {
@@ -251,10 +268,16 @@ export const SmartDocumentUpload = ({ onUploadComplete, employmentType }: SmartD
     };
 
     globalState.listeners.add(handleQueueChange);
-    
+
     // Sync initial state
     setQueue([...globalState.queue]);
     setIsProcessing(globalState.isProcessing);
+
+    // If user navigated away mid-upload, ensure processing continues
+    const hasWork = globalState.queue.some(d => d.status === 'pending') && !globalState.isProcessing;
+    if (hasWork) {
+      processQueueInBackground();
+    }
 
     return () => {
       globalState.listeners.delete(handleQueueChange);
