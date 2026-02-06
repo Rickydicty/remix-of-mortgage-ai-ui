@@ -18,6 +18,7 @@ import { SmartDocumentUpload } from "@/components/SmartDocumentUpload";
 import { DocumentList } from "@/components/DocumentList";
 import { AIPDocumentsList } from "@/components/client/AIPDocumentsList";
 import { ESignaturesTab } from "@/components/client/ESignaturesTab";
+import BrokerMessagesTab from "@/components/client/BrokerMessagesTab";
 import { LoanOffersTab } from "@/components/client/LoanOffersTab";
 import { format, addDays } from "date-fns";
 import { emailTemplates } from "@/lib/emailTemplates";
@@ -402,6 +403,7 @@ const ClientApplicationTab = ({ applicationId, application, brokerProfile, onRef
         { id: "bank", label: "Bank" },
         { id: "mortgage", label: "Mortgage" },
         { id: "property", label: "Property" },
+        { id: "messages", label: "Broker Messages" },
       ]
     },
     after_aip: {
@@ -751,7 +753,7 @@ const ClientApplicationTab = ({ applicationId, application, brokerProfile, onRef
     );
   }
 
-  const isFormTab = !['documents', 'valuation', 'signatures'].includes(activeTab);
+  const isFormTab = !['documents', 'valuation', 'signatures', 'messages'].includes(activeTab);
 
   return (
     <div className="space-y-4">
@@ -849,6 +851,13 @@ const ClientApplicationTab = ({ applicationId, application, brokerProfile, onRef
           )}
           {activeTab === "property" && (
             <BeforeAIPPropertyForm formData={formData} onChange={handleInputChange} />
+          )}
+          {activeTab === "messages" && (
+            <BrokerMessagesTab 
+              applicationId={applicationId}
+              brokerId={application?.assigned_broker_id || null}
+              brokerName={brokerProfile?.full_name}
+            />
           )}
         </>
       )}
