@@ -12,87 +12,98 @@ interface FinancialCreditFormProps {
   onChange: (field: string, value: any) => void;
 }
 
-export const FinancialCreditForm = ({ formData, onChange }: FinancialCreditFormProps) => {
-  const flags = validateFinancialDetails(formData);
-
-  const CreditHistoryQuestions = ({ prefix, title }: { prefix: 'app1' | 'app2'; title: string }) => (
-    <div className="space-y-4">
-      <h5 className="font-medium text-sm">{title}</h5>
-      <div className="space-y-3">
-        <div className="flex items-start gap-3">
-          <Checkbox 
-            checked={formData[`${prefix}_refused_mortgage`] || false} 
-            onCheckedChange={(v) => onChange(`${prefix}_refused_mortgage`, v)} 
-          />
-          <div className="flex-1">
-            <Label className="text-sm">Been refused a mortgage on this or any other property?</Label>
-            {formData[`${prefix}_refused_mortgage`] && (
-              <Textarea 
-                className="mt-2" 
-                placeholder="Please provide details..." 
-                value={formData[`${prefix}_refused_mortgage_details`] || ''} 
-                onChange={(e) => onChange(`${prefix}_refused_mortgage_details`, e.target.value)} 
-              />
-            )}
-          </div>
+// Extracted outside to prevent re-creation on every render
+const CreditHistoryQuestions = ({ 
+  prefix, 
+  title,
+  formData,
+  onChange
+}: { 
+  prefix: 'app1' | 'app2'; 
+  title: string;
+  formData: any;
+  onChange: (field: string, value: any) => void;
+}) => (
+  <div className="space-y-4">
+    <h5 className="font-medium text-sm">{title}</h5>
+    <div className="space-y-3">
+      <div className="flex items-start gap-3">
+        <Checkbox 
+          checked={formData[`${prefix}_refused_mortgage`] || false} 
+          onCheckedChange={(v) => onChange(`${prefix}_refused_mortgage`, v)} 
+        />
+        <div className="flex-1">
+          <Label className="text-sm">Been refused a mortgage on this or any other property?</Label>
+          {formData[`${prefix}_refused_mortgage`] && (
+            <Textarea 
+              className="mt-2" 
+              placeholder="Please provide details..." 
+              value={formData[`${prefix}_refused_mortgage_details`] || ''} 
+              onChange={(e) => onChange(`${prefix}_refused_mortgage_details`, e.target.value)} 
+            />
+          )}
         </div>
-        
-        <div className="flex items-start gap-3">
-          <Checkbox 
-            checked={formData[`${prefix}_court_order`] || false} 
-            onCheckedChange={(v) => onChange(`${prefix}_court_order`, v)} 
-          />
-          <div className="flex-1">
-            <Label className="text-sm">Had a court order registered against you?</Label>
-            {formData[`${prefix}_court_order`] && (
-              <Textarea 
-                className="mt-2" 
-                placeholder="Please provide details..." 
-                value={formData[`${prefix}_court_order_details`] || ''} 
-                onChange={(e) => onChange(`${prefix}_court_order_details`, e.target.value)} 
-              />
-            )}
-          </div>
+      </div>
+      
+      <div className="flex items-start gap-3">
+        <Checkbox 
+          checked={formData[`${prefix}_court_order`] || false} 
+          onCheckedChange={(v) => onChange(`${prefix}_court_order`, v)} 
+        />
+        <div className="flex-1">
+          <Label className="text-sm">Had a court order registered against you?</Label>
+          {formData[`${prefix}_court_order`] && (
+            <Textarea 
+              className="mt-2" 
+              placeholder="Please provide details..." 
+              value={formData[`${prefix}_court_order_details`] || ''} 
+              onChange={(e) => onChange(`${prefix}_court_order_details`, e.target.value)} 
+            />
+          )}
         </div>
-        
-        <div className="flex items-start gap-3">
-          <Checkbox 
-            checked={formData[`${prefix}_bankruptcy`] || false} 
-            onCheckedChange={(v) => onChange(`${prefix}_bankruptcy`, v)} 
-          />
-          <div className="flex-1">
-            <Label className="text-sm">Been insolvent, declared bankrupt or made any arrangements with creditors?</Label>
-            {formData[`${prefix}_bankruptcy`] && (
-              <Textarea 
-                className="mt-2" 
-                placeholder="Please provide details..." 
-                value={formData[`${prefix}_bankruptcy_details`] || ''} 
-                onChange={(e) => onChange(`${prefix}_bankruptcy_details`, e.target.value)} 
-              />
-            )}
-          </div>
+      </div>
+      
+      <div className="flex items-start gap-3">
+        <Checkbox 
+          checked={formData[`${prefix}_bankruptcy`] || false} 
+          onCheckedChange={(v) => onChange(`${prefix}_bankruptcy`, v)} 
+        />
+        <div className="flex-1">
+          <Label className="text-sm">Been insolvent, declared bankrupt or made any arrangements with creditors?</Label>
+          {formData[`${prefix}_bankruptcy`] && (
+            <Textarea 
+              className="mt-2" 
+              placeholder="Please provide details..." 
+              value={formData[`${prefix}_bankruptcy_details`] || ''} 
+              onChange={(e) => onChange(`${prefix}_bankruptcy_details`, e.target.value)} 
+            />
+          )}
         </div>
-        
-        <div className="flex items-start gap-3">
-          <Checkbox 
-            checked={formData[`${prefix}_mortgage_arrears_24m`] || false} 
-            onCheckedChange={(v) => onChange(`${prefix}_mortgage_arrears_24m`, v)} 
-          />
-          <div className="flex-1">
-            <Label className="text-sm">Had arrears on your existing mortgage within the last 24 months?</Label>
-            {formData[`${prefix}_mortgage_arrears_24m`] && (
-              <Textarea 
-                className="mt-2" 
-                placeholder="Please provide details..." 
-                value={formData[`${prefix}_mortgage_arrears_details`] || ''} 
-                onChange={(e) => onChange(`${prefix}_mortgage_arrears_details`, e.target.value)} 
-              />
-            )}
-          </div>
+      </div>
+      
+      <div className="flex items-start gap-3">
+        <Checkbox 
+          checked={formData[`${prefix}_mortgage_arrears_24m`] || false} 
+          onCheckedChange={(v) => onChange(`${prefix}_mortgage_arrears_24m`, v)} 
+        />
+        <div className="flex-1">
+          <Label className="text-sm">Had arrears on your existing mortgage within the last 24 months?</Label>
+          {formData[`${prefix}_mortgage_arrears_24m`] && (
+            <Textarea 
+              className="mt-2" 
+              placeholder="Please provide details..." 
+              value={formData[`${prefix}_mortgage_arrears_details`] || ''} 
+              onChange={(e) => onChange(`${prefix}_mortgage_arrears_details`, e.target.value)} 
+            />
+          )}
         </div>
       </div>
     </div>
-  );
+  </div>
+);
+
+export const FinancialCreditForm = ({ formData, onChange }: FinancialCreditFormProps) => {
+  const flags = validateFinancialDetails(formData);
 
   return (
     <div className="space-y-4">
@@ -200,9 +211,9 @@ export const FinancialCreditForm = ({ formData, onChange }: FinancialCreditFormP
           <p className="text-sm text-muted-foreground mb-4">Have you ever:</p>
           
           <div className="grid md:grid-cols-2 gap-6">
-            <CreditHistoryQuestions prefix="app1" title="Applicant One" />
+            <CreditHistoryQuestions prefix="app1" title="Applicant One" formData={formData} onChange={onChange} />
             {formData.app2_enabled && (
-              <CreditHistoryQuestions prefix="app2" title="Applicant Two" />
+              <CreditHistoryQuestions prefix="app2" title="Applicant Two" formData={formData} onChange={onChange} />
             )}
           </div>
           
