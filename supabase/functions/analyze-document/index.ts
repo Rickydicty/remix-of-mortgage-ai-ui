@@ -825,6 +825,41 @@ Remember: Read the document carefully and extract ALL visible information.`;
     throw new Error('AI_TEMPORARILY_UNAVAILABLE: All AI services are busy. Please try again in a few moments.');
   }
 
+  // Employment Detail Summary (EDS) tax-year validation:
+  // must be from current or previous tax year; otherwise force broker review.
+  if (finalDocType === 'employment_summary') {
+    const currentYear = new Date().getFullYear();
+    const previousYear = currentYear - 1;
+
+    const taxYearRaw = parsedResult?.extractedData?.taxYear;
+    const taxYearNum = typeof taxYearRaw === 'string'
+      ? Number((taxYearRaw.match(/\d{4}/)?.[0] ?? NaN))
+      : (typeof taxYearRaw === 'number' ? taxYearRaw : NaN);
+
+    const isValid = taxYearNum === currentYear || taxYearNum === previousYear;
+
+    if (!Number.isFinite(taxYearNum) || !isValid) {
+      parsedResult.score = 65;
+      parsedResult.extractedData = parsedResult.extractedData || {};
+      parsedResult.extractedData.flagSeverity = 'medium';
+      parsedResult.extractedData.qualityIssues = Array.from(new Set([
+        ...(parsedResult.extractedData.qualityIssues || []),
+        'EDS tax year is not current or previous tax year'
+      ]));
+      parsedResult.extractedData.riskFlags = Array.from(new Set([
+        ...(parsedResult.extractedData.riskFlags || []),
+        'Outdated Employment Detail Summary (EDS)'
+      ]));
+
+      const yearText = Number.isFinite(taxYearNum) ? `${taxYearNum}` : 'an unknown year';
+      parsedResult.extractedData.agentComment =
+        `This Employment Detail Summary appears to be for ${yearText}. Please upload your Revenue EDS for ${previousYear} or ${currentYear}.`;
+
+      parsedResult.analysis =
+        `EDS tax year validation: extracted ${yearText}; required ${previousYear} or ${currentYear}. Marked for broker review.`;
+    }
+  }
+
   // Process the parsed result - use valid status values from documents_status_check constraint
   let status: 'approved' | 'disapproved' | 'pending';
   if (parsedResult.score >= 70) {
