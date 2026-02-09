@@ -305,4 +305,163 @@ export const emailTemplates = {
       <a href="${params.dashboardUrl}" style="${getButtonStyle()}">Review Documents</a>
     </div>
   `),
+
+  aiDocumentIssue: (params: {
+    clientName: string;
+    documentType: string;
+    issueDetails: string;
+    loginUrl: string;
+  }) => getEmailWrapper(`
+    <h2 style="margin: 0 0 20px 0; color: #333; font-size: 24px;">⚠️ Document Needs Attention</h2>
+    <p style="margin: 0 0 15px 0; color: #555; font-size: 16px; line-height: 1.6;">
+      Hello <strong>${params.clientName}</strong>,
+    </p>
+    <p style="margin: 0 0 20px 0; color: #555; font-size: 16px; line-height: 1.6;">
+      Our system has reviewed your <strong>${params.documentType}</strong> and found an issue that needs your attention.
+    </p>
+    <div style="background: #fff3e0; border-left: 4px solid #ff9800; padding: 15px 20px; margin: 20px 0; border-radius: 0 4px 4px 0;">
+      <p style="margin: 0; color: #333; font-size: 15px;">${params.issueDetails}</p>
+    </div>
+    <p style="margin: 0 0 20px 0; color: #555; font-size: 16px;">
+      Please log in to review and respond, or upload a corrected document.
+    </p>
+    <div style="text-align: center;">
+      <a href="${params.loginUrl}" style="${getButtonStyle()}">Review &amp; Respond</a>
+    </div>
+  `),
+
+  riskAnomalyDetected: (params: {
+    applicationId: string;
+    clientName: string;
+    riskDetails: string;
+    dashboardUrl: string;
+  }) => getEmailWrapper(`
+    <h2 style="margin: 0 0 20px 0; color: #333; font-size: 24px;">🚨 Risk / Anomaly Detected</h2>
+    <p style="margin: 0 0 20px 0; color: #555; font-size: 16px; line-height: 1.6;">
+      A potential risk or anomaly has been flagged on an application that requires your review.
+    </p>
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="8" style="background: #ffebee; border-radius: 6px; margin: 20px 0;">
+      <tr>
+        <td style="color: #c62828; font-size: 14px; border-bottom: 1px solid #ffcdd2;"><strong>Client:</strong></td>
+        <td style="color: #333; font-size: 14px; border-bottom: 1px solid #ffcdd2;">${params.clientName}</td>
+      </tr>
+      <tr>
+        <td style="color: #c62828; font-size: 14px;"><strong>Details:</strong></td>
+        <td style="color: #333; font-size: 14px;">${params.riskDetails}</td>
+      </tr>
+    </table>
+    <div style="text-align: center;">
+      <a href="${params.dashboardUrl}" style="${getButtonStyle()}">Review Application</a>
+    </div>
+  `),
+
+  clientRepliedToAI: (params: {
+    clientName: string;
+    messagePreview: string;
+    applicationId: string;
+    dashboardUrl: string;
+  }) => getEmailWrapper(`
+    <h2 style="margin: 0 0 20px 0; color: #333; font-size: 24px;">💬 Client Replied to AI Assistant</h2>
+    <p style="margin: 0 0 20px 0; color: #555; font-size: 16px; line-height: 1.6;">
+      <strong>${params.clientName}</strong> has responded in the AI chat and may need your attention.
+    </p>
+    <div style="background: #f8f9fa; border-left: 4px solid #4CAF50; padding: 15px 20px; margin: 20px 0; border-radius: 0 4px 4px 0;">
+      <p style="margin: 0; color: #333; font-size: 15px; font-style: italic;">"${params.messagePreview}"</p>
+    </div>
+    <div style="text-align: center;">
+      <a href="${params.dashboardUrl}" style="${getButtonStyle()}">Review Conversation</a>
+    </div>
+  `),
+
+  brokerAssigned: (params: {
+    clientName: string;
+    clientEmail: string;
+    brokerName: string;
+    brokerEmail: string;
+    dashboardUrl: string;
+  }) => getEmailWrapper(`
+    <h2 style="margin: 0 0 20px 0; color: #333; font-size: 24px;">👤 Broker Assigned to Case</h2>
+    <p style="margin: 0 0 20px 0; color: #555; font-size: 16px; line-height: 1.6;">
+      A broker has been assigned to a client case for tracking purposes.
+    </p>
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="8" style="background: #e3f2fd; border-radius: 6px; margin: 20px 0;">
+      <tr>
+        <td style="color: #1565c0; font-size: 14px; border-bottom: 1px solid #bbdefb;"><strong>Client:</strong></td>
+        <td style="color: #333; font-size: 14px; border-bottom: 1px solid #bbdefb;">${params.clientName} (${params.clientEmail})</td>
+      </tr>
+      <tr>
+        <td style="color: #1565c0; font-size: 14px;"><strong>Broker:</strong></td>
+        <td style="color: #333; font-size: 14px;">${params.brokerName} (${params.brokerEmail})</td>
+      </tr>
+    </table>
+    <div style="text-align: center;">
+      <a href="${params.dashboardUrl}" style="${getButtonStyle()}">View in Dashboard</a>
+    </div>
+  `),
+
+  slaBreachWarning: (params: {
+    clientName: string;
+    clientEmail: string;
+    idleDays: number;
+    lastActivityDate: string;
+    applicationId: string;
+    dashboardUrl: string;
+  }) => getEmailWrapper(`
+    <h2 style="margin: 0 0 20px 0; color: #333; font-size: 24px;">⏰ SLA Breach - Client Idle</h2>
+    <p style="margin: 0 0 20px 0; color: #555; font-size: 16px; line-height: 1.6;">
+      A client has been inactive for <strong>${params.idleDays} days</strong> and may require intervention.
+    </p>
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="8" style="background: #fff3e0; border-radius: 6px; margin: 20px 0;">
+      <tr>
+        <td style="color: #e65100; font-size: 14px; border-bottom: 1px solid #ffe0b2;"><strong>Client:</strong></td>
+        <td style="color: #333; font-size: 14px; border-bottom: 1px solid #ffe0b2;">${params.clientName} (${params.clientEmail})</td>
+      </tr>
+      <tr>
+        <td style="color: #e65100; font-size: 14px; border-bottom: 1px solid #ffe0b2;"><strong>Idle Days:</strong></td>
+        <td style="color: #c62828; font-size: 14px; font-weight: bold; border-bottom: 1px solid #ffe0b2;">${params.idleDays} days</td>
+      </tr>
+      <tr>
+        <td style="color: #e65100; font-size: 14px;"><strong>Last Activity:</strong></td>
+        <td style="color: #333; font-size: 14px;">${params.lastActivityDate}</td>
+      </tr>
+    </table>
+    <div style="text-align: center;">
+      <a href="${params.dashboardUrl}" style="${getButtonStyle()}">Take Action</a>
+    </div>
+  `),
+
+  manualOverrideUsed: (params: {
+    applicationId: string;
+    applicationNumber: string;
+    fromState: string;
+    toState: string;
+    reason: string;
+    dashboardUrl: string;
+  }) => getEmailWrapper(`
+    <h2 style="margin: 0 0 20px 0; color: #333; font-size: 24px;">🔧 Manual Override Used</h2>
+    <p style="margin: 0 0 20px 0; color: #555; font-size: 16px; line-height: 1.6;">
+      An application state has been manually overridden. This requires audit review.
+    </p>
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="8" style="background: #fce4ec; border-radius: 6px; margin: 20px 0;">
+      <tr>
+        <td style="color: #c62828; font-size: 14px; border-bottom: 1px solid #f8bbd0;"><strong>Application:</strong></td>
+        <td style="color: #333; font-size: 14px; border-bottom: 1px solid #f8bbd0;">${params.applicationNumber}</td>
+      </tr>
+      <tr>
+        <td style="color: #c62828; font-size: 14px; border-bottom: 1px solid #f8bbd0;"><strong>From State:</strong></td>
+        <td style="color: #333; font-size: 14px; border-bottom: 1px solid #f8bbd0;">${params.fromState}</td>
+      </tr>
+      <tr>
+        <td style="color: #c62828; font-size: 14px; border-bottom: 1px solid #f8bbd0;"><strong>To State:</strong></td>
+        <td style="color: #333; font-size: 14px; border-bottom: 1px solid #f8bbd0;">${params.toState}</td>
+      </tr>
+      <tr>
+        <td style="color: #c62828; font-size: 14px;"><strong>Reason:</strong></td>
+        <td style="color: #333; font-size: 14px;">${params.reason || 'No reason provided'}</td>
+      </tr>
+    </table>
+    <div style="text-align: center;">
+      <a href="${params.dashboardUrl}" style="${getButtonStyle()}">Review in Dashboard</a>
+    </div>
+  `),
 };

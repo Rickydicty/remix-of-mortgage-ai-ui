@@ -6,6 +6,46 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Email helper functions
+const getEmailWrapper = (content: string) => `
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>YourKey</title></head>
+<body style="margin:0;padding:0;font-family:Arial,sans-serif;background:#f4f4f4;">
+<table width="100%" cellspacing="0" cellpadding="0" style="background:#f4f4f4;"><tr><td align="center" style="padding:40px 20px;">
+<table width="600" cellspacing="0" cellpadding="0" style="background:#fff;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+<tr><td style="background:linear-gradient(135deg,#4CAF50,#2E7D32);padding:30px;text-align:center;border-radius:8px 8px 0 0;">
+<h1 style="margin:0;color:#fff;font-size:28px;">🏠 YourKey</h1>
+<p style="margin:5px 0 0;color:rgba(255,255,255,0.9);font-size:14px;">Mortgage Portal</p>
+</td></tr>
+<tr><td style="padding:40px 30px;">${content}</td></tr>
+<tr><td style="background:#f8f9fa;padding:20px 30px;text-align:center;border-radius:0 0 8px 8px;border-top:1px solid #e9ecef;">
+<p style="margin:0;color:#adb5bd;font-size:12px;">© ${new Date().getFullYear()} YourKey Mortgages.</p>
+</td></tr></table></td></tr></table></body></html>`;
+
+const btnStyle = "display:inline-block;background:linear-gradient(135deg,#4CAF50,#2E7D32);color:#fff;padding:14px 28px;text-decoration:none;border-radius:6px;font-weight:bold;";
+
+const getAIDocIssueEmail = (clientName: string, docType: string, issue: string) => getEmailWrapper(`
+  <h2 style="margin:0 0 20px;color:#333;font-size:24px;">⚠️ Document Needs Attention</h2>
+  <p style="margin:0 0 15px;color:#555;font-size:16px;">Hello <strong>${clientName}</strong>,</p>
+  <p style="margin:0 0 20px;color:#555;font-size:16px;">Our system reviewed your <strong>${docType}</strong> and found an issue:</p>
+  <div style="background:#fff3e0;border-left:4px solid #ff9800;padding:15px 20px;margin:20px 0;border-radius:0 4px 4px 0;">
+    <p style="margin:0;color:#333;font-size:15px;">${issue}</p>
+  </div>
+  <div style="text-align:center;"><a href="https://yourkey.ie/login" style="${btnStyle}">Review &amp; Respond</a></div>
+`);
+
+const getRiskAnomalyEmail = (appNumber: string, clientName: string, details: string) => getEmailWrapper(`
+  <h2 style="margin:0 0 20px;color:#333;font-size:24px;">🚨 Risk / Anomaly Detected</h2>
+  <p style="margin:0 0 20px;color:#555;font-size:16px;">A potential risk has been flagged on application <strong>${appNumber}</strong>.</p>
+  <table width="100%" cellspacing="0" cellpadding="8" style="background:#ffebee;border-radius:6px;margin:20px 0;">
+    <tr><td style="color:#c62828;font-size:14px;border-bottom:1px solid #ffcdd2;"><strong>Client:</strong></td>
+    <td style="color:#333;font-size:14px;border-bottom:1px solid #ffcdd2;">${clientName}</td></tr>
+    <tr><td style="color:#c62828;font-size:14px;"><strong>Details:</strong></td>
+    <td style="color:#333;font-size:14px;">${details}</td></tr>
+  </table>
+  <div style="text-align:center;"><a href="https://yourkey.ie/login" style="${btnStyle}">Review Application</a></div>
+`);
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -133,10 +173,93 @@ serve(async (req) => {
         greetingMessage += `• ${issue}\n`;
       });
       greetingMessage += "\n";
+
+      // Send email to client about the document issue
+      const userProfile = await supabaseService
+        .from("profiles")
+        .select("email, full_name")
+        .eq("id", user.id)
+        .single();
+
+      if (userProfile.data?.email) {
+        const issueDetails = (docAnalysis.quality_issues as string[]).join("; ");
+        await supabaseService.functions.invoke('send-notification', {
+          body: {
+            notification_type: 'ai_document_issue',
+            subject: `Action Needed: Your ${docLabel} requires attention`,
+            recipient_email: userProfile.data.email,
+            html_content: getAIDocIssueEmail(
+              userProfile.data.full_name || clientName,
+              docLabel,
+              issueDetails
+            ),
+          }
+        });
+      }
     }
 
     if (docAnalysis?.client_explanation) {
       greetingMessage += `📝 **What you can do:** ${docAnalysis.client_explanation}\n\n`;
+    }
+
+    // Also send email if score is low (missing/incorrect doc detection)
+    if (score !== undefined && score < 60) {
+      const userProfile = await supabaseService
+        .from("profiles")
+        .select("email, full_name")
+        .eq("id", user.id)
+        .single();
+
+      if (userProfile.data?.email) {
+        await supabaseService.functions.invoke('send-notification', {
+          body: {
+            notification_type: 'ai_document_issue',
+            subject: `Action Needed: Your ${docLabel} needs review`,
+            recipient_email: userProfile.data.email,
+            html_content: getAIDocIssueEmail(
+              userProfile.data.full_name || clientName,
+              docLabel,
+              `Your document scored ${score}/100. This may indicate the document is incomplete, unclear, or doesn't match your application details. Please review and re-upload if needed.`
+            ),
+          }
+        });
+      }
+
+      // Send risk/anomaly email to broker
+      const { data: appData } = await supabaseService
+        .from("applications")
+        .select("assigned_broker_id, application_number")
+        .eq("id", applicationId)
+        .single();
+
+      if (appData?.assigned_broker_id) {
+        const { data: brokerProfile } = await supabaseService
+          .from("profiles")
+          .select("email, full_name")
+          .eq("id", appData.assigned_broker_id)
+          .single();
+
+        if (brokerProfile?.email) {
+          const userProfile2 = await supabaseService
+            .from("profiles")
+            .select("full_name")
+            .eq("id", user.id)
+            .single();
+
+          await supabaseService.functions.invoke('send-notification', {
+            body: {
+              notification_type: 'risk_anomaly',
+              subject: `Risk Alert: Low document score for ${appData.application_number}`,
+              recipient_email: brokerProfile.email,
+              html_content: getRiskAnomalyEmail(
+                appData.application_number,
+                userProfile2.data?.full_name || 'Client',
+                `${docLabel} scored ${score}/100 — potential quality or authenticity issue detected.`
+              ),
+            }
+          });
+        }
+      }
     }
 
     // Add progress update

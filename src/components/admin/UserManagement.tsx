@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Shield, User, Briefcase, Trash2, Sparkles, Users } from "lucide-react";
+import { emailTemplates } from "@/lib/emailTemplates";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 interface UserProfile {
@@ -123,6 +124,26 @@ export const UserManagement = () => {
         if (error) throw error;
       }
       toast({ title: "Broker assigned", description: "Client has been assigned to broker" });
+
+      // Send admin notification email for broker assignment tracking
+      const client = users.find(u => u.id === clientId);
+      const broker = brokers.find(b => b.id === brokerId);
+      if (client && broker) {
+        supabase.functions.invoke('send-notification', {
+          body: {
+            notification_type: 'broker_assigned',
+            subject: `Broker Assigned: ${broker.full_name || broker.email} → ${client.full_name || client.email}`,
+            html_content: emailTemplates.brokerAssigned({
+              clientName: client.full_name || 'Unknown',
+              clientEmail: client.email,
+              brokerName: broker.full_name || 'Unknown',
+              brokerEmail: broker.email,
+              dashboardUrl: 'https://yourkey.ie/login',
+            }),
+          }
+        });
+      }
+
       fetchUsers();
     } catch (error: any) {
       toast({ title: "Error assigning broker", description: error.message, variant: "destructive" });

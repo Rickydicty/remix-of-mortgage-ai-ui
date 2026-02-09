@@ -19,6 +19,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { emailTemplates } from "@/lib/emailTemplates";
 
 interface Message {
   id: string;
@@ -310,6 +311,37 @@ const UnifiedChatBot = ({ applicationId, userId, brokerId }: UnifiedChatBotProps
             type: data.escalated ? "escalation" : "chat",
           },
         ]);
+
+        // Notify broker that client replied in AI chat
+        if (brokerId) {
+          const { data: brokerProfile } = await supabase
+            .from('profiles')
+            .select('email, full_name')
+            .eq('id', brokerId)
+            .single();
+
+          const { data: clientProfile } = await supabase
+            .from('profiles')
+            .select('full_name')
+            .eq('id', userId)
+            .single();
+
+          if (brokerProfile?.email) {
+            supabase.functions.invoke('send-notification', {
+              body: {
+                notification_type: 'client_replied_to_ai',
+                subject: `Client AI Chat: ${clientProfile?.full_name || 'A client'} needs attention`,
+                recipient_email: brokerProfile.email,
+                html_content: emailTemplates.clientRepliedToAI({
+                  clientName: clientProfile?.full_name || 'A client',
+                  messagePreview: userMessage.substring(0, 200),
+                  applicationId: applicationId || '',
+                  dashboardUrl: 'https://yourkey.ie/login',
+                }),
+              }
+            });
+          }
+        }
 
         if (data.escalated) {
           toast.info("Your message has been forwarded to your broker", {

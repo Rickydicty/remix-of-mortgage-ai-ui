@@ -286,6 +286,33 @@ const handler = async (req: Request): Promise<Response> => {
     if (force_state && Object.values(APPLICATION_STATES).includes(force_state)) {
       newState = force_state;
       evaluationNotes = `Manually set to ${force_state}${reason ? `: ${reason}` : ''}`;
+
+      // Send admin notification for manual override (audit)
+      await supabase.functions.invoke('send-notification', {
+        body: {
+          notification_type: 'manual_override',
+          subject: `⚠️ Manual Override: ${application.application_number} → ${force_state}`,
+          html_content: getEmailWrapper(`
+            <h2 style="margin: 0 0 20px 0; color: #333; font-size: 24px;">🔧 Manual Override Used</h2>
+            <p style="margin: 0 0 20px 0; color: #555; font-size: 16px;">
+              An application state has been manually overridden. This requires audit review.
+            </p>
+            <table role="presentation" width="100%" cellspacing="0" cellpadding="8" style="background: #fce4ec; border-radius: 6px; margin: 20px 0;">
+              <tr><td style="color: #c62828; font-size: 14px; border-bottom: 1px solid #f8bbd0;"><strong>Application:</strong></td>
+              <td style="color: #333; font-size: 14px; border-bottom: 1px solid #f8bbd0;">${application.application_number}</td></tr>
+              <tr><td style="color: #c62828; font-size: 14px; border-bottom: 1px solid #f8bbd0;"><strong>From:</strong></td>
+              <td style="color: #333; font-size: 14px; border-bottom: 1px solid #f8bbd0;">${previousState}</td></tr>
+              <tr><td style="color: #c62828; font-size: 14px; border-bottom: 1px solid #f8bbd0;"><strong>To:</strong></td>
+              <td style="color: #333; font-size: 14px; border-bottom: 1px solid #f8bbd0;">${force_state}</td></tr>
+              <tr><td style="color: #c62828; font-size: 14px;"><strong>Reason:</strong></td>
+              <td style="color: #333; font-size: 14px;">${reason || 'No reason provided'}</td></tr>
+            </table>
+            <div style="text-align: center;">
+              <a href="https://yourkey.ie/login" style="display: inline-block; background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%); color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: bold;">Review in Dashboard</a>
+            </div>
+          `),
+        }
+      });
     } else {
       // AI Decision Layer: Evaluate current state based on documents
       const { data: documents } = await supabase
