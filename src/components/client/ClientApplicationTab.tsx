@@ -27,6 +27,7 @@ import {
   validateSecurityDetails,
   validateAlternativeDetails
 } from "@/components/client/FormFieldFlags";
+import NDICalculator from "@/components/broker/NDICalculator";
 
 // Import staged form components
 import { 
@@ -403,6 +404,7 @@ const ClientApplicationTab = ({ applicationId, application, brokerProfile, onRef
         { id: "bank", label: "Bank" },
         { id: "mortgage", label: "Mortgage" },
         { id: "property", label: "Property" },
+        { id: "calculator", label: "Calculator" },
         { id: "messages", label: "Broker Messages" },
       ]
     },
@@ -753,7 +755,7 @@ const ClientApplicationTab = ({ applicationId, application, brokerProfile, onRef
     );
   }
 
-  const isFormTab = !['documents', 'valuation', 'signatures', 'messages'].includes(activeTab);
+  const isFormTab = !['documents', 'valuation', 'signatures', 'messages', 'calculator'].includes(activeTab);
 
   return (
     <div className="space-y-4">
@@ -851,6 +853,9 @@ const ClientApplicationTab = ({ applicationId, application, brokerProfile, onRef
           )}
           {activeTab === "property" && (
             <BeforeAIPPropertyForm formData={formData} onChange={handleInputChange} />
+          )}
+          {activeTab === "calculator" && (
+            <NDICalculator />
           )}
           {activeTab === "messages" && (
             <BrokerMessagesTab 
