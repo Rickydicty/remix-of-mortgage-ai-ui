@@ -32,3 +32,6 @@ verify_jwt = false
 
 [functions.document-upload-greeting]
 verify_jwt = true
+
+[functions.check-sla-breach]
+verify_jwt = false
