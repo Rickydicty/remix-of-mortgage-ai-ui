@@ -1,7 +1,7 @@
 project_id = "urdyzlulkpgffzrwefwj"
 
 [functions.send-notification]
-verify_jwt = true
+verify_jwt = false
 
 [functions.check-valuation-ai]
 verify_jwt = false

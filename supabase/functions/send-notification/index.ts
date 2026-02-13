@@ -13,17 +13,24 @@ interface NotificationRequest {
   notification_type: string;
   subject: string;
   html_content: string;
-  recipient_email?: string; // Optional: send to specific email instead of from settings
+  recipient_email?: string;
   event_data?: Record<string, any>;
 }
 
 const handler = async (req: Request): Promise<Response> => {
-  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    if (!SENDGRID_API_KEY) {
+      console.error("SENDGRID_API_KEY is not configured");
+      return new Response(
+        JSON.stringify({ error: "SendGrid not configured", sent: false }),
+        { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
@@ -31,7 +38,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     const { notification_type, subject, html_content, recipient_email, event_data }: NotificationRequest = await req.json();
 
-    console.log(`Processing notification: ${notification_type}`);
+    console.log(`Processing notification: ${notification_type}, recipient: ${recipient_email || 'from settings'}`);
 
     let toEmail = recipient_email;
 
@@ -47,10 +54,7 @@ const handler = async (req: Request): Promise<Response> => {
         console.error("Error fetching notification setting:", settingError);
         return new Response(
           JSON.stringify({ error: "Notification type not found", sent: false }),
-          {
-            status: 200,
-            headers: { "Content-Type": "application/json", ...corsHeaders },
-          }
+          { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
         );
       }
 
@@ -58,17 +62,22 @@ const handler = async (req: Request): Promise<Response> => {
         console.log(`Notification type ${notification_type} is disabled`);
         return new Response(
           JSON.stringify({ message: "Notification disabled", sent: false }),
-          {
-            status: 200,
-            headers: { "Content-Type": "application/json", ...corsHeaders },
-          }
+          { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
         );
       }
 
       toEmail = setting.recipient_email;
     }
 
-    console.log(`Sending email to: ${toEmail}`);
+    if (!toEmail) {
+      console.error("No recipient email found");
+      return new Response(
+        JSON.stringify({ error: "No recipient email", sent: false }),
+        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    console.log(`Sending email to: ${toEmail}, subject: ${subject}`);
 
     // Send email via SendGrid
     const emailResponse = await fetch("https://api.sendgrid.com/v3/mail/send", {
@@ -83,7 +92,7 @@ const handler = async (req: Request): Promise<Response> => {
             to: [{ email: toEmail }],
           },
         ],
-        from: { email: "support@yourkey.ie", name: "Mortgage Portal" },
+        from: { email: "support@yourkey.ie", name: "YourKey Mortgages" },
         subject: subject,
         content: [
           {
@@ -96,30 +105,24 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (!emailResponse.ok) {
       const errorText = await emailResponse.text();
-      console.error("SendGrid error:", errorText);
-      throw new Error(`SendGrid API error: ${emailResponse.status}`);
+      console.error("SendGrid error:", emailResponse.status, errorText);
+      return new Response(
+        JSON.stringify({ error: `SendGrid API error: ${emailResponse.status}`, details: errorText, sent: false }),
+        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
     }
 
-    console.log("Email sent successfully via SendGrid");
+    console.log(`Email sent successfully to ${toEmail} for ${notification_type}`);
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        sent: true,
-      }),
-      {
-        status: 200,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      }
+      JSON.stringify({ success: true, sent: true }),
+      { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   } catch (error: any) {
     console.error("Error in send-notification function:", error);
     return new Response(
       JSON.stringify({ error: error.message, sent: false }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      }
+      { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   }
 };
