@@ -1,10 +1,10 @@
 import { Routes, Route, useNavigate, useLocation } from "react-router-dom";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -43,6 +43,7 @@ const ApplicationTab = () => {
   const [preEligibility, setPreEligibility] = useState<PreEligibilityData | null>(null);
   const [formData, setFormData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [activeStage, setActiveStage] = useState<'before_aip' | 'after_aip' | 'after_offer'>('before_aip');
 
   const searchParams = new URLSearchParams(location.search);
   const applicationId = searchParams.get('id');
@@ -122,15 +123,38 @@ const ApplicationTab = () => {
     { id: "log", label: "Action Log" },
   ];
 
-  // Row 2 tabs (main tabs)
-  const row2Tabs = [
-    { id: "summary", label: "Summary" },
-    { id: "personal", label: "Personal Details" },
-    { id: "income", label: "Income & Employment" },
-    { id: "financial", label: "Financial & Credit History" },
-    { id: "mortgage", label: "Mortgage Details" },
-    { id: "property", label: "Property Details" },
-  ];
+  // Stages with their tabs (matching client-side structure)
+  const stages = {
+    before_aip: {
+      label: "Before AIP",
+      tabs: [
+        { id: "summary", label: "Summary" },
+        { id: "personal", label: "Personal Details" },
+        { id: "income", label: "Income & Employment" },
+        { id: "financial", label: "Financial & Credit" },
+        { id: "mortgage", label: "Mortgage Details" },
+        { id: "property", label: "Property Details" },
+      ],
+    },
+    after_aip: {
+      label: "After AIP",
+      tabs: [
+        { id: "mortgage-additional", label: "Mortgage (Additional)" },
+        { id: "property-additional", label: "Property (Additional)" },
+        { id: "valuation", label: "Valuation" },
+      ],
+    },
+    after_offer: {
+      label: "After Loan Offer",
+      tabs: [
+        { id: "declarations", label: "Declarations & Consents" },
+        { id: "security", label: "Additional Security" },
+        { id: "alternative", label: "Alternative Lending" },
+      ],
+    },
+  };
+
+  const row2Tabs = stages[activeStage].tabs;
 
   const currentPath = location.pathname;
   const basePath = "/dashboard/broker/application";
@@ -172,7 +196,32 @@ const ApplicationTab = () => {
               </button>
             ))}
           </div>
-          {/* Row 2 */}
+          {/* Stage Selector */}
+          <div className="flex bg-muted/20 border-b border-border">
+            {(Object.keys(stages) as Array<keyof typeof stages>).map((stageKey) => (
+              <button
+                key={stageKey}
+                onClick={() => {
+                  setActiveStage(stageKey);
+                  const firstTab = stages[stageKey].tabs[0];
+                  if (firstTab.id === "summary") {
+                    navigate(`${basePath}${applicationId ? `?id=${applicationId}` : ''}`);
+                  } else {
+                    navigate(`${basePath}/${firstTab.id}${applicationId ? `?id=${applicationId}` : ''}`);
+                  }
+                }}
+                className={cn(
+                  "flex-1 px-4 py-2 text-sm font-semibold transition-colors border-b-2",
+                  activeStage === stageKey
+                    ? "border-primary text-primary bg-primary/5"
+                    : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                )}
+              >
+                {stages[stageKey].label}
+              </button>
+            ))}
+          </div>
+          {/* Row 2 - Stage Tabs */}
           <div className="flex flex-wrap bg-background">
             {row2Tabs.map((tab) => (
               <button
@@ -225,6 +274,8 @@ const ApplicationTab = () => {
           <Route path="financial" element={<FinancialTab preEligibility={preEligibility} formData={formData} />} />
           <Route path="mortgage" element={<MortgageTab preEligibility={preEligibility} formData={formData} />} />
           <Route path="property" element={<PropertyTab preEligibility={preEligibility} formData={formData} />} />
+          <Route path="mortgage-additional" element={<MortgageAdditionalTab formData={formData} />} />
+          <Route path="property-additional" element={<PropertyAdditionalTab formData={formData} />} />
           <Route path="valuation" element={<PropertyValuationReview applicationId={applicationId || ''} propertyAddress={formData?.property_address} />} />
           <Route path="docs" element={<DocsTab applicationId={applicationId} userId={application?.user_id} />} />
           <Route path="declarations" element={<DeclarationsTab preEligibility={preEligibility} formData={formData} />} />
@@ -2440,4 +2491,240 @@ const AlternativeTab = ({ formData }: { formData: any }) => {
     </Card>
   );
 };
+
+// Mortgage Additional Tab (After AIP)
+const MortgageAdditionalTab = ({ formData }: { formData: any }) => {
+  return (
+    <Card>
+      <CardContent className="pt-6">
+        <h4 className="font-semibold text-primary bg-primary/10 px-3 py-1 mb-4">Additional Mortgage Details (After AIP)</h4>
+        <div className="grid md:grid-cols-2 gap-6">
+          <div className="space-y-3">
+            <div className="flex items-center gap-4">
+              <Label className="w-48 text-muted-foreground">Site Price</Label>
+              <span className="text-muted-foreground">€</span>
+              <Input className="flex-1" defaultValue={formData?.site_price || ''} readOnly />
+            </div>
+            <div className="flex items-center gap-4">
+              <Label className="w-48 text-muted-foreground">Grant Amount</Label>
+              <span className="text-muted-foreground">€</span>
+              <Input className="flex-1" defaultValue={formData?.grant_amount || ''} readOnly />
+            </div>
+            <div className="flex items-center gap-4">
+              <Label className="w-48 text-muted-foreground">Legal / Stamp Duty</Label>
+              <span className="text-muted-foreground">€</span>
+              <Input className="flex-1" defaultValue={formData?.legal_stamp_duty || ''} readOnly />
+            </div>
+            <div className="flex items-center gap-4">
+              <Label className="w-48 text-muted-foreground">Gifts</Label>
+              <span className="text-muted-foreground">€</span>
+              <Input className="flex-1" defaultValue={formData?.gifts || ''} readOnly />
+            </div>
+            <div className="flex items-center gap-4">
+              <Label className="w-48 text-muted-foreground">Repairs / Renovations</Label>
+              <span className="text-muted-foreground">€</span>
+              <Input className="flex-1" defaultValue={formData?.repairs_renovations || ''} readOnly />
+            </div>
+          </div>
+          <div className="space-y-3">
+            <div className="flex items-center gap-4">
+              <Label className="w-48 text-muted-foreground">Other Funds</Label>
+              <span className="text-muted-foreground">€</span>
+              <Input className="flex-1" defaultValue={formData?.other_funds || ''} readOnly />
+            </div>
+            <div className="flex items-center gap-4">
+              <Label className="w-48 text-muted-foreground">Other Costs</Label>
+              <span className="text-muted-foreground">€</span>
+              <Input className="flex-1" defaultValue={formData?.other_costs || ''} readOnly />
+            </div>
+            <div className="flex items-center gap-4">
+              <Label className="w-48 text-muted-foreground">Commencement Date</Label>
+              <Input className="flex-1" defaultValue={formData?.commencement_date || ''} readOnly />
+            </div>
+          </div>
+        </div>
+
+        {/* Remortgage Section */}
+        <div className="mt-6">
+          <h4 className="font-semibold text-primary bg-primary/10 px-3 py-1 mb-4">Remortgage Details</h4>
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="space-y-3">
+              <div className="flex items-center gap-4">
+                <Label className="w-48 text-muted-foreground">Remortgage Amount</Label>
+                <span className="text-muted-foreground">€</span>
+                <Input className="flex-1" defaultValue={formData?.remortgage_amount || ''} readOnly />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-48 text-muted-foreground">Remortgage Property Value</Label>
+                <span className="text-muted-foreground">€</span>
+                <Input className="flex-1" defaultValue={formData?.remortgage_property_value || ''} readOnly />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-48 text-muted-foreground">Current Mortgage Outstanding</Label>
+                <span className="text-muted-foreground">€</span>
+                <Input className="flex-1" defaultValue={formData?.current_mortgage_outstanding || ''} readOnly />
+              </div>
+            </div>
+            <div className="space-y-3">
+              <div className="flex items-center gap-4">
+                <Label className="w-48 text-muted-foreground">Year of Original Purchase</Label>
+                <Input className="flex-1" defaultValue={formData?.year_original_purchase || ''} readOnly />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-48 text-muted-foreground">Purpose Additional Borrowing</Label>
+                <Input className="flex-1" defaultValue={formData?.purpose_additional_borrowing || ''} readOnly />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Split Loan */}
+        <div className="mt-6">
+          <h4 className="font-semibold text-primary bg-primary/10 px-3 py-1 mb-4">Split Loan</h4>
+          <div className="flex items-center gap-2 mb-4">
+            <Checkbox checked={formData?.split_loan || false} disabled />
+            <span>Split Loan Required</span>
+          </div>
+          {formData?.split_loan && (
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="space-y-3">
+                <div className="flex items-center gap-4">
+                  <Label className="w-48 text-muted-foreground">First Amount</Label>
+                  <span className="text-muted-foreground">€</span>
+                  <Input className="flex-1" defaultValue={formData?.split_first_amount || ''} readOnly />
+                </div>
+                <div className="flex items-center gap-4">
+                  <Label className="w-48 text-muted-foreground">First Term (Years)</Label>
+                  <Input className="flex-1" defaultValue={formData?.split_first_term || ''} readOnly />
+                </div>
+                <div className="flex items-center gap-4">
+                  <Label className="w-48 text-muted-foreground">First Rate Type</Label>
+                  <Input className="flex-1" defaultValue={formData?.split_first_rate_type || ''} readOnly />
+                </div>
+              </div>
+              <div className="space-y-3">
+                <div className="flex items-center gap-4">
+                  <Label className="w-48 text-muted-foreground">Second Amount</Label>
+                  <span className="text-muted-foreground">€</span>
+                  <Input className="flex-1" defaultValue={formData?.split_second_amount || ''} readOnly />
+                </div>
+                <div className="flex items-center gap-4">
+                  <Label className="w-48 text-muted-foreground">Second Term (Years)</Label>
+                  <Input className="flex-1" defaultValue={formData?.split_second_term || ''} readOnly />
+                </div>
+                <div className="flex items-center gap-4">
+                  <Label className="w-48 text-muted-foreground">Second Rate Type</Label>
+                  <Input className="flex-1" defaultValue={formData?.split_second_rate_type || ''} readOnly />
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+// Property Additional Tab (After AIP)
+const PropertyAdditionalTab = ({ formData }: { formData: any }) => {
+  return (
+    <Card>
+      <CardContent className="pt-6">
+        <h4 className="font-semibold text-primary bg-primary/10 px-3 py-1 mb-4">Additional Property Details (After AIP)</h4>
+        <div className="grid md:grid-cols-2 gap-6">
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Checkbox checked={formData?.property_new || false} disabled />
+              <span>New Property</span>
+            </div>
+            <div className="flex items-center gap-4">
+              <Label className="w-48 text-muted-foreground">Number of Floors</Label>
+              <Input className="flex-1" defaultValue={formData?.property_floors || ''} readOnly />
+            </div>
+            <div className="flex items-center gap-2">
+              <Checkbox checked={formData?.homebuilders_bond || false} disabled />
+              <span>Homebuilders Bond</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Checkbox checked={formData?.direct_labour || false} disabled />
+              <span>Direct Labour</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Checkbox checked={formData?.part_of_development || false} disabled />
+              <span>Part of Development</span>
+            </div>
+          </div>
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Checkbox checked={formData?.stage_payments_required || false} disabled />
+              <span>Stage Payments Required</span>
+            </div>
+            {formData?.stage_payments_required && (
+              <div className="flex items-center gap-4">
+                <Label className="w-48 text-muted-foreground">No. of Stage Payments</Label>
+                <Input className="flex-1" defaultValue={formData?.num_stage_payments || ''} readOnly />
+              </div>
+            )}
+            <div className="flex items-center gap-2">
+              <Checkbox checked={formData?.fixed_price_contract || false} disabled />
+              <span>Fixed Price Contract</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Checkbox checked={formData?.architect_supervision || false} disabled />
+              <span>Architect Supervision</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Checkbox checked={formData?.hb47_available || false} disabled />
+              <span>HB47 Available</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Contacts */}
+        <div className="mt-6">
+          <h4 className="font-semibold text-primary bg-primary/10 px-3 py-1 mb-4">Property Contacts</h4>
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="space-y-3">
+              <div className="flex items-center gap-4">
+                <Label className="w-48 text-muted-foreground">Selling Agent</Label>
+                <Input className="flex-1" defaultValue={formData?.selling_agent_name || ''} readOnly />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-48 text-muted-foreground">Agent Phone</Label>
+                <Input className="flex-1" defaultValue={formData?.selling_agent_phone || ''} readOnly />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-48 text-muted-foreground">Valuer</Label>
+                <Input className="flex-1" defaultValue={formData?.valuer_name || ''} readOnly />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-48 text-muted-foreground">Valuer Company</Label>
+                <Input className="flex-1" defaultValue={formData?.valuer_company || ''} readOnly />
+              </div>
+            </div>
+            <div className="space-y-3">
+              <div className="flex items-center gap-4">
+                <Label className="w-48 text-muted-foreground">Architect</Label>
+                <Input className="flex-1" defaultValue={formData?.architect_name || ''} readOnly />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-48 text-muted-foreground">Architect Phone</Label>
+                <Input className="flex-1" defaultValue={formData?.architect_phone || ''} readOnly />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-48 text-muted-foreground">Builder</Label>
+                <Input className="flex-1" defaultValue={formData?.builder_name || ''} readOnly />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-48 text-muted-foreground">Builder Phone</Label>
+                <Input className="flex-1" defaultValue={formData?.builder_phone || ''} readOnly />
+              </div>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
 export default ApplicationTab;
