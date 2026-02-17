@@ -165,7 +165,7 @@ const SELF_EMPLOYED_DOCUMENT_SECTIONS = [
 ];
 
 const getDocumentSections = (employmentType: string | null | undefined) => {
-  const isSelfEmployed = employmentType === 'self_employed' || employmentType === 'Self Employed';
+  const isSelfEmployed = employmentType === 'self_employed' || employmentType === 'Self Employed' || employmentType === 'self-employed';
   
   if (isSelfEmployed) {
     return [...BASE_DOCUMENT_SECTIONS, ...SELF_EMPLOYED_DOCUMENT_SECTIONS];
