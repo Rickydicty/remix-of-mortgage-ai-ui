@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { Save, Upload, FileText, FileCheck, Download, Home, ChevronRight, ChevronLeft } from "lucide-react";
+import { Save, Upload, FileText, FileCheck, Download, Home, ChevronRight, ChevronLeft, CheckCircle } from "lucide-react";
 import { PropertyValuationSubmit } from "@/components/client/PropertyValuationSubmit";
 import { cn } from "@/lib/utils";
 import { DocumentUpload } from "@/components/DocumentUpload";
@@ -387,6 +387,8 @@ const ClientApplicationTab = ({ applicationId, application, brokerProfile, onRef
   const [formData, setFormData] = useState<FormData>(defaultFormData);
   const [formDataId, setFormDataId] = useState<string | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
   const [eligibilityData, setEligibilityData] = useState<{
     score: number | null;
     employmentType: string | null;
@@ -431,6 +433,27 @@ const ClientApplicationTab = ({ applicationId, application, brokerProfile, onRef
   useEffect(() => {
     fetchData();
   }, [user, applicationId]);
+
+  // Auto-save: debounce 3 seconds after changes
+  useEffect(() => {
+    if (!hasUnsavedChanges || !user) return;
+
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+    }
+
+    autoSaveTimerRef.current = setTimeout(() => {
+      handleSave().then(() => {
+        setHasUnsavedChanges(false);
+      });
+    }, 3000);
+
+    return () => {
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+      }
+    };
+  }, [formData, hasUnsavedChanges]);
 
   const fetchData = async () => {
     if (!user) return;
@@ -532,6 +555,7 @@ const ClientApplicationTab = ({ applicationId, application, brokerProfile, onRef
 
   const handleInputChange = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    setHasUnsavedChanges(true);
   };
 
   // Calculate form completion percentage
@@ -808,8 +832,8 @@ const ClientApplicationTab = ({ applicationId, application, brokerProfile, onRef
 
       {/* Save Button - only show for form tabs */}
       {isFormTab && (
-        <div className="flex justify-between items-center">
-          <div className="flex gap-2">
+        <div className="flex justify-between items-center bg-card border border-border rounded-lg p-3">
+          <div className="flex gap-2 items-center">
             <Button variant="outline" onClick={goToPrevTab} disabled={activeStage === 'before_aip' && currentTabIndex === 0}>
               <ChevronLeft className="h-4 w-4 mr-1" />
               Previous
@@ -818,10 +842,27 @@ const ClientApplicationTab = ({ applicationId, application, brokerProfile, onRef
               Next
               <ChevronRight className="h-4 w-4 ml-1" />
             </Button>
+            {hasUnsavedChanges && (
+              <span className="text-xs text-muted-foreground ml-2">Auto-saving in a moment...</span>
+            )}
+            {!hasUnsavedChanges && formDataId && (
+              <span className="text-xs text-success ml-2 flex items-center gap-1">
+                <CheckCircle className="h-3 w-3" />
+                All changes saved
+              </span>
+            )}
           </div>
-          <Button onClick={handleSave} disabled={saving}>
+          <Button 
+            onClick={() => { handleSave().then(() => setHasUnsavedChanges(false)); }} 
+            disabled={saving}
+            size="lg"
+            className={cn(
+              "shadow-lg font-semibold px-6",
+              hasUnsavedChanges && "animate-pulse ring-2 ring-primary/50"
+            )}
+          >
             <Save className="h-4 w-4 mr-2" />
-            {saving ? 'Saving...' : 'Save Changes'}
+            {saving ? 'Saving...' : hasUnsavedChanges ? 'Save Now' : 'Save Changes'}
           </Button>
         </div>
       )}
