@@ -144,21 +144,6 @@ const Index = () => {
               </div>
               
               {/* Floating Elements Animation */}
-              <motion.div 
-                animate={{ y: [0, -10, 0] }}
-                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                className="absolute -top-6 -right-6 bg-card p-4 rounded-xl shadow-xl border border-border/50 hidden md:block z-20"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="bg-success/10 p-2 rounded-lg">
-                    <CheckCircle className="h-6 w-6 text-success" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">Eligibility Checked</p>
-                    <p className="text-xs text-muted-foreground">Just now</p>
-                  </div>
-                </div>
-              </motion.div>
 
               <motion.div 
                 animate={{ y: [0, 10, 0] }}
