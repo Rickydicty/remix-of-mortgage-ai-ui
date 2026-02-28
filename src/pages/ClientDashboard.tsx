@@ -131,19 +131,25 @@ const ClientDashboard = () => {
     }
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusDisplay = (status: string) => {
     switch (status.toLowerCase()) {
       case 'approved':
-        return 'bg-success/10 text-success border-success/20';
+        return { label: 'Approved', color: 'bg-success/10 text-success border-success/20', description: 'Your application has been approved' };
       case 'in_progress':
       case 'in progress':
-        return 'bg-primary/10 text-primary border-primary/20';
+        return { label: 'In Progress', color: 'bg-primary/10 text-primary border-primary/20', description: 'You are filling out your application' };
+      case 'pending_review':
+        return { label: 'Under Review', color: 'bg-warning/10 text-warning border-warning/20', description: 'Your broker is reviewing your application' };
       case 'pending':
-        return 'bg-warning/10 text-warning border-warning/20';
+        return { label: 'Pending Assignment', color: 'bg-warning/10 text-warning border-warning/20', description: 'Waiting for a broker to be assigned' };
+      case 'needs_documents':
+        return { label: 'Awaiting Documents', color: 'bg-destructive/10 text-destructive border-destructive/20', description: 'Additional documents are required' };
       case 'rejected':
-        return 'bg-destructive/10 text-destructive border-destructive/20';
+        return { label: 'Rejected', color: 'bg-destructive/10 text-destructive border-destructive/20', description: 'Your application was not approved' };
+      case 'draft':
+        return { label: 'Draft', color: 'bg-muted/10 text-muted-foreground border-muted/20', description: 'Complete your forms and upload documents to proceed' };
       default:
-        return 'bg-muted/10 text-muted-foreground border-muted/20';
+        return { label: status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()), color: 'bg-muted/10 text-muted-foreground border-muted/20', description: '' };
     }
   };
 
@@ -210,9 +216,17 @@ const ClientDashboard = () => {
               </div>
               <div>
                 <p className="text-xs text-muted-foreground mb-1">Status</p>
-                <Badge className={getStatusColor(application.status)}>
-                  {application.status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                </Badge>
+                {(() => {
+                  const statusInfo = getStatusDisplay(application.status);
+                  return (
+                    <div>
+                      <Badge className={statusInfo.color}>{statusInfo.label}</Badge>
+                      {statusInfo.description && (
+                        <p className="text-xs text-muted-foreground mt-1">{statusInfo.description}</p>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
               <div>
                 <p className="text-xs text-muted-foreground mb-1">Current Step</p>

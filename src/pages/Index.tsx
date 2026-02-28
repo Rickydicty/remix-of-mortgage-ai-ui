@@ -66,8 +66,8 @@ const Index = () => {
     },
     {
       number: "03",
-      title: "Get Approved",
-      description: "Receive your Agreement in Principle and explore loan offers.",
+      title: "Broker Review & AIP",
+      description: "Your broker reviews your case and submits to lenders for approval.",
     },
   ];
 
@@ -154,7 +154,7 @@ const Index = () => {
                     <CheckCircle className="h-6 w-6 text-success" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium">Pre-Approved</p>
+                    <p className="text-sm font-medium">Eligibility Checked</p>
                     <p className="text-xs text-muted-foreground">Just now</p>
                   </div>
                 </div>
@@ -211,7 +211,7 @@ const Index = () => {
             How It Works
           </h2>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            Three simple steps to your mortgage approval
+            Three simple steps to your mortgage journey
           </p>
         </div>
         <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
@@ -229,6 +229,12 @@ const Index = () => {
               )}
             </div>
           ))}
+        </div>
+        <div className="text-center mt-10">
+          <Button variant="outline" size="lg" onClick={() => navigate("/how-it-works")}>
+            Learn More About the Process
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
         </div>
       </section>
 
