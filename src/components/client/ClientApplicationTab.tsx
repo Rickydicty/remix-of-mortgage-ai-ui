@@ -455,6 +455,34 @@ const ClientApplicationTab = ({ applicationId, application, brokerProfile, onRef
     };
   }, [formData, hasUnsavedChanges]);
 
+  // Warn user before leaving with unsaved changes
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasUnsavedChanges]);
+
+  // Save before tab/stage switch
+  const handleTabSwitch = (tabId: string) => {
+    if (hasUnsavedChanges) {
+      handleSave().then(() => setHasUnsavedChanges(false));
+    }
+    setActiveTab(tabId);
+  };
+
+  const handleStageSwitch = (stageKey: keyof typeof stages) => {
+    if (hasUnsavedChanges) {
+      handleSave().then(() => setHasUnsavedChanges(false));
+    }
+    setActiveStage(stageKey);
+    setActiveTab(stages[stageKey].tabs[0].id);
+  };
+
   const fetchData = async () => {
     if (!user) return;
 
@@ -732,10 +760,12 @@ const ClientApplicationTab = ({ applicationId, application, brokerProfile, onRef
   const currentTabIndex = currentStageTabs.findIndex(t => t.id === activeTab);
 
   const goToNextTab = () => {
+    if (hasUnsavedChanges) {
+      handleSave().then(() => setHasUnsavedChanges(false));
+    }
     if (currentTabIndex < currentStageTabs.length - 1) {
       setActiveTab(currentStageTabs[currentTabIndex + 1].id);
     } else {
-      // Move to next stage
       const stageKeys = Object.keys(stages) as Array<keyof typeof stages>;
       const stageIndex = stageKeys.indexOf(activeStage);
       if (stageIndex < stageKeys.length - 1) {
@@ -747,10 +777,12 @@ const ClientApplicationTab = ({ applicationId, application, brokerProfile, onRef
   };
 
   const goToPrevTab = () => {
+    if (hasUnsavedChanges) {
+      handleSave().then(() => setHasUnsavedChanges(false));
+    }
     if (currentTabIndex > 0) {
       setActiveTab(currentStageTabs[currentTabIndex - 1].id);
     } else {
-      // Move to previous stage
       const stageKeys = Object.keys(stages) as Array<keyof typeof stages>;
       const stageIndex = stageKeys.indexOf(activeStage);
       if (stageIndex > 0) {
@@ -760,6 +792,20 @@ const ClientApplicationTab = ({ applicationId, application, brokerProfile, onRef
         setActiveTab(prevStageTabs[prevStageTabs.length - 1].id);
       }
     }
+  };
+
+  // Determine next step label
+  const getNextLabel = () => {
+    if (currentTabIndex < currentStageTabs.length - 1) {
+      return `Next: ${currentStageTabs[currentTabIndex + 1].label}`;
+    }
+    const stageKeys = Object.keys(stages) as Array<keyof typeof stages>;
+    const stageIndex = stageKeys.indexOf(activeStage);
+    if (stageIndex < stageKeys.length - 1) {
+      const nextStage = stageKeys[stageIndex + 1];
+      return `Next: ${stages[nextStage].label}`;
+    }
+    return 'Complete';
   };
 
   const canSubmitForReview = () => {
@@ -788,10 +834,7 @@ const ClientApplicationTab = ({ applicationId, application, brokerProfile, onRef
         {(Object.keys(stages) as Array<keyof typeof stages>).map((stageKey) => (
           <button
             key={stageKey}
-            onClick={() => {
-              setActiveStage(stageKey);
-              setActiveTab(stages[stageKey].tabs[0].id);
-            }}
+            onClick={() => handleStageSwitch(stageKey)}
             className={cn(
               "p-3 rounded-lg border text-center transition-all",
               activeStage === stageKey
@@ -816,7 +859,7 @@ const ClientApplicationTab = ({ applicationId, application, brokerProfile, onRef
           {currentStageTabs.map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => handleTabSwitch(tab.id)}
               className={cn(
                 "px-4 py-3 text-sm font-medium border-r border-b border-border transition-colors",
                 activeTab === tab.id
@@ -961,19 +1004,17 @@ const ClientApplicationTab = ({ applicationId, application, brokerProfile, onRef
         </>
       )}
 
-      {/* Navigation Footer */}
-      {isFormTab && (
-        <div className="flex justify-between pt-4 border-t">
-          <Button variant="outline" onClick={goToPrevTab} disabled={activeStage === 'before_aip' && currentTabIndex === 0}>
-            <ChevronLeft className="h-4 w-4 mr-1" />
-            Previous
-          </Button>
-          <Button onClick={goToNextTab}>
-            Next
-            <ChevronRight className="h-4 w-4 ml-1" />
-          </Button>
-        </div>
-      )}
+      {/* Navigation Footer - show on ALL tabs */}
+      <div className="flex justify-between items-center pt-4 border-t">
+        <Button variant="outline" onClick={goToPrevTab} disabled={activeStage === 'before_aip' && currentTabIndex === 0}>
+          <ChevronLeft className="h-4 w-4 mr-1" />
+          Previous
+        </Button>
+        <Button onClick={goToNextTab} size="lg" className="shadow-md font-semibold px-6">
+          {getNextLabel()}
+          <ChevronRight className="h-4 w-4 ml-1" />
+        </Button>
+      </div>
     </div>
   );
 };
