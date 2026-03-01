@@ -159,7 +159,21 @@ const processDocument = async (doc: QueuedDocument, sessionToken: string, applic
     if (errorMessage.includes('PAYMENT_REQUIRED') || errorMessage.includes('402')) {
       displayError = 'AI credits exhausted. Add credits in Settings → Workspace → Usage.';
     } else if (errorMessage.includes('RATE_LIMITED') || errorMessage.includes('429')) {
-      displayError = 'Rate limit reached. Please wait and retry.';
+      displayError = 'Rate limit reached. Please wait a moment and retry.';
+    } else if (errorMessage.includes('413') || errorMessage.includes('too large') || errorMessage.includes('size')) {
+      displayError = `File too large (${(doc.file.size / 1024 / 1024).toFixed(1)}MB). Max size is 10MB.`;
+    } else if (errorMessage.includes('401') || errorMessage.includes('Unauthorized') || errorMessage.includes('JWT')) {
+      displayError = 'Session expired. Please refresh the page and log in again.';
+    } else if (errorMessage.includes('unsupported') || errorMessage.includes('format') || errorMessage.includes('mime')) {
+      displayError = `Unsupported file format. Please upload PDF, JPG, or PNG files.`;
+    } else if (errorMessage.includes('timeout') || errorMessage.includes('TIMEOUT')) {
+      displayError = 'Analysis timed out. The file may be too complex — try a smaller or clearer scan.';
+    } else if (errorMessage.includes('network') || errorMessage.includes('fetch') || errorMessage.includes('Failed to fetch')) {
+      displayError = 'Network error. Check your connection and retry.';
+    } else if (errorMessage.includes('500') || errorMessage.includes('Internal')) {
+      displayError = 'Server error during analysis. Please retry — if it persists, try a different file format.';
+    } else if (errorMessage === 'Upload failed') {
+      displayError = `Upload failed for "${doc.file.name}". Try re-saving the file and uploading again.`;
     }
     
     console.error('Upload error for', doc.file.name, error);

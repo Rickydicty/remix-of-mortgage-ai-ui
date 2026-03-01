@@ -4,6 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
+import AddressLookup from "@/components/client/AddressLookup";
 
 interface BeforeAIPPropertyFormProps {
   formData: any;
@@ -18,6 +19,7 @@ export const BeforeAIPPropertyForm = ({ formData, onChange }: BeforeAIPPropertyF
         
         {/* Property Address */}
         <h4 className="font-semibold text-primary bg-primary/10 px-3 py-2 rounded">Property Address</h4>
+        <AddressLookup prefix="property" formData={formData} onChange={onChange} label="Search Address" />
         <div className="grid md:grid-cols-2 gap-4">
           <div className="space-y-3">
             <div className="flex items-center gap-4">

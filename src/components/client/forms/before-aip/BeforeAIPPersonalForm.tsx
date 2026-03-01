@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { IRISH_COUNTIES, COUNTRIES } from "@/lib/irishLocations";
+import AddressLookup from "@/components/client/AddressLookup";
 interface BeforeAIPPersonalFormProps {
   formData: any;
   onChange: (field: string, value: any) => void;
@@ -100,6 +101,7 @@ const ApplicantFields = ({
     
     {/* Current Address */}
     <h5 className="font-medium text-sm mt-4 pt-4 border-t">Current Address</h5>
+    <AddressLookup prefix={prefix} formData={formData} onChange={onChange} />
     <div className="grid md:grid-cols-2 gap-4">
       <div className="space-y-3">
         <div className="flex items-center gap-4">
