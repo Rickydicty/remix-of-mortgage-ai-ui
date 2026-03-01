@@ -43,13 +43,17 @@ const NDICalculator = () => {
   const RENT_MULTIPLIER = 1.2; // Net rent >= 1.2x mortgage payment for BTL
   const ASSUMED_RENT_RETENTION = 0.80; // 80% of gross rent assumed as net
 
+  // Check if user has entered meaningful data
+  const hasUserInput = useMemo(() => {
+    return propertyValue > 0 || mortgageRequested > 0 || netMonthlySalary1 > 0 || monthlyRent > 0;
+  }, [propertyValue, mortgageRequested, netMonthlySalary1, monthlyRent]);
+
   // Calculations
   const calculations = useMemo(() => {
     // LTV Calculation
     const ltv = propertyValue > 0 ? (mortgageRequested / propertyValue) * 100 : 0;
-    const maxLoanAvailable = propertyValue * 0.9; // Assuming 90% max LTV
+    const maxLoanAvailable = propertyValue * 0.9;
 
-    // Monthly mortgage payment calculation (standard annuity formula)
     const monthlyRate = interestRate / 100 / 12;
     const totalPayments = termYears * 12;
     
@@ -64,7 +68,6 @@ const NDICalculator = () => {
       }
     }
 
-    // Stressed mortgage payment (+2%)
     const stressedRate = (interestRate + STRESS_RATE_ADDITION) / 100 / 12;
     let stressedMortgagePayment = 0;
     if (paymentType === "interest_only") {
@@ -77,55 +80,34 @@ const NDICalculator = () => {
       }
     }
 
-    // BTL Stress Tests
     const assumedNetRent = monthlyRent * ASSUMED_RENT_RETENTION;
     const rentCoverageRequired = monthlyMortgagePayment * RENT_MULTIPLIER;
     const stressTest1Pass = assumedNetRent >= rentCoverageRequired;
     const stressTest2Pass = assumedNetRent >= stressedMortgagePayment;
 
-    // Living Expenses (simplified - based on number of people in household)
     const baseLivingExpense = applicantStatus === "joint" ? 1500 : 1000;
     const childExpense = numberOfChildren * 300;
     const totalLivingExpenses = baseLivingExpense + childExpense;
 
-    // Total Income
     const totalNetIncome = netMonthlySalary1 + otherNetIncome1 + netMonthlySalary2 + otherNetIncome2;
 
-    // Total Commitments
-    const creditCardMonthly = creditCardDebt * 0.10; // 10% of balance
+    const creditCardMonthly = creditCardDebt * 0.10;
     const totalCommitments = maintenancePayments + carLoans + hpLeases + otherCommitments + creditCardMonthly + otherMortgagePayments;
 
-    // Net Disposable Income
     const ndi = totalNetIncome - totalLivingExpenses - totalCommitments - stressedMortgagePayment;
 
-    // DSCR (Debt Service Coverage Ratio) - for BTL
     const dscr = monthlyMortgagePayment > 0 ? assumedNetRent / monthlyMortgagePayment : 0;
 
-    // Results
     const ltvPass = ltv <= 90;
     const loanPass = mortgageRequested <= maxLoanAvailable;
     const ndiPass = ndi >= 0;
     const overallPass = ltvPass && loanPass && (borrowerType === "btl" ? (stressTest1Pass && stressTest2Pass) : ndiPass);
 
     return {
-      ltv,
-      maxLoanAvailable,
-      monthlyMortgagePayment,
-      stressedMortgagePayment,
-      assumedNetRent,
-      rentCoverageRequired,
-      stressTest1Pass,
-      stressTest2Pass,
-      totalLivingExpenses,
-      totalNetIncome,
-      totalCommitments,
-      creditCardMonthly,
-      ndi,
-      dscr,
-      ltvPass,
-      loanPass,
-      ndiPass,
-      overallPass,
+      ltv, maxLoanAvailable, monthlyMortgagePayment, stressedMortgagePayment,
+      assumedNetRent, rentCoverageRequired, stressTest1Pass, stressTest2Pass,
+      totalLivingExpenses, totalNetIncome, totalCommitments, creditCardMonthly,
+      ndi, dscr, ltvPass, loanPass, ndiPass, overallPass,
       stressedRate: interestRate + STRESS_RATE_ADDITION
     };
   }, [
@@ -427,21 +409,32 @@ const NDICalculator = () => {
 
         {/* Right Column - Results */}
         <div className="space-y-4">
-          {/* Overall Result */}
-          <Card className={calculations.overallPass ? "border-success/50 bg-success/5" : "border-destructive/50 bg-destructive/5"}>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-center gap-2">
-                {calculations.overallPass ? (
-                  <CheckCircle2 className="h-8 w-8 text-success" />
-                ) : (
-                  <XCircle className="h-8 w-8 text-destructive" />
-                )}
-                <span className={`text-2xl font-bold ${calculations.overallPass ? "text-success" : "text-destructive"}`}>
-                  {calculations.overallPass ? "PASS" : "FAIL"}
-                </span>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Overall Result - only show when user has entered data */}
+          {hasUserInput ? (
+            <Card className={calculations.overallPass ? "border-success/50 bg-success/5" : "border-destructive/50 bg-destructive/5"}>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-center gap-2">
+                  {calculations.overallPass ? (
+                    <CheckCircle2 className="h-8 w-8 text-success" />
+                  ) : (
+                    <XCircle className="h-8 w-8 text-destructive" />
+                  )}
+                  <span className={`text-2xl font-bold ${calculations.overallPass ? "text-success" : "text-destructive"}`}>
+                    {calculations.overallPass ? "PASS" : "FAIL"}
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card className="border-border bg-muted/30">
+              <CardContent className="pt-6">
+                <div className="text-center">
+                  <Calculator className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                  <p className="text-sm text-muted-foreground">Enter property and income details to see your result</p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Loan Summary */}
           <Card>

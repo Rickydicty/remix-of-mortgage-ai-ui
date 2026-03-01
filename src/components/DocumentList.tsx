@@ -226,6 +226,29 @@ export const DocumentList = ({ refreshTrigger, employmentType }: DocumentListPro
         </p>
       </div>
 
+      {/* Document Preparation Checklist */}
+      <div className="bg-muted/30 border border-border rounded-lg p-4">
+        <h3 className="font-semibold text-sm mb-2">📋 Document Checklist — Prepare these files</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-1">
+          {documentSections.filter(s => s.required).map((section) => {
+            const uploaded = documents.some(d => d.document_type === section.type);
+            return (
+              <div key={section.type} className="flex items-center gap-2 text-sm">
+                <span className={uploaded ? "text-success" : "text-muted-foreground"}>
+                  {uploaded ? "✅" : "⬜"}
+                </span>
+                <span className={uploaded ? "text-foreground" : "text-muted-foreground"}>
+                  {section.title}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+        <p className="text-xs text-muted-foreground mt-3 border-t border-border pt-2">
+          💡 Some forms (e.g. BI Application Form, Salary Certificate) will be provided by your broker once assigned. You can upload any documents you already have.
+        </p>
+      </div>
+
       {/* Cover Letter Form - First Section */}
       <CoverLetterForm />
       
