@@ -188,10 +188,29 @@ export const BatchDocumentUpload = ({ onUploadComplete }: BatchDocumentUploadPro
 
         } catch (error) {
           console.error('Upload error for', doc.file.name, error);
+          const errorMessage = error instanceof Error ? error.message : 'Upload failed';
+          
+          let displayError = errorMessage;
+          if (errorMessage.includes('413') || errorMessage.includes('too large')) {
+            displayError = `File too large (${(doc.file.size / 1024 / 1024).toFixed(1)}MB). Max 10MB.`;
+          } else if (errorMessage.includes('401') || errorMessage.includes('JWT')) {
+            displayError = 'Session expired. Refresh and log in again.';
+          } else if (errorMessage.includes('unsupported') || errorMessage.includes('format')) {
+            displayError = 'Unsupported format. Use PDF, JPG, or PNG.';
+          } else if (errorMessage.includes('timeout')) {
+            displayError = 'Timed out. Try a smaller file.';
+          } else if (errorMessage.includes('500') || errorMessage.includes('Internal')) {
+            displayError = 'Server error. Retry in a moment.';
+          } else if (errorMessage.includes('Failed to fetch')) {
+            displayError = 'Network error. Check connection.';
+          } else if (errorMessage === 'Upload failed') {
+            displayError = `Failed for "${doc.file.name}". Try a different format.`;
+          }
+          
           updateQueueItem(doc.id, { 
             status: 'error', 
             progress: 0,
-            error: error instanceof Error ? error.message : 'Upload failed'
+            error: displayError
           });
           errorCount++;
         }

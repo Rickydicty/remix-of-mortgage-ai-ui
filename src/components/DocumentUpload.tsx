@@ -223,9 +223,28 @@ export const DocumentUpload = ({ onUploadComplete }: DocumentUploadProps) => {
       
     } catch (error) {
       console.error('Upload error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Upload failed';
+      
+      let displayError = errorMessage;
+      if (errorMessage.includes('413') || errorMessage.includes('too large') || errorMessage.includes('size')) {
+        displayError = `File too large (${file ? (file.size / 1024 / 1024).toFixed(1) + 'MB' : ''}). Maximum size is 10MB.`;
+      } else if (errorMessage.includes('401') || errorMessage.includes('Unauthorized') || errorMessage.includes('JWT')) {
+        displayError = 'Your session has expired. Please refresh the page and log in again.';
+      } else if (errorMessage.includes('unsupported') || errorMessage.includes('format')) {
+        displayError = 'Unsupported file format. Please upload PDF, JPG, or PNG files.';
+      } else if (errorMessage.includes('timeout') || errorMessage.includes('TIMEOUT')) {
+        displayError = 'Analysis timed out. Try uploading a smaller or clearer file.';
+      } else if (errorMessage.includes('500') || errorMessage.includes('Internal')) {
+        displayError = 'Server error during analysis. Please retry in a moment.';
+      } else if (errorMessage.includes('Failed to fetch') || errorMessage.includes('network')) {
+        displayError = 'Network error. Please check your internet connection and try again.';
+      } else if (errorMessage === 'Upload failed') {
+        displayError = 'Upload failed. Please try re-saving the file in a different format and uploading again.';
+      }
+      
       toast({
         title: "Upload failed",
-        description: error instanceof Error ? error.message : "Failed to upload document",
+        description: displayError,
         variant: "destructive",
       });
     } finally {

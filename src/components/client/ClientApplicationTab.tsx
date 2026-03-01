@@ -1036,20 +1036,17 @@ const DocumentsTabContent = ({
   handleSubmitForReview: () => void;
 }) => (
   <div className="space-y-8">
+    {/* Smart Upload - AI auto-detect */}
     <SmartDocumentUpload 
       onUploadComplete={handleUploadComplete} 
       employmentType={eligibilityData.employmentType}
     />
     
-    <details className="group">
-      <summary className="cursor-pointer text-sm text-muted-foreground hover:text-foreground flex items-center gap-2">
-        <span>Or upload with manual document type selection</span>
-      </summary>
-      <div className="mt-4 space-y-4">
-        <BatchDocumentUpload onUploadComplete={handleUploadComplete} />
-        <DocumentUpload onUploadComplete={handleUploadComplete} />
-      </div>
-    </details>
+    {/* Manual Upload Options - always visible */}
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <DocumentUpload onUploadComplete={handleUploadComplete} />
+      <BatchDocumentUpload onUploadComplete={handleUploadComplete} />
+    </div>
     
     <DocumentList refreshTrigger={refreshTrigger} employmentType={eligibilityData.employmentType} />
 
