@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Save, Upload, FileText, FileCheck, Download, Home, ChevronRight, ChevronLeft, CheckCircle } from "lucide-react";
+import { ApplicationPDFDownload } from "@/components/client/ApplicationPDFDownload";
 import { PropertyValuationSubmit } from "@/components/client/PropertyValuationSubmit";
 import { cn } from "@/lib/utils";
 import { DocumentUpload } from "@/components/DocumentUpload";
@@ -921,6 +922,7 @@ const ClientApplicationTab = ({ applicationId, application, brokerProfile, onRef
               application={application}
               canSubmitForReview={canSubmitForReview}
               handleSubmitForReview={handleSubmitForReview}
+              formData={formData}
             />
           )}
           {activeTab === "personal" && (
@@ -1026,7 +1028,8 @@ const DocumentsTabContent = ({
   refreshTrigger, 
   application, 
   canSubmitForReview, 
-  handleSubmitForReview 
+  handleSubmitForReview,
+  formData,
 }: {
   handleUploadComplete: () => void;
   eligibilityData: { score: number | null; employmentType: string | null };
@@ -1034,6 +1037,7 @@ const DocumentsTabContent = ({
   application: Application | null | undefined;
   canSubmitForReview: () => boolean;
   handleSubmitForReview: () => void;
+  formData: FormData;
 }) => (
   <div className="space-y-8">
     {/* Smart Upload - AI auto-detect */}
@@ -1153,6 +1157,19 @@ const DocumentsTabContent = ({
       </CardHeader>
       <CardContent>
         <LoanOffersTab applicationId={application?.id || null} />
+      </CardContent>
+    </Card>
+
+    {/* PDF Download */}
+    <Card>
+      <CardContent className="pt-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="font-semibold mb-1">Application Summary</h3>
+            <p className="text-sm text-muted-foreground">Download a full PDF summary of your submitted application data.</p>
+          </div>
+          <ApplicationPDFDownload formData={formData} applicationNumber={application?.application_number || 'DRAFT'} />
+        </div>
       </CardContent>
     </Card>
 

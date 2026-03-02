@@ -10,6 +10,11 @@ interface AfterOfferBankFormProps {
 }
 
 export const AfterOfferBankForm = ({ formData, onChange }: AfterOfferBankFormProps) => {
+  const formatIban = (value: string) => {
+    const clean = value.replace(/\s/g, '').toUpperCase();
+    return clean.replace(/(.{4})/g, '$1 ').trim();
+  };
+
   return (
     <Card>
       <CardContent className="pt-6 space-y-6">
@@ -29,12 +34,24 @@ export const AfterOfferBankForm = ({ formData, onChange }: AfterOfferBankFormPro
               <Input className="flex-1" value={formData.dd_account_names || ''} onChange={(e) => onChange('dd_account_names', e.target.value)} placeholder="Name(s) on account" />
             </div>
             <div className="flex items-center gap-4">
-              <Label className="w-40 text-sm text-muted-foreground">Sort Code<span className="text-destructive">*</span></Label>
-              <Input className="flex-1" value={formData.dd_sort_code || ''} onChange={(e) => onChange('dd_sort_code', e.target.value)} placeholder="XX-XX-XX" />
+              <Label className="w-40 text-sm text-muted-foreground">IBAN<span className="text-destructive">*</span></Label>
+              <Input
+                className="flex-1 font-mono tracking-wider"
+                value={formData.dd_iban || formData.dd_sort_code || ''}
+                onChange={(e) => onChange('dd_iban', formatIban(e.target.value))}
+                placeholder="IE29 AIBK 9311 5212 3456 78"
+                maxLength={42}
+              />
             </div>
             <div className="flex items-center gap-4">
-              <Label className="w-40 text-sm text-muted-foreground">Account Number<span className="text-destructive">*</span></Label>
-              <Input className="flex-1" value={formData.dd_account_number || ''} onChange={(e) => onChange('dd_account_number', e.target.value)} />
+              <Label className="w-40 text-sm text-muted-foreground">BIC / SWIFT</Label>
+              <Input
+                className="flex-1 font-mono"
+                value={formData.dd_bic || ''}
+                onChange={(e) => onChange('dd_bic', e.target.value.toUpperCase())}
+                placeholder="AIBKIE2D"
+                maxLength={11}
+              />
             </div>
           </div>
           <div className="space-y-3">
