@@ -12,7 +12,6 @@ interface FinancialCreditFormProps {
   onChange: (field: string, value: any) => void;
 }
 
-// Extracted outside to prevent re-creation on every render
 const CreditHistoryQuestions = ({ 
   prefix, 
   title,
@@ -27,80 +26,38 @@ const CreditHistoryQuestions = ({
   <div className="space-y-4">
     <h5 className="font-medium text-sm">{title}</h5>
     <div className="space-y-3">
-      <div className="flex items-start gap-3">
-        <Checkbox 
-          checked={formData[`${prefix}_refused_mortgage`] || false} 
-          onCheckedChange={(v) => onChange(`${prefix}_refused_mortgage`, v)} 
-        />
-        <div className="flex-1">
-          <Label className="text-sm">Been refused a mortgage on this or any other property?</Label>
-          {formData[`${prefix}_refused_mortgage`] && (
-            <Textarea 
-              className="mt-2" 
-              placeholder="Please provide details..." 
-              value={formData[`${prefix}_refused_mortgage_details`] || ''} 
-              onChange={(e) => onChange(`${prefix}_refused_mortgage_details`, e.target.value)} 
-            />
-          )}
+      {[
+        { field: 'refused_mortgage', label: 'Been refused a mortgage on this or any other property?' },
+        { field: 'court_order', label: 'Had a court order registered against you?' },
+        { field: 'bankruptcy', label: 'Been insolvent, declared bankrupt or made any arrangements with creditors?' },
+        { field: 'mortgage_arrears_24m', label: 'Had arrears on your existing mortgage within the last 24 months?' },
+      ].map(({ field, label }) => (
+        <div key={field} className="flex items-start gap-3">
+          <Checkbox 
+            checked={formData[`${prefix}_${field}`] || false} 
+            onCheckedChange={(v) => onChange(`${prefix}_${field}`, v)} 
+          />
+          <div className="flex-1">
+            <Label className="text-sm">{label}</Label>
+            {formData[`${prefix}_${field}`] && (
+              <Textarea 
+                className="mt-2" 
+                placeholder="Please provide details..." 
+                value={formData[`${prefix}_${field}_details`] || ''} 
+                onChange={(e) => onChange(`${prefix}_${field}_details`, e.target.value)} 
+              />
+            )}
+          </div>
         </div>
-      </div>
-      
-      <div className="flex items-start gap-3">
-        <Checkbox 
-          checked={formData[`${prefix}_court_order`] || false} 
-          onCheckedChange={(v) => onChange(`${prefix}_court_order`, v)} 
-        />
-        <div className="flex-1">
-          <Label className="text-sm">Had a court order registered against you?</Label>
-          {formData[`${prefix}_court_order`] && (
-            <Textarea 
-              className="mt-2" 
-              placeholder="Please provide details..." 
-              value={formData[`${prefix}_court_order_details`] || ''} 
-              onChange={(e) => onChange(`${prefix}_court_order_details`, e.target.value)} 
-            />
-          )}
-        </div>
-      </div>
-      
-      <div className="flex items-start gap-3">
-        <Checkbox 
-          checked={formData[`${prefix}_bankruptcy`] || false} 
-          onCheckedChange={(v) => onChange(`${prefix}_bankruptcy`, v)} 
-        />
-        <div className="flex-1">
-          <Label className="text-sm">Been insolvent, declared bankrupt or made any arrangements with creditors?</Label>
-          {formData[`${prefix}_bankruptcy`] && (
-            <Textarea 
-              className="mt-2" 
-              placeholder="Please provide details..." 
-              value={formData[`${prefix}_bankruptcy_details`] || ''} 
-              onChange={(e) => onChange(`${prefix}_bankruptcy_details`, e.target.value)} 
-            />
-          )}
-        </div>
-      </div>
-      
-      <div className="flex items-start gap-3">
-        <Checkbox 
-          checked={formData[`${prefix}_mortgage_arrears_24m`] || false} 
-          onCheckedChange={(v) => onChange(`${prefix}_mortgage_arrears_24m`, v)} 
-        />
-        <div className="flex-1">
-          <Label className="text-sm">Had arrears on your existing mortgage within the last 24 months?</Label>
-          {formData[`${prefix}_mortgage_arrears_24m`] && (
-            <Textarea 
-              className="mt-2" 
-              placeholder="Please provide details..." 
-              value={formData[`${prefix}_mortgage_arrears_details`] || ''} 
-              onChange={(e) => onChange(`${prefix}_mortgage_arrears_details`, e.target.value)} 
-            />
-          )}
-        </div>
-      </div>
+      ))}
     </div>
   </div>
 );
+
+const formatIban = (value: string) => {
+  const clean = value.replace(/\s/g, '').toUpperCase();
+  return clean.replace(/(.{4})/g, '$1 ').trim();
+};
 
 export const FinancialCreditForm = ({ formData, onChange }: FinancialCreditFormProps) => {
   const flags = validateFinancialDetails(formData);
@@ -113,13 +70,22 @@ export const FinancialCreditForm = ({ formData, onChange }: FinancialCreditFormP
         <CardContent className="pt-6">
           <h3 className="font-bold text-lg mb-4">Section C – Financial & Credit History</h3>
           
-          {/* Bank Details */}
           <h4 className="font-semibold text-primary bg-primary/10 px-3 py-2 rounded mb-4">Current Bank/Building Society</h4>
           <div className="grid md:grid-cols-2 gap-4 mb-6">
             <div className="space-y-3">
               <div className="flex items-center gap-4">
                 <Label className="w-40 text-sm text-muted-foreground">Bank Name</Label>
                 <Input className="flex-1" value={formData.bank_name || ''} onChange={(e) => onChange('bank_name', e.target.value)} />
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="w-40 text-sm text-muted-foreground">IBAN</Label>
+                <Input
+                  className="flex-1 font-mono tracking-wider"
+                  value={formData.bank_sort_code || ''}
+                  onChange={(e) => onChange('bank_sort_code', formatIban(e.target.value))}
+                  placeholder="IE29 AIBK 9311 5212 3456 78"
+                  maxLength={42}
+                />
               </div>
               <div className="flex items-center gap-4">
                 <Label className="w-40 text-sm text-muted-foreground">Address</Label>
@@ -130,9 +96,7 @@ export const FinancialCreditForm = ({ formData, onChange }: FinancialCreditFormP
               <div className="flex items-center gap-4">
                 <Label className="w-40 text-sm text-muted-foreground">Account Type</Label>
                 <Select value={formData.bank_account_type || ''} onValueChange={(v) => onChange('bank_account_type', v)}>
-                  <SelectTrigger className="flex-1">
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
+                  <SelectTrigger className="flex-1"><SelectValue placeholder="Select" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="current">Current Account</SelectItem>
                     <SelectItem value="savings">Savings Account</SelectItem>
@@ -145,10 +109,6 @@ export const FinancialCreditForm = ({ formData, onChange }: FinancialCreditFormP
                 <Input className="flex-1" value={formData.bank_account_number || ''} onChange={(e) => onChange('bank_account_number', e.target.value)} />
               </div>
               <div className="flex items-center gap-4">
-                <Label className="w-40 text-sm text-muted-foreground">Sort Code / IBAN</Label>
-                <Input className="flex-1" value={formData.bank_sort_code || ''} onChange={(e) => onChange('bank_sort_code', e.target.value)} />
-              </div>
-              <div className="flex items-center gap-4">
                 <Label className="w-40 text-sm text-muted-foreground">Years Held</Label>
                 <Input className="w-24" type="number" min="0" value={formData.bank_years_held || ''} onChange={(e) => onChange('bank_years_held', parseInt(e.target.value) || 0)} />
               </div>
@@ -157,7 +117,6 @@ export const FinancialCreditForm = ({ formData, onChange }: FinancialCreditFormP
           
           <Separator className="my-6" />
           
-          {/* Financial Commitments */}
           <h4 className="font-semibold text-primary bg-primary/10 px-3 py-2 rounded mb-4">Financial Commitments</h4>
           <div className="grid md:grid-cols-2 gap-4 mb-6">
             <div className="space-y-3">
@@ -188,16 +147,13 @@ export const FinancialCreditForm = ({ formData, onChange }: FinancialCreditFormP
           
           <Separator className="my-6" />
           
-          {/* Credit History */}
           <h4 className="font-semibold text-primary bg-primary/10 px-3 py-2 rounded mb-4">Credit History</h4>
           
           <div className="mb-4">
             <div className="flex items-center gap-4 mb-4">
               <Label className="w-40 text-sm text-muted-foreground">Credit History</Label>
               <Select value={formData.credit_history || ''} onValueChange={(v) => onChange('credit_history', v)}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Select" />
-                </SelectTrigger>
+                <SelectTrigger className="w-48"><SelectValue placeholder="Select" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="excellent">Excellent</SelectItem>
                   <SelectItem value="good">Good</SelectItem>
@@ -219,7 +175,6 @@ export const FinancialCreditForm = ({ formData, onChange }: FinancialCreditFormP
           
           <Separator className="my-6" />
           
-          {/* Legacy CCJ and Arrears fields */}
           <div className="space-y-4">
             <div className="flex items-start gap-3">
               <Checkbox checked={formData.has_ccj || false} onCheckedChange={(v) => onChange('has_ccj', v)} />
