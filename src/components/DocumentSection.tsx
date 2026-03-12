@@ -100,7 +100,21 @@ export const DocumentSection = ({
     }
   };
 
-  const hasApprovedDoc = sectionDocs.some(doc => doc.status === 'approved');
+  const handleDeleteDoc = async (docId: string, filePath: string) => {
+    setDeletingDocId(docId);
+    try {
+      await supabase.storage.from('documents').remove([filePath]);
+      const { error } = await supabase.from('documents').delete().eq('id', docId);
+      if (error) throw error;
+      toast({ title: "Document deleted", description: "The document has been removed." });
+      onDocumentDeleted?.();
+    } catch (error) {
+      toast({ title: "Delete failed", description: "Could not delete the document.", variant: "destructive" });
+    } finally {
+      setDeletingDocId(null);
+    }
+  };
+
 
   return (
     <Card className={`border-2 ${hasApprovedDoc ? 'border-success/30' : required ? 'border-warning/30' : 'border-border'}`}>
