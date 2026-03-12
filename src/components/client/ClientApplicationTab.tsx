@@ -389,7 +389,7 @@ const ClientApplicationTab = ({ applicationId, application, brokerProfile, onRef
   const [formDataId, setFormDataId] = useState<string | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [eligibilityData, setEligibilityData] = useState<{
     score: number | null;
     employmentType: string | null;
@@ -672,10 +672,60 @@ const ClientApplicationTab = ({ applicationId, application, brokerProfile, onRef
     setSaving(true);
 
     try {
+      // Fields that exist only in the UI form but NOT in the database table
+      const uiOnlyFields = new Set([
+        'app1_months_at_address',
+        'app1_correspondence_line1', 'app1_correspondence_line2', 'app1_correspondence_line3',
+        'app1_correspondence_county', 'app1_correspondence_country',
+        'app1_previous_line1', 'app1_previous_line2', 'app1_previous_line3',
+        'app1_previous_county', 'app1_previous_country', 'app1_previous_months',
+        'app2_months_at_address', 'app2_previous_months',
+        'app1_employer_line1', 'app1_employer_line2', 'app1_employer_line3',
+        'app1_employer_county', 'app1_employer_country',
+        'app1_prev_employer_name', 'app1_prev_employer_line1', 'app1_prev_employer_county',
+        'app1_prev_occupation', 'app1_prev_years', 'app1_prev_months',
+        'app1_se_company_line1', 'app1_se_company_line2', 'app1_se_company_county', 'app1_se_company_country',
+        'app1_se_time_involved_years', 'app1_se_time_involved_months',
+        'app1_se_accountant_line1', 'app1_se_accountant_county', 'app1_se_accountant_fax',
+        'app2_employer_line1', 'app2_employer_county',
+        'bank_line1', 'bank_line2', 'bank_line3', 'bank_county', 'bank_country', 'bank_months_held',
+        'bank_accounts', 'bank_iban', 'bank_bic',
+        'savings_accounts',
+        'customer_type',
+        'site_price', 'grant_amount', 'legal_stamp_duty', 'gifts', 'repairs_renovations',
+        'other_funds', 'other_costs', 'is_scheme',
+        'remortgage_amount', 'remortgage_property_value', 'remortgage_ltv',
+        'year_original_purchase', 'current_mortgage_outstanding', 'new_mortgage_required',
+        'purpose_additional_borrowing', 'commencement_date',
+        'split_loan', 'split_first_amount', 'split_second_amount',
+        'split_first_term', 'split_second_term', 'split_first_rate_type', 'split_second_rate_type',
+        'interest_only_period',
+        'property_num_utility_rooms', 'property_private_owner_occupation', 'property_purpose',
+        'property_new', 'property_floors', 'homebuilders_bond', 'direct_labour',
+        'part_of_development', 'stage_payments_required', 'num_stage_payments',
+        'fixed_price_contract', 'architect_supervision', 'hb47_available',
+        'people_over_18',
+        'selling_agent_name', 'selling_agent_phone', 'selling_agent_address',
+        'valuer_name', 'valuer_company', 'valuer_phone', 'valuer_address',
+        'valuation_contact_name', 'valuation_contact_phone', 'valuation_contact_address',
+        'architect_name', 'architect_phone', 'builder_name', 'builder_phone',
+        'dd_bank_name', 'dd_account_names', 'dd_sort_code', 'dd_account_number',
+        'dd_debit_day', 'dd_bank_line1', 'dd_bank_county', 'dd_bank_country',
+        'consented_to_be_contacted', 'customer_address', 'date_signed',
+      ]);
+
+      // Filter out UI-only fields before saving to database
+      const filteredFormData: Record<string, any> = {};
+      for (const [key, value] of Object.entries(formData)) {
+        if (!uiOnlyFields.has(key)) {
+          filteredFormData[key] = value;
+        }
+      }
+
       const dataToSave = {
         user_id: user.id,
         application_id: applicationId || null,
-        ...formData,
+        ...filteredFormData,
         app1_date_of_birth: formData.app1_date_of_birth || null,
         app2_date_of_birth: formData.app2_date_of_birth || null,
         estimated_closing_date: formData.estimated_closing_date || null,
