@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
-import { Building2, LogOut, User, ClipboardList, CreditCard, CheckCircle } from "lucide-react";
+import { Building2, LogOut, User, ClipboardList, CreditCard, CheckCircle, Trash2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import ProgressTracker from "@/components/ProgressTracker";
 import { supabase } from "@/integrations/supabase/client";
