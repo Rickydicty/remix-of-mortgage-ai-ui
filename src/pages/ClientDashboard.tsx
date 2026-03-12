@@ -251,6 +251,11 @@ const ClientDashboard = () => {
       </header>
 
       <div className="container mx-auto px-4 py-8">
+        {/* Instructions */}
+        <div className="mb-6">
+          <ClientInstructions />
+        </div>
+
         {/* Broker Message Notification */}
         {application?.assigned_broker_id && (
           <BrokerMessageNotification
