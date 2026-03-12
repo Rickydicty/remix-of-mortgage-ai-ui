@@ -175,7 +175,7 @@ const getDocumentSections = (employmentType: string | null | undefined) => {
   return [...BASE_DOCUMENT_SECTIONS, ...EMPLOYEE_DOCUMENT_SECTIONS];
 };
 
-export const DocumentList = ({ refreshTrigger, employmentType }: DocumentListProps) => {
+export const DocumentList = ({ refreshTrigger, employmentType, onDocumentDeleted }: DocumentListProps) => {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
 
