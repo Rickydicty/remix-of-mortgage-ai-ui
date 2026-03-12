@@ -115,6 +115,7 @@ export const DocumentSection = ({
     }
   };
 
+  const hasApprovedDoc = sectionDocs.some(doc => doc.status === 'approved');
 
   return (
     <Card className={`border-2 ${hasApprovedDoc ? 'border-success/30' : required ? 'border-warning/30' : 'border-border'}`}>
