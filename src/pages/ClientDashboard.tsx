@@ -290,6 +290,26 @@ const ClientDashboard = () => {
               brokerProfile={brokerProfile}
               onRefresh={fetchApplicationData}
             />
+            
+            {/* Delete Application */}
+            {application && (
+              <div className="mt-8 pt-6 border-t border-border">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-destructive">Danger Zone</p>
+                    <p className="text-xs text-muted-foreground">Permanently delete your application and all data.</p>
+                  </div>
+                  <DeleteApplicationDialog
+                    applicationId={application.id}
+                    applicationNumber={application.application_number}
+                    onDeleted={() => {
+                      setApplication(null);
+                      fetchApplicationData();
+                    }}
+                  />
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
