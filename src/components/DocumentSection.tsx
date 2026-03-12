@@ -32,7 +32,7 @@ export const DocumentSection = ({
   description, 
   documentType, 
   documents,
-  required 
+  required,
   onDocumentDeleted,
 }: DocumentSectionProps) => {
   const { toast } = useToast();
