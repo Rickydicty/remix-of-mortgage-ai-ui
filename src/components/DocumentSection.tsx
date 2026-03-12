@@ -164,6 +164,31 @@ export const DocumentSection = ({
                     >
                       <Download className="h-4 w-4" />
                     </Button>
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Delete Document</DialogTitle>
+                          <DialogDescription>
+                            Are you sure you want to delete <strong>{doc.filename}</strong>? This cannot be undone.
+                          </DialogDescription>
+                        </DialogHeader>
+                        <DialogFooter>
+                          <Button variant="outline" onClick={() => {}}>Cancel</Button>
+                          <Button 
+                            variant="destructive" 
+                            onClick={() => handleDeleteDoc(doc.id, doc.file_path)}
+                            disabled={deletingDocId === doc.id}
+                          >
+                            {deletingDocId === doc.id ? "Deleting..." : "Delete"}
+                          </Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
                   </div>
                 </div>
 
