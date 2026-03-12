@@ -17,6 +17,7 @@ interface Document {
 interface DocumentListProps {
   refreshTrigger?: number;
   employmentType?: string | null;
+  onDocumentDeleted?: () => void;
 }
 
 // Documents required for all applicants
