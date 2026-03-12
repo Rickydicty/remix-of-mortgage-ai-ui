@@ -97,6 +97,7 @@ const BrokerDashboard = () => {
 
       {/* Tab Content */}
       <div className="container mx-auto px-4 py-8">
+        <BrokerInstructions />
         <Routes>
           <Route index element={<BrokerWebTab />} />
           <Route path="tracker" element={<BrokerTrackerTab />} />
