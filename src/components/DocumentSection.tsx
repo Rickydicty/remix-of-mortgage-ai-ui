@@ -2,9 +2,10 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, XCircle, Clock, Download, FileText, ChevronDown, ChevronUp } from "lucide-react";
+import { CheckCircle2, XCircle, Clock, Download, FileText, ChevronDown, ChevronUp, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 
 interface Document {
   id: string;
@@ -23,6 +24,7 @@ interface DocumentSectionProps {
   documentType: string;
   documents: Document[];
   required: boolean;
+  onDocumentDeleted?: () => void;
 }
 
 export const DocumentSection = ({ 
@@ -30,11 +32,13 @@ export const DocumentSection = ({
   description, 
   documentType, 
   documents,
-  required 
+  required,
+  onDocumentDeleted,
 }: DocumentSectionProps) => {
   const { toast } = useToast();
   const [expandedAnalysis, setExpandedAnalysis] = useState<string | null>(null);
   const [showAllDocs, setShowAllDocs] = useState(false);
+  const [deletingDocId, setDeletingDocId] = useState<string | null>(null);
   
   // Sort documents by created_at descending (most recent first)
   const sectionDocs = documents
@@ -96,6 +100,21 @@ export const DocumentSection = ({
     }
   };
 
+  const handleDeleteDoc = async (docId: string, filePath: string) => {
+    setDeletingDocId(docId);
+    try {
+      await supabase.storage.from('documents').remove([filePath]);
+      const { error } = await supabase.from('documents').delete().eq('id', docId);
+      if (error) throw error;
+      toast({ title: "Document deleted", description: "The document has been removed." });
+      onDocumentDeleted?.();
+    } catch (error) {
+      toast({ title: "Delete failed", description: "Could not delete the document.", variant: "destructive" });
+    } finally {
+      setDeletingDocId(null);
+    }
+  };
+
   const hasApprovedDoc = sectionDocs.some(doc => doc.status === 'approved');
 
   return (
@@ -146,6 +165,31 @@ export const DocumentSection = ({
                     >
                       <Download className="h-4 w-4" />
                     </Button>
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Delete Document</DialogTitle>
+                          <DialogDescription>
+                            Are you sure you want to delete <strong>{doc.filename}</strong>? This cannot be undone.
+                          </DialogDescription>
+                        </DialogHeader>
+                        <DialogFooter>
+                          <Button variant="outline" onClick={() => {}}>Cancel</Button>
+                          <Button 
+                            variant="destructive" 
+                            onClick={() => handleDeleteDoc(doc.id, doc.file_path)}
+                            disabled={deletingDocId === doc.id}
+                          >
+                            {deletingDocId === doc.id ? "Deleting..." : "Delete"}
+                          </Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
                   </div>
                 </div>
 

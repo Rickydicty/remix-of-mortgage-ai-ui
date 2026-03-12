@@ -17,6 +17,7 @@ interface Document {
 interface DocumentListProps {
   refreshTrigger?: number;
   employmentType?: string | null;
+  onDocumentDeleted?: () => void;
 }
 
 // Documents required for all applicants
@@ -174,7 +175,7 @@ const getDocumentSections = (employmentType: string | null | undefined) => {
   return [...BASE_DOCUMENT_SECTIONS, ...EMPLOYEE_DOCUMENT_SECTIONS];
 };
 
-export const DocumentList = ({ refreshTrigger, employmentType }: DocumentListProps) => {
+export const DocumentList = ({ refreshTrigger, employmentType, onDocumentDeleted }: DocumentListProps) => {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -260,6 +261,10 @@ export const DocumentList = ({ refreshTrigger, employmentType }: DocumentListPro
           documentType={section.type}
           documents={documents}
           required={section.required}
+          onDocumentDeleted={() => {
+            fetchDocuments();
+            onDocumentDeleted?.();
+          }}
         />
       ))}
     </div>

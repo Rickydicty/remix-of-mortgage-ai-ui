@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
-import { Building2, LogOut, User, ClipboardList, CreditCard, CheckCircle } from "lucide-react";
+import { Building2, LogOut, User, ClipboardList, CreditCard, CheckCircle, Trash2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import ProgressTracker from "@/components/ProgressTracker";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,6 +12,8 @@ import ClientApplicationTab from "@/components/client/ClientApplicationTab";
 import ApplicationFeePayment from "@/components/payments/ApplicationFeePayment";
 import UnifiedChatBot from "@/components/client/UnifiedChatBot";
 import BrokerMessageNotification from "@/components/client/BrokerMessageNotification";
+import { DeleteApplicationDialog } from "@/components/client/DeleteApplicationDialog";
+import { ClientInstructions } from "@/components/client/AppInstructions";
 interface Application {
   id: string;
   application_number: string;
@@ -249,6 +251,11 @@ const ClientDashboard = () => {
       </header>
 
       <div className="container mx-auto px-4 py-8">
+        {/* Instructions */}
+        <div className="mb-6">
+          <ClientInstructions />
+        </div>
+
         {/* Broker Message Notification */}
         {application?.assigned_broker_id && (
           <BrokerMessageNotification
@@ -283,6 +290,26 @@ const ClientDashboard = () => {
               brokerProfile={brokerProfile}
               onRefresh={fetchApplicationData}
             />
+            
+            {/* Delete Application */}
+            {application && (
+              <div className="mt-8 pt-6 border-t border-border">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-destructive">Danger Zone</p>
+                    <p className="text-xs text-muted-foreground">Permanently delete your application and all data.</p>
+                  </div>
+                  <DeleteApplicationDialog
+                    applicationId={application.id}
+                    applicationNumber={application.application_number}
+                    onDeleted={() => {
+                      setApplication(null);
+                      fetchApplicationData();
+                    }}
+                  />
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
