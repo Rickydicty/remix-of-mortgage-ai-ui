@@ -33,10 +33,12 @@ export const DocumentSection = ({
   documentType, 
   documents,
   required 
+  onDocumentDeleted,
 }: DocumentSectionProps) => {
   const { toast } = useToast();
   const [expandedAnalysis, setExpandedAnalysis] = useState<string | null>(null);
   const [showAllDocs, setShowAllDocs] = useState(false);
+  const [deletingDocId, setDeletingDocId] = useState<string | null>(null);
   
   // Sort documents by created_at descending (most recent first)
   const sectionDocs = documents
