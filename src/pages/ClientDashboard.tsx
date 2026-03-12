@@ -12,6 +12,8 @@ import ClientApplicationTab from "@/components/client/ClientApplicationTab";
 import ApplicationFeePayment from "@/components/payments/ApplicationFeePayment";
 import UnifiedChatBot from "@/components/client/UnifiedChatBot";
 import BrokerMessageNotification from "@/components/client/BrokerMessageNotification";
+import { DeleteApplicationDialog } from "@/components/client/DeleteApplicationDialog";
+import { ClientInstructions } from "@/components/client/AppInstructions";
 interface Application {
   id: string;
   application_number: string;
