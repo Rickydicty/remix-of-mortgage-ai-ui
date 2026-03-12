@@ -5,6 +5,7 @@ import { LogOut, Globe, Activity, FileText, TrendingUp, BookOpen, Building2 } fr
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { BrokerInstructions } from "@/components/client/AppInstructions";
 
 // Tab Components
 import BrokerWebTab from "@/components/broker/WebTab";
