@@ -24,6 +24,7 @@ interface DocumentSectionProps {
   documentType: string;
   documents: Document[];
   required: boolean;
+  onDocumentDeleted?: () => void;
 }
 
 export const DocumentSection = ({ 
