@@ -261,6 +261,10 @@ export const DocumentList = ({ refreshTrigger, employmentType, onDocumentDeleted
           documentType={section.type}
           documents={documents}
           required={section.required}
+          onDocumentDeleted={() => {
+            fetchDocuments();
+            onDocumentDeleted?.();
+          }}
         />
       ))}
     </div>
