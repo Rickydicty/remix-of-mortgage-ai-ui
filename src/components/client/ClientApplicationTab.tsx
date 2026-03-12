@@ -389,7 +389,7 @@ const ClientApplicationTab = ({ applicationId, application, brokerProfile, onRef
   const [formDataId, setFormDataId] = useState<string | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [eligibilityData, setEligibilityData] = useState<{
     score: number | null;
     employmentType: string | null;
