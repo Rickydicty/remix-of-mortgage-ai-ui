@@ -83,7 +83,10 @@ const updateGlobalQueueItem = (id: string, updates: Partial<QueuedDocument>) => 
 };
 
 // Process a single document
-const processDocument = async (doc: QueuedDocument, sessionToken: string, applicationId?: string) => {
+const processDocument = async (doc: QueuedDocument, sessionToken: string, applicationId?: string, retryCount = 0) => {
+  const MAX_RETRIES = 3;
+  const RETRY_DELAY_MS = 5000; // 5 seconds base delay
+
   try {
     updateGlobalQueueItem(doc.id, { status: 'detecting', progress: 10 });
 
@@ -104,6 +107,16 @@ const processDocument = async (doc: QueuedDocument, sessionToken: string, applic
         body: formData,
       }
     );
+
+    // Handle rate limiting with automatic retry
+    if (response.status === 429 && retryCount < MAX_RETRIES) {
+      const retryAfter = parseInt(response.headers.get('Retry-After') || '0', 10);
+      const waitTime = retryAfter > 0 ? retryAfter * 1000 : RETRY_DELAY_MS * (retryCount + 1);
+      console.log(`Rate limited on ${doc.file.name}, retrying in ${waitTime / 1000}s (attempt ${retryCount + 1}/${MAX_RETRIES})`);
+      updateGlobalQueueItem(doc.id, { status: 'pending', progress: 0, error: `Rate limited, retrying in ${Math.ceil(waitTime / 1000)}s...` });
+      await new Promise(resolve => setTimeout(resolve, waitTime));
+      return processDocument(doc, sessionToken, applicationId, retryCount + 1);
+    }
 
     updateGlobalQueueItem(doc.id, { status: 'analyzing', progress: 60 });
 
@@ -210,25 +223,26 @@ const processQueueInBackground = async () => {
       .eq('user_id', session.user.id)
       .maybeSingle();
 
-    // Process in batches of 3
-    const batchSize = 3;
+    // Process one at a time with delay to avoid rate limits
     let successCount = 0;
     let errorCount = 0;
+    const DELAY_BETWEEN_REQUESTS_MS = 3000; // 3 seconds between each request
 
     while (true) {
       const pendingDocs = globalState.queue.filter(doc => doc.status === 'pending');
       if (pendingDocs.length === 0) break;
 
-      const batch = pendingDocs.slice(0, batchSize);
+      const doc = pendingDocs[0];
+      const result = await processDocument(doc, session.access_token, application?.id);
+      
+      if (result.success) successCount++;
+      else errorCount++;
 
-      const results = await Promise.all(
-        batch.map(doc => processDocument(doc, session.access_token, application?.id))
-      );
-
-      results.forEach(result => {
-        if (result.success) successCount++;
-        else errorCount++;
-      });
+      // Wait before processing next document to avoid rate limits
+      const remainingPending = globalState.queue.filter(d => d.status === 'pending');
+      if (remainingPending.length > 0) {
+        await new Promise(resolve => setTimeout(resolve, DELAY_BETWEEN_REQUESTS_MS));
+      }
     }
 
     // Trigger broker-agent analysis after all uploads
