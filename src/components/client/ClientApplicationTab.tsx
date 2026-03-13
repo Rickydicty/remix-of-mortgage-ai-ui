@@ -861,7 +861,13 @@ const ClientApplicationTab = ({ applicationId, application, brokerProfile, onRef
 
   const canSubmitForReview = () => {
     if (!application) return false;
-    return application.status === 'draft' || application.status === 'pending' || application.status === 'needs_documents';
+    if (!(application.status === 'draft' || application.status === 'pending' || application.status === 'needs_documents')) return false;
+    // Only show submit button if user has actually uploaded documents
+    const hasFormData = formData && Object.keys(formData).some(key => {
+      const val = formData[key as keyof typeof formData];
+      return val !== null && val !== undefined && val !== '' && val !== false && val !== 0;
+    });
+    return hasFormData;
   };
 
   if (loading) {
