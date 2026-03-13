@@ -845,20 +845,39 @@ const ClientApplicationTab = ({ applicationId, application, brokerProfile, onRef
     if (!application) return;
 
     try {
+      const hasAllRequiredDocs = await evaluateRequiredDocuments();
+
+      if (!hasAllRequiredDocs) {
+        toast({
+          title: "Documents missing",
+          description: "Please upload all required documents before submitting for review.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const hasAssignedBroker = Boolean(application.assigned_broker_id);
+      const nextStatus = hasAssignedBroker ? 'pending_review' : 'pending';
+      const nextStep = hasAssignedBroker ? 3 : 2;
+
       const { error } = await supabase
         .from('applications')
-        .update({ 
-          status: 'pending_review',
-          current_step: 3
+        .update({
+          status: nextStatus,
+          current_step: nextStep,
         })
-        .eq('id', application.id);
+        .eq('id', application.id)
+        .eq('user_id', user?.id);
 
       if (error) throw error;
 
       onRefresh?.();
+
       toast({
-        title: "Submitted for Review",
-        description: "All documents uploaded! Your application is now under broker review.",
+        title: hasAssignedBroker ? "Submitted for Review" : "Submitted",
+        description: hasAssignedBroker
+          ? "All required documents uploaded! Your application is now under broker review."
+          : "All required documents uploaded. Your application is now waiting for broker assignment.",
       });
     } catch (error) {
       console.error('Error submitting application:', error);
