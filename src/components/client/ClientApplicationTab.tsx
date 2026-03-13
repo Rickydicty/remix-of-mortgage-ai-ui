@@ -378,6 +378,40 @@ const defaultFormData: FormData = {
   broker_notes: '',
 };
 
+const REQUIRED_BASE_DOC_TYPES = [
+  'certified_id',
+  'proof_of_address',
+  'application_form',
+  'current_account_statements',
+  'savings_account_statements',
+];
+
+const REQUIRED_EMPLOYEE_DOC_TYPES = [
+  'payslips',
+  'employment_summary',
+  'salary_cert',
+];
+
+const REQUIRED_SELF_EMPLOYED_DOC_TYPES = [
+  'self_employed_docs',
+  'form_11',
+  'chapter_4',
+  'business_bank_statements',
+  'ros_payment_charges',
+  'tax_clearance',
+];
+
+const getRequiredDocumentTypes = (employmentType: string | null | undefined) => {
+  const isSelfEmployed =
+    employmentType === 'self_employed' ||
+    employmentType === 'Self Employed' ||
+    employmentType === 'self-employed';
+
+  return isSelfEmployed
+    ? [...REQUIRED_BASE_DOC_TYPES, ...REQUIRED_SELF_EMPLOYED_DOC_TYPES]
+    : [...REQUIRED_BASE_DOC_TYPES, ...REQUIRED_EMPLOYEE_DOC_TYPES];
+};
+
 const ClientApplicationTab = ({ applicationId, application, brokerProfile, onRefresh }: ClientApplicationTabProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -394,6 +428,32 @@ const ClientApplicationTab = ({ applicationId, application, brokerProfile, onRef
     score: number | null;
     employmentType: string | null;
   }>({ score: null, employmentType: null });
+  const [hasRequiredDocuments, setHasRequiredDocuments] = useState(false);
+
+  const evaluateRequiredDocuments = useCallback(async () => {
+    if (!user || !application) {
+      setHasRequiredDocuments(false);
+      return false;
+    }
+
+    const requiredDocTypes = getRequiredDocumentTypes(eligibilityData.employmentType);
+    const { data, error } = await supabase
+      .from('documents')
+      .select('document_type')
+      .eq('user_id', user.id)
+      .in('document_type', requiredDocTypes);
+
+    if (error) {
+      console.error('Error checking required documents:', error);
+      setHasRequiredDocuments(false);
+      return false;
+    }
+
+    const uploadedDocTypes = new Set((data ?? []).map(doc => doc.document_type));
+    const isComplete = requiredDocTypes.every(docType => uploadedDocTypes.has(docType));
+    setHasRequiredDocuments(isComplete);
+    return isComplete;
+  }, [application, eligibilityData.employmentType, user]);
 
   // Stages with their tabs
   const stages = {
@@ -434,6 +494,10 @@ const ClientApplicationTab = ({ applicationId, application, brokerProfile, onRef
   useEffect(() => {
     fetchData();
   }, [user, applicationId]);
+
+  useEffect(() => {
+    void evaluateRequiredDocuments();
+  }, [evaluateRequiredDocuments, refreshTrigger]);
 
   // Auto-save: debounce 3 seconds after changes
   useEffect(() => {
@@ -778,23 +842,42 @@ const ClientApplicationTab = ({ applicationId, application, brokerProfile, onRef
   };
 
   const handleSubmitForReview = async () => {
-    if (!application) return;
+    if (!user || !application) return;
 
     try {
+      const hasAllRequiredDocs = await evaluateRequiredDocuments();
+
+      if (!hasAllRequiredDocs) {
+        toast({
+          title: "Documents missing",
+          description: "Please upload all required documents before submitting for review.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const hasAssignedBroker = Boolean(application.assigned_broker_id);
+      const nextStatus = hasAssignedBroker ? 'pending_review' : 'pending';
+      const nextStep = hasAssignedBroker ? 3 : 2;
+
       const { error } = await supabase
         .from('applications')
-        .update({ 
-          status: 'pending_review',
-          current_step: 3
+        .update({
+          status: nextStatus,
+          current_step: nextStep,
         })
-        .eq('id', application.id);
+        .eq('id', application.id)
+        .eq('user_id', user?.id);
 
       if (error) throw error;
 
       onRefresh?.();
+
       toast({
-        title: "Submitted for Review",
-        description: "All documents uploaded! Your application is now under broker review.",
+        title: hasAssignedBroker ? "Submitted for Review" : "Submitted",
+        description: hasAssignedBroker
+          ? "All required documents uploaded! Your application is now under broker review."
+          : "All required documents uploaded. Your application is now waiting for broker assignment.",
       });
     } catch (error) {
       console.error('Error submitting application:', error);
@@ -861,13 +944,12 @@ const ClientApplicationTab = ({ applicationId, application, brokerProfile, onRef
 
   const canSubmitForReview = () => {
     if (!application) return false;
-    if (!(application.status === 'draft' || application.status === 'pending' || application.status === 'needs_documents')) return false;
-    // Only show submit button if user has actually uploaded documents
-    const hasFormData = formData && Object.keys(formData).some(key => {
-      const val = formData[key as keyof typeof formData];
-      return val !== null && val !== undefined && val !== '' && val !== false && val !== 0;
-    });
-    return hasFormData;
+
+    const canSubmitByStatus =
+      application.status === 'draft' ||
+      application.status === 'needs_documents';
+
+    return canSubmitByStatus && hasRequiredDocuments;
   };
 
   if (loading) {
@@ -1108,7 +1190,11 @@ const DocumentsTabContent = ({
       <BatchDocumentUpload onUploadComplete={handleUploadComplete} />
     </div>
     
-    <DocumentList refreshTrigger={refreshTrigger} employmentType={eligibilityData.employmentType} />
+    <DocumentList 
+      refreshTrigger={refreshTrigger}
+      employmentType={eligibilityData.employmentType}
+      onDocumentDeleted={handleUploadComplete}
+    />
 
     {/* AIP Letter Section */}
     <Card>
