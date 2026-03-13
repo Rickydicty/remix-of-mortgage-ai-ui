@@ -694,12 +694,62 @@ async function callGeminiForAnalysis(apiKey: string, systemPrompt: string, userP
   const data = await response.json();
   const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
   
-  // Try to extract JSON from the response
+  // Try to extract JSON from the response with resilient parsing
   const jsonMatch = responseText.match(/\{[\s\S]*\}/);
   if (jsonMatch) {
-    return JSON.parse(jsonMatch[0]);
+    try {
+      return JSON.parse(jsonMatch[0]);
+    } catch {
+      // Try to fix common JSON issues: trailing commas, truncated arrays
+      let fixed = jsonMatch[0]
+        .replace(/,\s*([}\]])/g, '$1')  // remove trailing commas
+        .replace(/([^\\])\\n/g, '$1 '); // fix unescaped newlines
+      try {
+        return JSON.parse(fixed);
+      } catch {
+        console.error('JSON parse failed even after fix attempt, raw length:', responseText.length);
+        throw new Error('Malformed JSON in AI response');
+      }
+    }
   }
   throw new Error('No JSON found in response');
+}
+
+// Helper to call Groq API as fallback (text-only, no vision)
+async function callGroqForAnalysis(apiKey: string, systemPrompt: string, userPrompt: string): Promise<any> {
+  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'llama-3.3-70b-versatile',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt + '\n\nNote: Image not available for this analysis. Score conservatively (50-65) and note that visual verification is pending.' }
+      ],
+      temperature: 0.3,
+      max_tokens: 2000,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`GROQ_ERROR_${response.status}`);
+  }
+
+  const data = await response.json();
+  const text = data.choices?.[0]?.message?.content || '';
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (jsonMatch) {
+    try {
+      return JSON.parse(jsonMatch[0]);
+    } catch {
+      let fixed = jsonMatch[0].replace(/,\s*([}\]])/g, '$1');
+      return JSON.parse(fixed);
+    }
+  }
+  throw new Error('No JSON from Groq');
 }
 
 async function analyzeDocumentWithAI(imageBase64: string, mimeType: string, documentType: string, autoDetect: boolean = false): Promise<AnalysisResponse & { detectedType?: string }> {
