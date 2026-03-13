@@ -559,33 +559,55 @@ function getExtractionTool(documentType: string) {
   };
 }
 
-// Helper to call Gemini API with a specific key
-async function callGeminiForClassification(apiKey: string, classificationPrompt: string, imageBase64: string, mimeType: string): Promise<string> {
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
-    {
+// Helper: sleep for ms
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+// Helper to call Gemini API with retry on rate limits
+async function callGeminiWithRetry(url: string, body: any, maxRetries = 3): Promise<any> {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{
-          parts: [
-            { text: classificationPrompt },
-            { inline_data: { mime_type: mimeType, data: imageBase64 } }
-          ]
-        }],
-        generationConfig: {
-          maxOutputTokens: 50,
-          temperature: 0.1,
-        },
-      }),
-    }
-  );
+      body: JSON.stringify(body),
+    });
 
-  if (!response.ok) {
+    if (response.ok) {
+      return response;
+    }
+
+    if (response.status === 429 && attempt < maxRetries) {
+      const retryAfter = parseInt(response.headers.get('Retry-After') || '0', 10);
+      const waitMs = retryAfter > 0 ? retryAfter * 1000 : Math.min(5000 * Math.pow(2, attempt), 30000);
+      console.log(`Rate limited (429), waiting ${waitMs / 1000}s before retry ${attempt + 1}/${maxRetries}...`);
+      await sleep(waitMs);
+      continue;
+    }
+
+    // For non-retryable errors, throw immediately
     const status = response.status;
-    console.error(`Gemini classification failed with status ${status}`);
+    console.error(`Gemini API failed with status ${status}`);
     throw new Error(`GEMINI_ERROR_${status}`);
   }
+  throw new Error('GEMINI_ERROR_429_MAX_RETRIES');
+}
+
+// Helper to call Gemini API with a specific key
+async function callGeminiForClassification(apiKey: string, classificationPrompt: string, imageBase64: string, mimeType: string): Promise<string> {
+  const response = await callGeminiWithRetry(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+    {
+      contents: [{
+        parts: [
+          { text: classificationPrompt },
+          { inline_data: { mime_type: mimeType, data: imageBase64 } }
+        ]
+      }],
+      generationConfig: {
+        maxOutputTokens: 50,
+        temperature: 0.1,
+      },
+    }
+  );
 
   const data = await response.json();
   return data.candidates?.[0]?.content?.parts?.[0]?.text?.trim()?.toLowerCase() || 'other';
@@ -653,31 +675,21 @@ Classify this document:`;
 
 // Helper to call Gemini API for document analysis
 async function callGeminiForAnalysis(apiKey: string, systemPrompt: string, userPrompt: string, imageBase64: string, mimeType: string): Promise<any> {
-  const response = await fetch(
+  const response = await callGeminiWithRetry(
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
     {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{
-          parts: [
-            { text: systemPrompt + "\n\n" + userPrompt },
-            { inline_data: { mime_type: mimeType, data: imageBase64 } }
-          ]
-        }],
-        generationConfig: {
-          maxOutputTokens: 2000,
-          temperature: 0.3,
-        },
-      }),
+      contents: [{
+        parts: [
+          { text: systemPrompt + "\n\n" + userPrompt },
+          { inline_data: { mime_type: mimeType, data: imageBase64 } }
+        ]
+      }],
+      generationConfig: {
+        maxOutputTokens: 2000,
+        temperature: 0.3,
+      },
     }
   );
-
-  if (!response.ok) {
-    const status = response.status;
-    console.error(`Gemini analysis failed with status ${status}`);
-    throw new Error(`GEMINI_ERROR_${status}`);
-  }
 
   const data = await response.json();
   const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
