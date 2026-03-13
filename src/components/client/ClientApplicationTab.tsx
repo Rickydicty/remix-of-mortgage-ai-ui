@@ -495,6 +495,10 @@ const ClientApplicationTab = ({ applicationId, application, brokerProfile, onRef
     fetchData();
   }, [user, applicationId]);
 
+  useEffect(() => {
+    void evaluateRequiredDocuments();
+  }, [evaluateRequiredDocuments, refreshTrigger]);
+
   // Auto-save: debounce 3 seconds after changes
   useEffect(() => {
     if (!hasUnsavedChanges || !user) return;
