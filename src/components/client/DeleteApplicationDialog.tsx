@@ -24,34 +24,49 @@ export const DeleteApplicationDialog = ({ applicationId, applicationNumber, onDe
     setDeleting(true);
 
     try {
-      // Delete related data in order: form data, documents (DB rows + storage), then application
-      const [formRes, docsRes] = await Promise.all([
-        supabase.from('application_form_data').delete().eq('application_id', applicationId),
-        supabase.from('documents').select('id, file_path').eq('user_id', user.id),
-      ]);
+      // 1. Fetch ALL documents for this user to delete from storage
+      const { data: allDocs } = await supabase
+        .from('documents')
+        .select('id, file_path')
+        .eq('user_id', user.id);
 
-      // Delete document storage files
-      if (docsRes.data && docsRes.data.length > 0) {
-        const filePaths = docsRes.data.map(d => d.file_path).filter(Boolean);
+      // 2. Remove files from storage bucket
+      if (allDocs && allDocs.length > 0) {
+        const filePaths = allDocs.map(d => d.file_path).filter(Boolean);
         if (filePaths.length > 0) {
-          await supabase.storage.from('documents').remove(filePaths);
+          // Storage remove accepts max 1000 files at a time
+          const batchSize = 100;
+          for (let i = 0; i < filePaths.length; i += batchSize) {
+            const batch = filePaths.slice(i, i + batchSize);
+            await supabase.storage.from('documents').remove(batch);
+          }
         }
-        await supabase.from('documents').delete().eq('user_id', user.id);
+        // 3. Delete all document DB rows for this user
+        const { error: docDeleteError } = await supabase
+          .from('documents')
+          .delete()
+          .eq('user_id', user.id);
+        if (docDeleteError) {
+          console.warn('Error deleting documents:', docDeleteError);
+        }
       }
 
-      // Delete signatures
-      await supabase.from('signatures').delete().eq('application_id', applicationId);
-
-      // Delete the application itself
-      const { error } = await supabase.from('applications').delete().eq('id', applicationId).eq('user_id', user.id);
+      // 4. Delete the application — cascading FKs handle form_data, signatures, messages, etc.
+      const { error } = await supabase
+        .from('applications')
+        .delete()
+        .eq('id', applicationId)
+        .eq('user_id', user.id);
+      
       if (error) throw error;
 
-      toast.success("Application deleted successfully");
+      toast.success("Application and all data deleted successfully");
       setOpen(false);
+      setConfirmText("");
       onDeleted();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting application:', error);
-      toast.error("Failed to delete application. Please try again.");
+      toast.error(`Failed to delete application: ${error.message || 'Please try again.'}`);
     } finally {
       setDeleting(false);
     }
