@@ -675,31 +675,21 @@ Classify this document:`;
 
 // Helper to call Gemini API for document analysis
 async function callGeminiForAnalysis(apiKey: string, systemPrompt: string, userPrompt: string, imageBase64: string, mimeType: string): Promise<any> {
-  const response = await fetch(
+  const response = await callGeminiWithRetry(
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
     {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{
-          parts: [
-            { text: systemPrompt + "\n\n" + userPrompt },
-            { inline_data: { mime_type: mimeType, data: imageBase64 } }
-          ]
-        }],
-        generationConfig: {
-          maxOutputTokens: 2000,
-          temperature: 0.3,
-        },
-      }),
+      contents: [{
+        parts: [
+          { text: systemPrompt + "\n\n" + userPrompt },
+          { inline_data: { mime_type: mimeType, data: imageBase64 } }
+        ]
+      }],
+      generationConfig: {
+        maxOutputTokens: 2000,
+        temperature: 0.3,
+      },
     }
   );
-
-  if (!response.ok) {
-    const status = response.status;
-    console.error(`Gemini analysis failed with status ${status}`);
-    throw new Error(`GEMINI_ERROR_${status}`);
-  }
 
   const data = await response.json();
   const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
