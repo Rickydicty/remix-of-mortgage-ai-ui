@@ -83,7 +83,10 @@ const updateGlobalQueueItem = (id: string, updates: Partial<QueuedDocument>) => 
 };
 
 // Process a single document
-const processDocument = async (doc: QueuedDocument, sessionToken: string, applicationId?: string) => {
+const processDocument = async (doc: QueuedDocument, sessionToken: string, applicationId?: string, retryCount = 0) => {
+  const MAX_RETRIES = 3;
+  const RETRY_DELAY_MS = 5000; // 5 seconds base delay
+
   try {
     updateGlobalQueueItem(doc.id, { status: 'detecting', progress: 10 });
 
@@ -104,6 +107,16 @@ const processDocument = async (doc: QueuedDocument, sessionToken: string, applic
         body: formData,
       }
     );
+
+    // Handle rate limiting with automatic retry
+    if (response.status === 429 && retryCount < MAX_RETRIES) {
+      const retryAfter = parseInt(response.headers.get('Retry-After') || '0', 10);
+      const waitTime = retryAfter > 0 ? retryAfter * 1000 : RETRY_DELAY_MS * (retryCount + 1);
+      console.log(`Rate limited on ${doc.file.name}, retrying in ${waitTime / 1000}s (attempt ${retryCount + 1}/${MAX_RETRIES})`);
+      updateGlobalQueueItem(doc.id, { status: 'pending', progress: 0, error: `Rate limited, retrying in ${Math.ceil(waitTime / 1000)}s...` });
+      await new Promise(resolve => setTimeout(resolve, waitTime));
+      return processDocument(doc, sessionToken, applicationId, retryCount + 1);
+    }
 
     updateGlobalQueueItem(doc.id, { status: 'analyzing', progress: 60 });
 
