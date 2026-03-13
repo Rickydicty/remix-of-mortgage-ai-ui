@@ -842,7 +842,7 @@ const ClientApplicationTab = ({ applicationId, application, brokerProfile, onRef
   };
 
   const handleSubmitForReview = async () => {
-    if (!application) return;
+    if (!user || !application) return;
 
     try {
       const hasAllRequiredDocs = await evaluateRequiredDocuments();
