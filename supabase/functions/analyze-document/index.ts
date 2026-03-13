@@ -882,6 +882,18 @@ Remember: Read the document carefully and extract ALL visible information.`;
     }
   }
 
+  // Try Groq as 3rd fallback (text-only, no image - will score conservatively)
+  if (!parsedResult && groqKey) {
+    try {
+      console.log('Trying document analysis with Groq fallback (text-only)...');
+      parsedResult = await callGroqForAnalysis(groqKey, systemPrompt, userPrompt);
+      console.log('Groq fallback succeeded');
+    } catch (e) {
+      console.error('Groq fallback failed:', e);
+      lastError = e instanceof Error ? e : new Error(String(e));
+    }
+  }
+
   // If all providers failed, throw a user-friendly error
   if (!parsedResult) {
     console.error('All AI providers failed for document analysis');
