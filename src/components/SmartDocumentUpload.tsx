@@ -210,25 +210,26 @@ const processQueueInBackground = async () => {
       .eq('user_id', session.user.id)
       .maybeSingle();
 
-    // Process in batches of 3
-    const batchSize = 3;
+    // Process one at a time with delay to avoid rate limits
     let successCount = 0;
     let errorCount = 0;
+    const DELAY_BETWEEN_REQUESTS_MS = 3000; // 3 seconds between each request
 
     while (true) {
       const pendingDocs = globalState.queue.filter(doc => doc.status === 'pending');
       if (pendingDocs.length === 0) break;
 
-      const batch = pendingDocs.slice(0, batchSize);
+      const doc = pendingDocs[0];
+      const result = await processDocument(doc, session.access_token, application?.id);
+      
+      if (result.success) successCount++;
+      else errorCount++;
 
-      const results = await Promise.all(
-        batch.map(doc => processDocument(doc, session.access_token, application?.id))
-      );
-
-      results.forEach(result => {
-        if (result.success) successCount++;
-        else errorCount++;
-      });
+      // Wait before processing next document to avoid rate limits
+      const remainingPending = globalState.queue.filter(d => d.status === 'pending');
+      if (remainingPending.length > 0) {
+        await new Promise(resolve => setTimeout(resolve, DELAY_BETWEEN_REQUESTS_MS));
+      }
     }
 
     // Trigger broker-agent analysis after all uploads
