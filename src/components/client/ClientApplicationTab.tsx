@@ -378,6 +378,40 @@ const defaultFormData: FormData = {
   broker_notes: '',
 };
 
+const REQUIRED_BASE_DOC_TYPES = [
+  'certified_id',
+  'proof_of_address',
+  'application_form',
+  'current_account_statements',
+  'savings_account_statements',
+];
+
+const REQUIRED_EMPLOYEE_DOC_TYPES = [
+  'payslips',
+  'employment_summary',
+  'salary_cert',
+];
+
+const REQUIRED_SELF_EMPLOYED_DOC_TYPES = [
+  'self_employed_docs',
+  'form_11',
+  'chapter_4',
+  'business_bank_statements',
+  'ros_payment_charges',
+  'tax_clearance',
+];
+
+const getRequiredDocumentTypes = (employmentType: string | null | undefined) => {
+  const isSelfEmployed =
+    employmentType === 'self_employed' ||
+    employmentType === 'Self Employed' ||
+    employmentType === 'self-employed';
+
+  return isSelfEmployed
+    ? [...REQUIRED_BASE_DOC_TYPES, ...REQUIRED_SELF_EMPLOYED_DOC_TYPES]
+    : [...REQUIRED_BASE_DOC_TYPES, ...REQUIRED_EMPLOYEE_DOC_TYPES];
+};
+
 const ClientApplicationTab = ({ applicationId, application, brokerProfile, onRefresh }: ClientApplicationTabProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
