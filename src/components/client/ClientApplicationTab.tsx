@@ -428,6 +428,32 @@ const ClientApplicationTab = ({ applicationId, application, brokerProfile, onRef
     score: number | null;
     employmentType: string | null;
   }>({ score: null, employmentType: null });
+  const [hasRequiredDocuments, setHasRequiredDocuments] = useState(false);
+
+  const evaluateRequiredDocuments = useCallback(async () => {
+    if (!user || !application) {
+      setHasRequiredDocuments(false);
+      return false;
+    }
+
+    const requiredDocTypes = getRequiredDocumentTypes(eligibilityData.employmentType);
+    const { data, error } = await supabase
+      .from('documents')
+      .select('document_type')
+      .eq('user_id', user.id)
+      .in('document_type', requiredDocTypes);
+
+    if (error) {
+      console.error('Error checking required documents:', error);
+      setHasRequiredDocuments(false);
+      return false;
+    }
+
+    const uploadedDocTypes = new Set((data ?? []).map(doc => doc.document_type));
+    const isComplete = requiredDocTypes.every(docType => uploadedDocTypes.has(docType));
+    setHasRequiredDocuments(isComplete);
+    return isComplete;
+  }, [application, eligibilityData.employmentType, user]);
 
   // Stages with their tabs
   const stages = {
