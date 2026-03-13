@@ -1190,7 +1190,11 @@ const DocumentsTabContent = ({
       <BatchDocumentUpload onUploadComplete={handleUploadComplete} />
     </div>
     
-    <DocumentList refreshTrigger={refreshTrigger} employmentType={eligibilityData.employmentType} />
+    <DocumentList 
+      refreshTrigger={refreshTrigger}
+      employmentType={eligibilityData.employmentType}
+      onDocumentDeleted={handleUploadComplete}
+    />
 
     {/* AIP Letter Section */}
     <Card>
