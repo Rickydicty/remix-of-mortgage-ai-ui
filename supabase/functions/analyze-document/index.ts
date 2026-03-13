@@ -755,9 +755,10 @@ async function callGroqForAnalysis(apiKey: string, systemPrompt: string, userPro
 async function analyzeDocumentWithAI(imageBase64: string, mimeType: string, documentType: string, autoDetect: boolean = false): Promise<AnalysisResponse & { detectedType?: string }> {
   const geminiPrimary = Deno.env.get('GEMINI_API_KEY');
   const geminiBackup = Deno.env.get('GEMINI_API_KEY_BACKUP');
+  const groqKey = Deno.env.get('GROQ_API_KEY');
   
-  if (!geminiPrimary && !geminiBackup) {
-    throw new Error('No Gemini API keys configured');
+  if (!geminiPrimary && !geminiBackup && !groqKey) {
+    throw new Error('No AI API keys configured');
   }
   
   // Auto-detect document type if requested
