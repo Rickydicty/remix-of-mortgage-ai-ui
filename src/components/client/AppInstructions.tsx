@@ -20,7 +20,7 @@ export const ClientInstructions = () => {
     {
       icon: <Calculator className="h-5 w-5 text-primary" />,
       title: "3. Check Your Numbers",
-      description: "Use the Calculator tab to estimate your Net Disposable Income (NDI) and affordability before submitting.",
+      description: "Use the Rates & Cashback tab to compare mortgage rates, monthly payments, and cashback offers from Irish lenders.",
     },
     {
       icon: <Send className="h-5 w-5 text-primary" />,
