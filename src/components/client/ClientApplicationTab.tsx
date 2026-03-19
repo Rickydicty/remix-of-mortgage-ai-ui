@@ -1079,7 +1079,7 @@ const ClientApplicationTab = ({ applicationId, application, brokerProfile, onRef
             <BeforeAIPPropertyForm formData={formData} onChange={handleInputChange} />
           )}
           {activeTab === "calculator" && (
-            <NDICalculator />
+            <ClientRatesTab />
           )}
           {activeTab === "messages" && (
             <BrokerMessagesTab 
