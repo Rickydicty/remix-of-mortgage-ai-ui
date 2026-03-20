@@ -468,6 +468,7 @@ const ClientApplicationTab = ({ applicationId, application, brokerProfile, onRef
         { id: "mortgage", label: "Mortgage" },
         { id: "property", label: "Property" },
         { id: "calculator", label: "Rates & Cashback" },
+        { id: "notes", label: "Notes & Messages" },
         { id: "messages", label: "Broker Messages" },
       ]
     },
