@@ -29,6 +29,7 @@ import {
   validateAlternativeDetails
 } from "@/components/client/FormFieldFlags";
 import ClientRatesTab from "@/components/client/ClientRatesTab";
+import ClientNotesTab from "@/components/client/ClientNotesTab";
 
 // Import staged form components
 import { 
@@ -468,6 +469,7 @@ const ClientApplicationTab = ({ applicationId, application, brokerProfile, onRef
         { id: "mortgage", label: "Mortgage" },
         { id: "property", label: "Property" },
         { id: "calculator", label: "Rates & Cashback" },
+        { id: "notes", label: "Notes & Messages" },
         { id: "messages", label: "Broker Messages" },
       ]
     },
@@ -964,7 +966,7 @@ const ClientApplicationTab = ({ applicationId, application, brokerProfile, onRef
     );
   }
 
-  const isFormTab = !['documents', 'valuation', 'signatures', 'messages', 'calculator'].includes(activeTab);
+  const isFormTab = !['documents', 'valuation', 'signatures', 'messages', 'calculator', 'notes'].includes(activeTab);
 
   return (
     <div className="space-y-4">
@@ -1080,6 +1082,9 @@ const ClientApplicationTab = ({ applicationId, application, brokerProfile, onRef
           )}
           {activeTab === "calculator" && (
             <ClientRatesTab />
+          )}
+          {activeTab === "notes" && (
+            <ClientNotesTab applicationId={applicationId} />
           )}
           {activeTab === "messages" && (
             <BrokerMessagesTab 
