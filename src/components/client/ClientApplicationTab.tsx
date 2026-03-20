@@ -965,7 +965,7 @@ const ClientApplicationTab = ({ applicationId, application, brokerProfile, onRef
     );
   }
 
-  const isFormTab = !['documents', 'valuation', 'signatures', 'messages', 'calculator'].includes(activeTab);
+  const isFormTab = !['documents', 'valuation', 'signatures', 'messages', 'calculator', 'notes'].includes(activeTab);
 
   return (
     <div className="space-y-4">
