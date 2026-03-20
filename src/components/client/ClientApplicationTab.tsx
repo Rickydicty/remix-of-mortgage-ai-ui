@@ -1082,6 +1082,9 @@ const ClientApplicationTab = ({ applicationId, application, brokerProfile, onRef
           {activeTab === "calculator" && (
             <ClientRatesTab />
           )}
+          {activeTab === "notes" && (
+            <ClientNotesTab applicationId={applicationId} />
+          )}
           {activeTab === "messages" && (
             <BrokerMessagesTab 
               applicationId={applicationId}
