@@ -29,6 +29,7 @@ import {
   validateAlternativeDetails
 } from "@/components/client/FormFieldFlags";
 import ClientRatesTab from "@/components/client/ClientRatesTab";
+import ClientNotesTab from "@/components/client/ClientNotesTab";
 
 // Import staged form components
 import { 
