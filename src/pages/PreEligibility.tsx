@@ -160,6 +160,44 @@ const PreEligibility = () => {
         recommendations: results.recommendations,
       });
       setShowResults(true);
+
+      // Send signup email if eligible and email was provided
+      if (results.eligibilityScore >= MIN_ELIGIBILITY_SCORE && formData.email) {
+        try {
+          const { supabase } = await import("@/integrations/supabase/client");
+          const signupUrl = `${window.location.origin}/signup/client`;
+          await supabase.functions.invoke('send-notification', {
+            body: {
+              notification_type: 'eligibility_signup_invite',
+              recipient_email: formData.email,
+              subject: 'Great news! You\'re eligible — Complete your sign up',
+              html_content: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                  <div style="background: linear-gradient(135deg, #16a34a, #15803d); padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
+                    <h1 style="color: #ffffff; margin: 0; font-size: 24px;">🎉 Congratulations!</h1>
+                  </div>
+                  <div style="padding: 30px; background: #ffffff; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px;">
+                    <p style="font-size: 16px; color: #333;">You've passed our eligibility check with a score of <strong>${results.eligibilityScore}%</strong>!</p>
+                    <p style="font-size: 14px; color: #666;">Your estimated borrowing capacity is <strong>€${results.borrowingLow.toLocaleString()} - €${results.borrowingHigh.toLocaleString()}</strong>.</p>
+                    <p style="font-size: 14px; color: #666;">Complete your registration to start your mortgage application with a dedicated broker.</p>
+                    <div style="text-align: center; margin: 30px 0;">
+                      <a href="${signupUrl}" style="background: linear-gradient(135deg, #16a34a, #15803d); color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; display: inline-block;">
+                        Complete Your Sign Up →
+                      </a>
+                    </div>
+                    <p style="font-size: 12px; color: #999; text-align: center;">
+                      If you didn't request this, please ignore this email.
+                    </p>
+                  </div>
+                </div>
+              `,
+            },
+          });
+          toast.success("We've sent a sign-up link to your email!");
+        } catch (emailError) {
+          console.error("Failed to send signup email:", emailError);
+        }
+      }
     } catch (error: any) {
       console.error("Error calculating eligibility:", error);
       toast.error("Failed to calculate eligibility. Please try again.");
