@@ -53,11 +53,16 @@ const ClientDashboard = () => {
     try {
       const { data: profile } = await supabase
         .from('profiles')
-        .select('full_name, email')
+        .select('full_name, email, phone_verified')
         .eq('id', user.id)
         .single();
       
       setUserProfile(profile);
+      
+      // Check if phone needs verification
+      if (profile && !profile.phone_verified) {
+        setShowPhoneVerification(true);
+      }
 
       const { data: apps } = await supabase
         .from('applications')
