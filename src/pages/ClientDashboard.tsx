@@ -14,6 +14,7 @@ import UnifiedChatBot from "@/components/client/UnifiedChatBot";
 import BrokerMessageNotification from "@/components/client/BrokerMessageNotification";
 import { DeleteApplicationDialog } from "@/components/client/DeleteApplicationDialog";
 import { ClientInstructions } from "@/components/client/AppInstructions";
+import PhoneVerification from "@/components/client/PhoneVerification";
 interface Application {
   id: string;
   application_number: string;
@@ -30,6 +31,7 @@ interface Application {
 interface Profile {
   full_name: string | null;
   email: string | null;
+  phone_verified?: boolean | null;
 }
 
 const ClientDashboard = () => {
@@ -40,6 +42,7 @@ const ClientDashboard = () => {
   const [brokerProfile, setBrokerProfile] = useState<Profile | null>(null);
   const [documentProgress, setDocumentProgress] = useState(0);
   const [plansOpen, setPlansOpen] = useState(false);
+  const [showPhoneVerification, setShowPhoneVerification] = useState(false);
 
   useEffect(() => {
     fetchApplicationData();
@@ -51,11 +54,16 @@ const ClientDashboard = () => {
     try {
       const { data: profile } = await supabase
         .from('profiles')
-        .select('full_name, email')
+        .select('full_name, email, phone_verified')
         .eq('id', user.id)
         .single();
       
       setUserProfile(profile);
+      
+      // Check if phone needs verification
+      if (profile && !profile.phone_verified) {
+        setShowPhoneVerification(true);
+      }
 
       const { data: apps } = await supabase
         .from('applications')
@@ -173,6 +181,13 @@ const ClientDashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Phone Verification Modal */}
+      {showPhoneVerification && (
+        <PhoneVerification
+          onVerified={() => setShowPhoneVerification(false)}
+          onSkip={() => setShowPhoneVerification(false)}
+        />
+      )}
       {/* Header */}
       <header className="border-b border-border bg-card sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4">
