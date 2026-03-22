@@ -383,13 +383,30 @@ const PreEligibility = () => {
               </Card>
 
               <div className="text-center">
-                <Button size="lg" onClick={() => navigate("/signup/client")}>
-                  <TrendingUp className="mr-2 h-5 w-5" />
-                  Continue to Sign Up
-                </Button>
-                <p className="text-sm text-muted-foreground mt-4">
-                  Create your account to start your mortgage application
-                </p>
+                {formData.email ? (
+                  <>
+                    <div className="mb-4 p-4 bg-success/10 border border-success/20 rounded-lg inline-block">
+                      <p className="text-success font-medium">✉️ A sign-up link has been sent to {formData.email}</p>
+                      <p className="text-sm text-muted-foreground mt-1">Check your inbox to complete registration</p>
+                    </div>
+                    <div>
+                      <Button size="lg" variant="outline" onClick={() => navigate("/signup/client")}>
+                        <TrendingUp className="mr-2 h-5 w-5" />
+                        Or Sign Up Here Directly
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <Button size="lg" onClick={() => navigate("/signup/client")}>
+                      <TrendingUp className="mr-2 h-5 w-5" />
+                      Continue to Sign Up
+                    </Button>
+                    <p className="text-sm text-muted-foreground mt-4">
+                      Create your account to start your mortgage application
+                    </p>
+                  </>
+                )}
               </div>
             </>
           ) : (
