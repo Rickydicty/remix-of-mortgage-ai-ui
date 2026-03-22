@@ -31,6 +31,7 @@ interface Application {
 interface Profile {
   full_name: string | null;
   email: string | null;
+  phone_verified: boolean | null;
 }
 
 const ClientDashboard = () => {
