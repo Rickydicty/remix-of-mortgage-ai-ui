@@ -41,6 +41,7 @@ const ClientDashboard = () => {
   const [brokerProfile, setBrokerProfile] = useState<Profile | null>(null);
   const [documentProgress, setDocumentProgress] = useState(0);
   const [plansOpen, setPlansOpen] = useState(false);
+  const [showPhoneVerification, setShowPhoneVerification] = useState(false);
 
   useEffect(() => {
     fetchApplicationData();
