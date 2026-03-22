@@ -14,6 +14,7 @@ import UnifiedChatBot from "@/components/client/UnifiedChatBot";
 import BrokerMessageNotification from "@/components/client/BrokerMessageNotification";
 import { DeleteApplicationDialog } from "@/components/client/DeleteApplicationDialog";
 import { ClientInstructions } from "@/components/client/AppInstructions";
+import PhoneVerification from "@/components/client/PhoneVerification";
 interface Application {
   id: string;
   application_number: string;
