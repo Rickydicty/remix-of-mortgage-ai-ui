@@ -63,11 +63,12 @@ serve(async (req) => {
         },
       });
 
-      // Send SMS via Twilio gateway
-      const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-      const TWILIO_API_KEY = Deno.env.get('TWILIO_API_KEY');
+      // Send SMS via Twilio direct API
+      const TWILIO_ACCOUNT_SID = Deno.env.get('TWILIO_ACCOUNT_SID');
+      const TWILIO_AUTH_TOKEN = Deno.env.get('TWILIO_AUTH_TOKEN');
+      const twilioFrom = Deno.env.get('TWILIO_FROM_NUMBER');
       
-      if (!LOVABLE_API_KEY || !TWILIO_API_KEY) {
+      if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !twilioFrom) {
         // Twilio not configured - return OTP in dev mode for testing
         console.log('Twilio not configured. OTP:', otp);
         return new Response(JSON.stringify({ 
@@ -79,27 +80,28 @@ serve(async (req) => {
         });
       }
 
-      // Get Twilio phone number from env or use a default
-      const twilioFrom = Deno.env.get('TWILIO_FROM_NUMBER') || '+15005550006';
+      const basicAuth = btoa(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`);
       
-      const twilioResponse = await fetch(`${GATEWAY_URL}/Messages.json`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-          'X-Connection-Api-Key': TWILIO_API_KEY,
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: new URLSearchParams({
-          To: phone,
-          From: twilioFrom,
-          Body: `Your YourKey Mortgages verification code is: ${otp}. This code expires in 5 minutes.`,
-        }),
-      });
+      const twilioResponse = await fetch(
+        `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Basic ${basicAuth}`,
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: new URLSearchParams({
+            To: phone,
+            From: twilioFrom,
+            Body: `Your YourKey Mortgages verification code is: ${otp}. This code expires in 5 minutes.`,
+          }),
+        }
+      );
 
       const twilioData = await twilioResponse.json();
       if (!twilioResponse.ok) {
         console.error('Twilio error:', twilioData);
-        return new Response(JSON.stringify({ error: 'Failed to send SMS' }), {
+        return new Response(JSON.stringify({ error: 'Failed to send SMS via Twilio' }), {
           status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
